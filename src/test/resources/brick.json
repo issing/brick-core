@@ -1,0 +1,19 @@
+﻿{
+    /** 总线模块 */
+    bus : {
+        endpoints : {
+            test : {
+                class : "net.isger.brick.test.TestEndpoint"
+            }
+        }
+    },
+    /** 测试模块 */
+    test : {
+        test-domain : {
+            something : "this is gate."
+        }
+    },
+    /** 未知模块 */
+    other : {
+    }
+}

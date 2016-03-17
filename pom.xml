@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>net.isger</groupId>
+    <artifactId>brick-primary</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <artifactId>brick-core</artifactId>
+  <packaging>jar</packaging>
+
+  <name>brick-core</name>
+  <description>Brick core library</description>
+  <url>https://github.com/issing/brick-core</url>
+
+  <scm>
+    <connection>scm:git:https://github.com/issing/brick-core.git</connection>
+    <developerConnection>scm:git:git@github.com:issing/brick-core.git</developerConnection>
+    <url>https://github.com/issing/brick-core</url>
+  </scm>
+
+  <properties>
+    <avro.version>1.7.7</avro.version>
+  </properties>
+
+  <dependencies>
+    <!-- 工具依赖 -->
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>${avro.version}</version>
+    </dependency>
+    <!-- 砖头依赖 -->
+    <dependency>
+      <groupId>net.isger</groupId>
+      <artifactId>brick-raw</artifactId>
+      <version>${brick.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.isger</groupId>
+      <artifactId>brick-raw-gson</artifactId>
+      <version>${brick.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- 添加AVRO编译工具 -->
+      <plugin>
+        <groupId>org.apache.avro</groupId>
+        <artifactId>avro-maven-plugin</artifactId>
+        <version>${avro.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>schema</goal>
+            </goals>
+            <configuration>
+              <sourceDirectory>${project.basedir}/src/main/avro/</sourceDirectory>
+              <outputDirectory>${project.basedir}/src/main/java/</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- 添加主源文件夹 -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${basedir}/src/main/dummy</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- 删除临时供应器 -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <tasks>
+                <echo>Removing brick's dummy BrickCoreBinder</echo>
+                <delete dir="target/classes/net/isger/brick/bind" />
+              </tasks>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- 默认概述 -->
+    <profile>
+      <id>brick-core-default</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <build>
+        <pluginManagement>
+          <plugins>
+            <plugin>
+              <groupId>org.eclipse.m2e</groupId>
+              <artifactId>lifecycle-mapping</artifactId>
+              <version>1.0.0</version>
+              <configuration>
+                <lifecycleMappingMetadata>
+                  <pluginExecutions>
+                    <pluginExecution>
+                      <pluginExecutionFilter>
+                        <groupId>org.apache.avro</groupId>
+                        <artifactId>avro-maven-plugin</artifactId>
+                        <versionRange>[1.0.0,)</versionRange>
+                        <goals>
+                          <goal>schema</goal>
+                        </goals>
+                      </pluginExecutionFilter>
+                      <action>
+                        <ignore />
+                      </action>
+                    </pluginExecution>
+                  </pluginExecutions>
+                </lifecycleMappingMetadata>
+              </configuration>
+            </plugin>
+          </plugins>
+        </pluginManagement>
+      </build>
+    </profile>
+  </profiles>
+</project>

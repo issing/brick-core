@@ -1,0 +1,15 @@
+{
+    "namespace" : "net.isger.brick.core",
+    "name" : "Command",
+    "type" : "record",
+    "fields" : [ {
+        "name" : "headers",
+        "type" : { "type" : "map", "values" : "bytes" }
+    }, {
+        "name" : "parameters",
+        "type" : { "type" : "map", "values" : "bytes" }
+    }, {
+        "name" : "footers",
+        "type" : { "type" : "map", "values" : "bytes" }
+    } ]
+}

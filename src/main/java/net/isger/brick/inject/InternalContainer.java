@@ -1,0 +1,250 @@
+package net.isger.brick.inject;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import net.isger.brick.Constants;
+import net.isger.util.Callable;
+import net.isger.util.Reflects;
+import net.isger.util.Strings;
+import net.isger.util.reflect.BoundField;
+
+/**
+ * 内部容器
+ * 
+ * @author issing
+ * 
+ */
+class InternalContainer implements Container {
+
+    /** 实例工厂集合 */
+    final Map<Key<?>, InternalFactory<?>> facs;
+
+    /** 实例策略集合 */
+    final Map<Key<?>, Strategy> stgs;
+
+    /** 容器构建上下文 */
+    private ThreadLocal<InternalContext[]> context;
+
+    InternalContainer(Map<Key<?>, InternalFactory<?>> factories) {
+        this.facs = new HashMap<Key<?>, InternalFactory<?>>(factories);
+        this.stgs = new HashMap<Key<?>, Strategy>();
+        this.context = new ThreadLocal<InternalContext[]>() {
+            protected InternalContext[] initialValue() {
+                return new InternalContext[1];
+            }
+        };
+    }
+
+    public void initial() {
+        /* 托管容器自身 */
+        this.facs.put(Key.newInstance(Container.class, Constants.SYSTEM),
+                new InternalFactory<Container>() {
+                    public Container create(InternalContext context) {
+                        return InternalContainer.this;
+                    }
+                });
+    }
+
+    public boolean contains(Class<?> type) {
+        return contains(type, Constants.DEFAULT);
+    }
+
+    public boolean contains(Class<?> type, String name) {
+        return contains(Key.newInstance(type, name));
+    }
+
+    private boolean contains(Key<?> key) {
+        return facs.get(key) != null || stgs.containsKey(key);
+    }
+
+    public Strategy getStrategy(Class<?> type) {
+        return getStrategy(type, Constants.DEFAULT);
+    }
+
+    public Strategy getStrategy(Class<?> type, String name) {
+        return stgs.get(Key.newInstance(type, name));
+    }
+
+    public Strategy setStrategy(Class<?> type, Strategy strategy) {
+        return setStrategy(type, Constants.DEFAULT, strategy);
+    }
+
+    public Strategy setStrategy(Class<?> type, String name, Strategy strategy) {
+        Key<?> key = Key.newInstance(type, name);
+        /** 移除策略 */
+        if (strategy == null) {
+            return stgs.remove(key);
+        }
+        return stgs.put(key, strategy);
+    }
+
+    public <T> T getInstance(Class<T> type) {
+        return getInstance(type, Constants.DEFAULT);
+    }
+
+    public <T> T getInstance(final Class<T> type, final String name) {
+        return call(new Callable<T>() {
+            public T call(Object... args) {
+                return getInstance(Key.newInstance(type, name),
+                        (InternalContext) args[0]);
+            }
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T getInstance(Key<T> key, InternalContext context) {
+        InternalFactory<T> factory = (InternalFactory<T>) facs.get(key);
+        T result;
+        if (factory == null) {
+            /* 策略模式查找对象 */
+            if (stgs.containsKey(key)) {
+                try {
+                    result = stgs.get(key).find(key.getType(), key.getName(),
+                            null);
+                } catch (Exception e) {
+                    throw new IllegalStateException(e.getMessage(),
+                            e.getCause());
+                }
+            } else {
+                return null;
+            }
+        } else {
+            result = factory.create(context);
+        }
+        /* 注入对象 */
+        inject(result, context);
+        return result;
+    }
+
+    public <T> Map<String, T> getInstances(final Class<T> type) {
+        return call(new Callable<Map<String, T>>() {
+            public Map<String, T> call(Object... args) {
+                return getInstances(type, (InternalContext) args[0]);
+            }
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Map<String, T> getInstances(Class<T> type,
+            InternalContext context) {
+        Map<String, T> instances = new HashMap<String, T>();
+        T instance;
+        // 获取策略模式对象
+        Strategy strategy;
+        for (Key<?> key : stgs.keySet()) {
+            if (key.type == type && facs.get(key) == null
+                    && (strategy = stgs.get(key)) != null) {
+                try {
+                    instance = (T) strategy.find(key.type, key.name, null);
+                    if (instance != null) {
+                        inject(instance, context);
+                        instances.put(key.getName(), instance);
+                    }
+                } catch (Exception e) {
+                    throw new IllegalStateException(e.getMessage(),
+                            e.getCause());
+                }
+            }
+        }
+        // 获取工厂注册对象
+        InternalFactory<T> factory;
+        for (Key<?> key : facs.keySet()) {
+            if (key.type == type
+                    && (factory = (InternalFactory<T>) facs.get(key)) != null) {
+                try {
+                    instance = factory.create(context);
+                    if (instances != null) {
+                        inject(instance, context);
+                        instances.put(key.getName(), instance);
+                    }
+                } catch (Exception e) {
+                    throw new IllegalStateException(e.getMessage(),
+                            e.getCause());
+                }
+            }
+        }
+        return instances;
+    }
+
+    public <T> T inject(final T instance) {
+        return call(new Callable<T>() {
+            public T call(Object... args) {
+                inject(instance, (InternalContext) args[0]);
+                return instance;
+            }
+        });
+    }
+
+    /**
+     * 依赖注入
+     * 
+     * @param instance
+     *            注入实例
+     * @param context
+     *            上下文
+     */
+    private void inject(Object instance, InternalContext context) {
+        if (context.hasInject(instance)) {
+            BoundField field;
+            Class<?> fieldType;
+            for (List<BoundField> fields : Reflects.getBoundFields(
+                    instance.getClass()).values()) {
+                field = fields.get(0);
+                // 根据字段类型及其绑定名称获取容器注册实例
+                fieldType = field.getField().getType();
+                if (!setInstance(instance, field, fieldType,
+                        Strings.empty(field.getAliasName(), Constants.DEFAULT))) {
+                    setInstance(instance, field, fieldType, field.getName());
+                }
+            }
+        }
+    }
+
+    /**
+     * 设置实例字段值
+     * 
+     * @param instance
+     * @param field
+     * @param fieldType
+     * @param fieldName
+     * @return
+     */
+    private boolean setInstance(Object instance, BoundField field,
+            Class<?> fieldType, String fieldName) {
+        boolean result;
+        if (result = contains(fieldType, fieldName)) {
+            field.setValue(instance, getInstance(fieldType, fieldName));
+        }
+        return result;
+    }
+
+    /**
+     * 上下文回调
+     * 
+     * @param callable
+     * @return
+     */
+    private <T> T call(Callable<T> callable) {
+        InternalContext[] reference = context.get();
+        if (reference[0] == null) {
+            reference[0] = new InternalContext(this);
+            try {
+                return callable.call(reference[0]);
+            } finally {
+                reference[0] = null;
+                context.remove();
+            }
+        } else {
+            return callable.call(reference[0]);
+        }
+    }
+
+    public void destroy() {
+        stgs.clear();
+        facs.clear();
+        context.remove();
+    }
+
+}

@@ -1,0 +1,248 @@
+package net.isger.brick.core;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import net.isger.brick.inject.ConstantStrategy;
+import net.isger.util.Asserts;
+import net.isger.util.Reflects;
+import net.isger.util.Strings;
+import net.isger.util.anno.Ignore;
+import net.isger.util.anno.Ignore.Mode;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * 门模块
+ * 
+ * @author issing
+ *
+ */
+@Ignore
+public class GateModule extends AbstractModule {
+
+    public static final String GATE = "gate";
+
+    private static final Logger LOG;
+
+    static {
+        LOG = LoggerFactory.getLogger(GateModule.class);
+    }
+
+    public GateModule() {
+    }
+
+    public GateModule(Class<? extends Gate> gateClass) {
+        setParameter(GATE, gateClass);
+    }
+
+    /**
+     * 获取门类型
+     * 
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public Class<? extends Gate> getTargetClass() {
+        Class<? extends Gate> targetClass = (Class<? extends Gate>) Reflects
+                .getClass(getParameter(GATE));
+        if (targetClass == null) {
+            targetClass = (Class<? extends Gate>) super.getTargetClass();
+        }
+        return targetClass;
+    }
+
+    /**
+     * 创建目标实例（键值对实例集合）
+     */
+    protected List<Gate> create(Class<?> clazz, Map<String, Object> res) {
+        Map<String, Gate> gates = createGates(res);
+        setGates(gates);
+        return new ArrayList<Gate>(gates.values());
+    }
+
+    /**
+     * 创建目标实例（暂不支持键值对以外配置方式）
+     */
+    protected Object create(Object res) {
+        throw new IllegalArgumentException("Unexpected config " + res);
+    }
+
+    /**
+     * 创建门
+     * 
+     * @param res
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    protected Map<String, Gate> createGates(Map<String, Object> res) {
+        Map<String, Gate> result = new HashMap<String, Gate>();
+        String name;
+        Object config;
+        /* 键值对配置方式 */
+        for (Entry<String, Object> entry : res.entrySet()) {
+            name = entry.getKey();
+            config = entry.getValue();
+            // 支持路径配置方式
+            if (config instanceof String) {
+                Object resource = console.loadResource((String) config);
+                if (resource != null) {
+                    config = resource;
+                }
+            }
+            // 跳过键值对以外配置方式
+            if (!(config instanceof Map)) {
+                LOG.warn("(!) Skipped the unexpected gate configuration [{}]",
+                        config);
+                continue;
+            }
+            result.put(name, createGate((Map<String, Object>) config));
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Gate createGate(Map<String, Object> res) {
+        return createGate((Class<? extends Gate>) getTargetClass(res), res);
+    }
+
+    protected Gate createGate(Class<? extends Gate> clazz,
+            Map<String, Object> config) {
+        return (Gate) super.create(clazz, config);
+    }
+
+    /**
+     * 添加门
+     * 
+     * @param gates
+     * @return
+     */
+    protected Map<String, Gate> setGates(Map<String, Gate> gates) {
+        Map<String, Gate> result = new HashMap<String, Gate>();
+        String name;
+        Gate gate;
+        for (Entry<String, Gate> entry : gates.entrySet()) {
+            gate = setGate(name = entry.getKey(), entry.getValue());
+            if (gate != null) {
+                result.put(name, gate);
+            }
+        }
+        return result;
+    }
+
+    protected Gate setGate(String name, Gate gate) {
+        Asserts.argument(Strings.isNotEmpty(name) && gate != null,
+                "The gate cannot be null or empty");
+        if (LOG.isDebugEnabled()) {
+            LOG.info("Binding [{}] gate [{}] for the [{}] module", name, gate,
+                    name());
+        }
+        return set(name, gate.getClass(), gate);
+    }
+
+    private Gate set(String name, Class<? extends Gate> gateType, Gate gate) {
+        Class<? extends Gate> type = getTargetClass();
+        if (type != gateType) {
+            ConstantStrategy.set(container, gateType, name, gate);
+        }
+        gate = ConstantStrategy.set(container, type, name, gate);
+        if (gate != null) {
+            LOG.warn("(!) Discard [{}] gate [{}] in the [{}] module", name,
+                    gate, name());
+        }
+        return gate;
+    }
+
+    /**
+     * 获取门
+     * 
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    protected Map<String, Gate> getGates() {
+        return container.getInstances((Class<Gate>) getTargetClass());
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Gate getGate(String name) {
+        return container.getInstance((Class<Gate>) getTargetClass(), name);
+    }
+
+    /**
+     * 删除门
+     * 
+     * @param name
+     */
+    protected Gate delGate(String name) {
+        Gate gate = getGate(name);
+        if (gate == null) {
+            return null;
+        }
+        return set(name, gate.getClass(), null);
+    }
+
+    public void initial() {
+        super.initial();
+        /* 初始所有门 */
+        for (Gate gate : getGates().values()) {
+            gate.initial();
+        }
+    }
+
+    public final void execute() {
+        String domain = GateCommand.getAction().getDomain(); // 获取域
+        if (domain == null) {
+            /* 模块操作 */
+            operate();
+        } else {
+            /* 关卡操作 */
+            Gate gate = getGate(domain);
+            setInternal(Gate.BRICK_GATE, gate);
+            gate.operate();
+        }
+    }
+
+    @Ignore(mode = Mode.INCLUDE)
+    public void create() {
+        GateCommand cmd = GateCommand.getAction();
+        Map<String, Gate> gates = createGates(cmd.getParameter());
+        if (!cmd.getTransient()) {
+            /* 容器托管门 */
+            setGates(gates);
+        }
+        Gate gate;
+        for (Entry<String, Gate> entry : gates.entrySet()) {
+            container.inject(gate = entry.getValue());
+            gate.initial();
+        }
+        cmd.setResult(gates);
+    }
+
+    @Ignore(mode = Mode.INCLUDE)
+    public void remove() {
+        GateCommand cmd = GateCommand.getAction();
+        Map<String, Object> params = cmd.getParameter();
+        String name;
+        Gate gate;
+        Map<String, Gate> result = new HashMap<String, Gate>();
+        for (Entry<String, Object> entry : params.entrySet()) {
+            gate = delGate(name = entry.getKey());
+            if (gate != null) {
+                result.put(name, gate);
+            }
+        }
+        cmd.setResult(result);
+    }
+
+    public void destroy() {
+        /* 注销所有门 */
+        for (Gate gate : getGates().values()) {
+            gate.destroy();
+        }
+        super.destroy();
+    }
+
+}
