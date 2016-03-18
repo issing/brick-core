@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 public class TaskModule extends AbstractModule {
 
+    private static final String TASK = "task";
+
     private static final Logger LOG;
 
     static {
@@ -22,22 +24,22 @@ public class TaskModule extends AbstractModule {
     /**
      * 任务目标类型
      */
-    public Class<?> getTargetClass() {
-        Class<?> targetClass = super.getTargetClass();
-        if (targetClass == null) {
-            targetClass = Task.class;
-        } else {
-            Asserts.argument(Task.class.isAssignableFrom(targetClass),
-                    "The task " + targetClass + " must implement the "
-                            + Task.class);
-        }
-        return targetClass;
+    public Class<? extends Task> getTargetClass() {
+        return Task.class;
     }
 
     /**
      * 任务实现类型
      */
-    public Class<?> getImplementClass() {
+    @SuppressWarnings("unchecked")
+    public Class<? extends Task> getImplementClass() {
+        return (Class<? extends Task>) getImplementClass(TASK);
+    }
+
+    /**
+     * 任务基本实现
+     */
+    public Class<? extends Task> getBaseClass() {
         return BaseTask.class;
     }
 

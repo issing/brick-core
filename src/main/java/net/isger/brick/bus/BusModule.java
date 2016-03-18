@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 public class BusModule extends AbstractModule {
 
+    private static final String BUS = "bus";
+
     private static final Logger LOG;
 
     static {
@@ -22,21 +24,20 @@ public class BusModule extends AbstractModule {
      * 总线目标类型
      */
     public Class<?> getTargetClass() {
-        Class<?> targetClass = super.getTargetClass();
-        if (targetClass == null) {
-            targetClass = Bus.class;
-        } else {
-            Asserts.argument(Bus.class.isAssignableFrom(targetClass),
-                    "The bus " + targetClass + " must implement the "
-                            + Bus.class);
-        }
-        return targetClass;
+        return Bus.class;
     }
 
     /**
      * 总线实现类型
      */
-    public Class<?> getImplementClass() {
+    public Class<?> getImplementsClass() {
+        return getImplementClass(BUS);
+    }
+
+    /**
+     * 总线基本实现
+     */
+    public Class<?> getBaseClass() {
         return BaseBus.class;
     }
 

@@ -76,7 +76,7 @@ public class EndpointsConversion extends DesignLoader implements Conversion {
             result.put(
                     name,
                     createEndpoint((Class<? extends Endpoint>) super
-                            .getTargetClass(res), res));
+                            .getImplementClass(res), res));
         }
         return result;
     }

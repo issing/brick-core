@@ -48,17 +48,7 @@ public interface Constants {
 
     public static final String MOD_TASK = "task";
 
-    public static final String MOD_AUTH = "auth";
-
     public static final String MOD_BUS = "bus";
-
-    public static final String MOD_SCHED = "sched";
-
-    public static final String MOD_CACHE = "cache";
-
-    public static final String MOD_PLUGIN = "plugin";
-
-    public static final String MOD_STUB = "stub";
 
     // =================================================================
 

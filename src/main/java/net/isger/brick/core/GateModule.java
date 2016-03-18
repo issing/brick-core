@@ -8,7 +8,6 @@ import java.util.Map.Entry;
 
 import net.isger.brick.inject.ConstantStrategy;
 import net.isger.util.Asserts;
-import net.isger.util.Reflects;
 import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
@@ -25,7 +24,7 @@ import org.slf4j.LoggerFactory;
 @Ignore
 public class GateModule extends AbstractModule {
 
-    public static final String GATE = "gate";
+    private static final String GATE = "gate";
 
     private static final Logger LOG;
 
@@ -33,26 +32,28 @@ public class GateModule extends AbstractModule {
         LOG = LoggerFactory.getLogger(GateModule.class);
     }
 
-    public GateModule() {
-    }
-
-    public GateModule(Class<? extends Gate> gateClass) {
-        setParameter(GATE, gateClass);
+    /**
+     * 获取门目标类型
+     */
+    public Class<? extends Gate> getTargetClass() {
+        return Gate.class;
     }
 
     /**
-     * 获取门类型
+     * 获取门实现类型
+     */
+    @SuppressWarnings("unchecked")
+    public Class<? extends Gate> getImplementClass() {
+        return (Class<? extends Gate>) getImplementClass(GATE);
+    }
+
+    /**
+     * 获取门基本实现
      * 
      * @return
      */
-    @SuppressWarnings("unchecked")
-    public Class<? extends Gate> getTargetClass() {
-        Class<? extends Gate> targetClass = (Class<? extends Gate>) Reflects
-                .getClass(getParameter(GATE));
-        if (targetClass == null) {
-            targetClass = (Class<? extends Gate>) super.getTargetClass();
-        }
-        return targetClass;
+    protected Class<? extends Gate> getBaseClass() {
+        return BaseGate.class;
     }
 
     /**
@@ -106,7 +107,7 @@ public class GateModule extends AbstractModule {
 
     @SuppressWarnings("unchecked")
     protected Gate createGate(Map<String, Object> res) {
-        return createGate((Class<? extends Gate>) getTargetClass(res), res);
+        return createGate((Class<? extends Gate>) getImplementClass(res), res);
     }
 
     protected Gate createGate(Class<? extends Gate> clazz,
@@ -162,12 +163,12 @@ public class GateModule extends AbstractModule {
      * @return
      */
     @SuppressWarnings("unchecked")
-    protected Map<String, Gate> getGates() {
+    public Map<String, Gate> getGates() {
         return container.getInstances((Class<Gate>) getTargetClass());
     }
 
     @SuppressWarnings("unchecked")
-    protected Gate getGate(String name) {
+    public Gate getGate(String name) {
         return container.getInstance((Class<Gate>) getTargetClass(), name);
     }
 

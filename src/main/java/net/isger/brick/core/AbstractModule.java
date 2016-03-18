@@ -2,6 +2,7 @@ package net.isger.brick.core;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import net.isger.brick.util.DesignLoader;
 import net.isger.brick.util.DynamicOperator;
@@ -34,6 +35,11 @@ public abstract class AbstractModule extends DesignLoader implements Module {
     }
 
     public String name() {
+        for (Entry<String, Module> entry : console.getModules().entrySet()) {
+            if (entry.getValue() == this) {
+                return entry.getKey();
+            }
+        }
         return Helpers.getAliasName(this.getClass(), "Module$");
     }
 
@@ -59,13 +65,56 @@ public abstract class AbstractModule extends DesignLoader implements Module {
     }
 
     /**
-     * 获取目标对象
+     * 获取目标类型
+     */
+    public Class<?> getTargetClass() {
+        throw new IllegalStateException("The " + this.getClass()
+                + " must override the method getTargetClass()");
+    }
+
+    /**
+     * 获取实现类型
      * 
      * @return
      */
-    public Class<?> getTargetClass() {
-        return Reflects.getClass(getParameter(TARGET));
+    public Class<?> getImplementClass() {
+        return getImplementClass(TARGET);
     }
+
+    /**
+     * 获取实现类型
+     * 
+     * @param name
+     * @return
+     */
+    protected final Class<?> getImplementClass(String name) {
+        return getImplementClass(name, getBaseClass());
+    }
+
+    /**
+     * 获取实现类型
+     * 
+     * @param name
+     * @param baseClass
+     * @return
+     */
+    protected final Class<?> getImplementClass(String name, Class<?> baseClass) {
+        Class<?> implClass = Reflects.getClass(getParameter(name));
+        if (implClass == null) {
+            implClass = super.getImplementClass();
+            if (implClass == getTargetClass()) {
+                implClass = baseClass;
+            }
+        }
+        return implClass;
+    }
+
+    /**
+     * 获取默认实现
+     * 
+     * @return
+     */
+    protected abstract Class<?> getBaseClass();
 
     /**
      * 模块操作

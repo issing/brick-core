@@ -141,7 +141,6 @@ public class Console implements Constants, Manageable {
             loadKernel(BRICK);
         }
         loadKernel(name);
-
     }
 
     /**
@@ -201,7 +200,12 @@ public class Console implements Constants, Manageable {
         ModuleDescribe entity = (ModuleDescribe) loader.load(res);
         String name = entity.getName();
         Module module = entity.getModule();
-        if (module != null) {
+        addModule: {
+            if (Strings.isEmpty(name)) {
+                name = module.name();
+            } else if (module == null) {
+                break addModule;
+            }
             addModule(name, module, entity.getDependencies());
         }
         Class<? extends Command> type = entity.getCommand();
@@ -319,7 +323,7 @@ public class Console implements Constants, Manageable {
      * 
      * @return
      */
-    protected final Map<String, Module> getModules() {
+    public final Map<String, Module> getModules() {
         return container.getInstances(Module.class);
     }
 
@@ -329,7 +333,7 @@ public class Console implements Constants, Manageable {
      * @param name
      * @return
      */
-    protected final Module getModule(String name) {
+    public final Module getModule(String name) {
         return container.getInstance(Module.class, name);
     }
 
@@ -339,7 +343,7 @@ public class Console implements Constants, Manageable {
      * @param command
      * @return
      */
-    protected final Module getModule(BaseCommand command) {
+    public final Module getModule(BaseCommand command) {
         Class<?> type = command.getClass();
         Module module;
         if (type != BaseCommand.class) {
@@ -364,7 +368,7 @@ public class Console implements Constants, Manageable {
      * @param type
      * @return
      */
-    protected final Module getModule(Class<?> type) {
+    public final Module getModule(Class<?> type) {
         if (!Command.class.isAssignableFrom(type) || Command.class.equals(type)) {
             return null;
         }
@@ -381,7 +385,7 @@ public class Console implements Constants, Manageable {
      * 
      * @param prober
      */
-    protected final void addProber(Prober prober) {
+    public final void addProber(Prober prober) {
         this.prober = ProberMulticaster.add(this.prober, prober);
     }
 
@@ -392,7 +396,7 @@ public class Console implements Constants, Manageable {
      * @param module
      * @param dependencies
      */
-    protected final void addModule(String name, Module module,
+    public final void addModule(String name, Module module,
             Object... dependencies) {
         addModule(name, module, Arrays.asList(dependencies));
     }
@@ -404,7 +408,7 @@ public class Console implements Constants, Manageable {
      * @param module
      * @param dependencies
      */
-    protected final void addModule(String name, Module module,
+    public final void addModule(String name, Module module,
             List<Object> dependencies) {
         if (LOG.isDebugEnabled()) {
             LOG.info("Binding [{}] module [{}]", name, module);
@@ -422,7 +426,7 @@ public class Console implements Constants, Manageable {
      * @param name
      * @param type
      */
-    protected final void addCommand(String name, Class<? extends Command> type) {
+    public final void addCommand(String name, Class<? extends Command> type) {
         String typeName = type.getName();
         if (LOG.isDebugEnabled()) {
             LOG.info("Binding [{}] command [{}]", name, typeName);
