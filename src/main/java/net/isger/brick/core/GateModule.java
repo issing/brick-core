@@ -44,7 +44,12 @@ public class GateModule extends AbstractModule {
      */
     @SuppressWarnings("unchecked")
     public Class<? extends Gate> getImplementClass() {
-        return (Class<? extends Gate>) getImplementClass(GATE);
+        Class<? extends Gate> implClass = (Class<? extends Gate>) getImplementClass(
+                GATE, null);
+        if (implClass == null) {
+            implClass = (Class<? extends Gate>) super.getImplementClass();
+        }
+        return implClass;
     }
 
     /**
@@ -113,6 +118,10 @@ public class GateModule extends AbstractModule {
     protected Gate createGate(Class<? extends Gate> clazz,
             Map<String, Object> config) {
         return (Gate) super.create(clazz, config);
+    }
+
+    protected Gate createGate() {
+        return (Gate) super.create(getImplementClass(), null);
     }
 
     /**
@@ -188,9 +197,13 @@ public class GateModule extends AbstractModule {
     public void initial() {
         super.initial();
         /* 初始所有门 */
-        for (Gate gate : getGates().values()) {
-            gate.initial();
+        for (Entry<String, Gate> entry : getGates().entrySet()) {
+            initial(entry.getKey(), entry.getValue());
         }
+    }
+
+    protected void initial(String domain, Gate gate) {
+        gate.initial();
     }
 
     public final void execute() {
@@ -201,7 +214,7 @@ public class GateModule extends AbstractModule {
         } else {
             /* 关卡操作 */
             Gate gate = getGate(domain);
-            setInternal(Gate.BRICK_GATE, gate);
+            setInternal(Gate.KEY_GATE, gate);
             gate.operate();
         }
     }
@@ -240,10 +253,14 @@ public class GateModule extends AbstractModule {
 
     public void destroy() {
         /* 注销所有门 */
-        for (Gate gate : getGates().values()) {
-            gate.destroy();
+        for (Entry<String, Gate> entry : getGates().entrySet()) {
+            destroy(entry.getKey(), entry.getValue());
         }
         super.destroy();
+    }
+
+    protected void destroy(String key, Gate gate) {
+        gate.destroy();
     }
 
 }

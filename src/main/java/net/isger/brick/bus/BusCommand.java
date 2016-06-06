@@ -40,11 +40,11 @@ public class BusCommand extends BaseCommand {
     }
 
     public Object getPayload() {
-        return getParameter(KEY_PAYLOAD);
+        return getHeader(KEY_PAYLOAD);
     }
 
     public void setPayload(Object payload) {
-        setParameter(KEY_PAYLOAD, payload);
+        setHeader(KEY_PAYLOAD, payload);
     }
 
 }

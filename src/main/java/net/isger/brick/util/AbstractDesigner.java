@@ -8,8 +8,8 @@ import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 import net.isger.util.config.Designer;
-import net.isger.util.reflect.Conversion;
 import net.isger.util.reflect.Converter;
+import net.isger.util.reflect.conversion.Conversion;
 
 /**
  * 抽象设计器

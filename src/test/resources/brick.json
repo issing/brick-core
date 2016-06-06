@@ -1,4 +1,12 @@
 ﻿{
+    /** 认证模块 */
+    auth : {
+        test : {
+            authorizer : {
+                ignores : [ "test-domain:say", "test-domain:other", "say", "other" ]
+            }
+        }
+    },
     /** 总线模块 */
     bus : {
         endpoints : {
@@ -13,7 +21,7 @@
             something : "this is gate."
         }
     },
-    /** 未知模块 */
+    /** 未知模块（系统忽略） */
     other : {
     }
 }

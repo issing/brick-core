@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import net.isger.brick.util.DesignLoader;
-import net.isger.brick.util.DynamicOperator;
+import net.isger.brick.util.CommandOperator;
 import net.isger.util.Helpers;
 import net.isger.util.Operator;
 import net.isger.util.Reflects;
@@ -31,7 +31,7 @@ public abstract class AbstractModule extends DesignLoader implements Module {
 
     public AbstractModule() {
         parameters = new HashMap<String, Object>();
-        operator = new DynamicOperator(this);
+        operator = new CommandOperator(this);
     }
 
     public String name() {

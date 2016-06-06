@@ -24,7 +24,7 @@ public class TextDecoder implements Decoder {
     private transient byte[] delimiters;
 
     public TextDecoder() {
-        this(Constants.ENCODING_UTF_8, TextProtocol.DELIMITER);
+        this(Constants.DEFAULT_ENCODING, TextProtocol.DELIMITER);
     }
 
     public TextDecoder(String encoding, String delimiter) {

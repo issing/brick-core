@@ -98,6 +98,19 @@ public abstract class Context {
     public abstract BaseCommand getCommand();
 
     /**
+     * 拷贝命令
+     * 
+     * @return
+     */
+    public BaseCommand newCommand() {
+        BaseCommand cmd = getCommand();
+        if (cmd != null) {
+            cmd = (BaseCommand) cmd.clone();
+        }
+        return cmd;
+    }
+
+    /**
      * 仿制命令
      * 
      * @return

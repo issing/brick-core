@@ -24,6 +24,8 @@ public class BaseCommand extends Command implements Cloneable {
 
     public static final int FOOTERS = 2;
 
+    public static final String KEY_IDENTITY = "brick-identity";
+
     public static final String KEY_MODULE = "brick-module";
 
     public static final String KEY_OPERATE = "brick-operate";
@@ -45,15 +47,44 @@ public class BaseCommand extends Command implements Cloneable {
     }
 
     private BaseCommand(Command source, boolean hasShell) {
-        if (!hasShell) {
-            return;
+        if (hasShell) {
+            ShellCommand shell = null;
+            if (source == null) {
+                source = this;
+            } else if (source instanceof BaseCommand) {
+                shell = ((BaseCommand) source).shell;
+            }
+            makeShell(source, shell);
         }
-        makeShell(source == null ? this : source, null);
     }
 
     public static BaseCommand getAction() {
         try {
             return Context.getAction().getCommand();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static BaseCommand newAction() {
+        try {
+            return Context.getAction().newCommand();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static BaseCommand mockAction() {
+        try {
+            return Context.getAction().mockCommand();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static BaseCommand realAction() {
+        try {
+            return Context.getAction().realCommand();
         } catch (Exception e) {
             return null;
         }
@@ -183,6 +214,18 @@ public class BaseCommand extends Command implements Cloneable {
         shell.set(index, key, value);
     }
 
+    public String getPermission() {
+        return getOperate();
+    }
+
+    public String getIdentity() {
+        return shell.getIdentity();
+    }
+
+    public void setIdentity(String identity) {
+        shell.setIdentity(identity);
+    }
+
     public String getModule() {
         return shell.getModule();
     }
@@ -228,10 +271,10 @@ public class BaseCommand extends Command implements Cloneable {
         if (shell == null) {
             shell = this.shell;
         }
-        this.shell.mappings = Helpers.copyMap(shell.mappings);
-        this.shell.setHeaders(Helpers.copyMap(shell.getHeaders()));
-        this.shell.setParameters(Helpers.copyMap(shell.getParameters()));
-        this.shell.setFooters(Helpers.copyMap(shell.getFooters()));
+        this.shell.mappings = Helpers.getMap(shell.mappings);
+        this.shell.setHeaders(Helpers.getMap(shell.getHeaders()));
+        this.shell.setParameters(Helpers.getMap(shell.getParameters()));
+        this.shell.setFooters(Helpers.getMap(shell.getFooters()));
     }
 
     private class ShellCommand {
@@ -395,6 +438,14 @@ public class BaseCommand extends Command implements Cloneable {
 
         public void setFooter(CharSequence key, Object value) {
             set(FOOTERS, key, value);
+        }
+
+        public String getIdentity() {
+            return getHeader(KEY_IDENTITY);
+        }
+
+        public void setIdentity(String identity) {
+            setHeader(KEY_IDENTITY, identity);
         }
 
         public String getModule() {

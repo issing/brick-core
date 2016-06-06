@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import net.isger.brick.util.DesignLoader;
-import net.isger.util.reflect.Conversion;
+import net.isger.util.reflect.conversion.Conversion;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

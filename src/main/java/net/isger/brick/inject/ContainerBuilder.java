@@ -30,6 +30,7 @@ public final class ContainerBuilder {
 
     public ContainerBuilder() {
         this.facs = new HashMap<Key<?>, InternalFactory<?>>();
+        this.duplicated = true;
     }
 
     /**
@@ -155,12 +156,10 @@ public final class ContainerBuilder {
         /* 检测重复 */
         if (facs.containsKey(key)) {
             if (!duplicated) {
-                throw new IllegalStateException("Dependency mapping for " + key
-                        + " already exists");
+                throw new IllegalStateException("(X) Dependency mapping for ["
+                        + key + "] already exists");
             }
-            if (LOG.isWarnEnabled()) {
-                LOG.warn("(!) Dependency mapping for {} already exists", key);
-            }
+            LOG.warn("(!) Dependency mapping for [{}] already exists", key);
         }
         /* 划分作用域 */
         facs.put(key, scope.factory(key.getType(), key.getName(), factory));

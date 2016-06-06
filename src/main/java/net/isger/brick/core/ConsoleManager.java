@@ -6,6 +6,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import net.isger.brick.Constants;
+import net.isger.brick.auth.AuthPreparer;
 import net.isger.brick.config.ModuleDescribe;
 import net.isger.brick.inject.BootstrapBuilder;
 import net.isger.brick.inject.Container;
@@ -238,8 +239,8 @@ public class ConsoleManager {
                         String.class, Constants.BRICK_RAW));
             }
         });
-        builder.factory(Preparer.class);
-        builder.constant(Constants.BRICK_MODULE_DESCRIBE, ModuleDescribe.class);
+        builder.factory(Preparer.class, AuthPreparer.class);
+        builder.constant(Constants.BRICK_DESCRIBE, ModuleDescribe.class);
         return builder;
     }
 

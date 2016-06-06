@@ -33,19 +33,19 @@ public class TaskCommand extends BaseCommand {
     }
 
     public Command getCommand() {
-        return getParameter(KEY_COMMAND);
+        return getHeader(KEY_COMMAND);
     }
 
     public void setCommand(Command command) {
-        setParameter(KEY_COMMAND, command);
+        setHeader(KEY_COMMAND, command);
     }
 
     public <T> Callable<T> getCallback() {
-        return getParameter(KEY_CALLBACK);
+        return getHeader(KEY_CALLBACK);
     }
 
     public void setCallback(Callable<?> callback) {
-        setParameter(KEY_CALLBACK, callback);
+        setHeader(KEY_CALLBACK, callback);
     }
 
 }

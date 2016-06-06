@@ -1,6 +1,7 @@
 package net.isger.brick.inject;
 
 import net.isger.util.Asserts;
+import net.isger.util.Reflects;
 
 /**
  * 实例键
@@ -21,7 +22,8 @@ public class Key<T> {
         Asserts.isNotEmpty(name, "The key name not be null or empty");
         this.type = type;
         this.name = name;
-        this.hashCode = type.hashCode() << 8 + name.hashCode() & 0xFF;
+        this.hashCode = Reflects.getWrapClass(type).hashCode() << 8 + name
+                .hashCode() & 0xFF;
     }
 
     public static <T> Key<T> newInstance(Class<T> type, String name) {
@@ -47,7 +49,15 @@ public class Key<T> {
             return true;
         }
         Key<?> key = (Key<?>) o;
-        return name.equals(key.name) && type.equals(key.type);
+        return name.equals(key.name)
+                && Reflects.getWrapClass(type).equals(
+                        Reflects.getWrapClass(key.type));
+    }
+
+    public String toString() {
+        StringBuffer buffer = new StringBuffer(128);
+        buffer.append(name).append(":").append(type.getName());
+        return buffer.toString();
     }
 
 }

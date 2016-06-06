@@ -4,7 +4,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.isger.brick.util.DynamicOperator;
+import net.isger.brick.Constants;
+import net.isger.brick.inject.Container;
+import net.isger.brick.util.CommandOperator;
+import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 
@@ -15,15 +18,20 @@ import net.isger.util.anno.Ignore.Mode;
  *
  */
 @Ignore
-public class BaseGate extends DynamicOperator implements Gate {
+public class BaseGate extends CommandOperator implements Gate {
+
+    @Ignore(mode = Mode.INCLUDE)
+    @Alias(Constants.SYSTEM)
+    protected Container container;
 
     @Ignore(mode = Mode.INCLUDE)
     private Map<String, Object> parameters;
 
+    public BaseGate() {
+        parameters = new HashMap<String, Object>();
+    }
+
     public void initial() {
-        if (parameters == null) {
-            parameters = new HashMap<String, Object>();
-        }
     }
 
     protected final Object getParameter(String name) {
@@ -36,7 +44,6 @@ public class BaseGate extends DynamicOperator implements Gate {
 
     public void destroy() {
         parameters.clear();
-        parameters = null;
     }
 
 }

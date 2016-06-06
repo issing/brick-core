@@ -1,0 +1,78 @@
+package net.isger.brick.auth;
+
+import net.isger.brick.Constants;
+import net.isger.brick.core.BaseCommand;
+import net.isger.brick.core.Command;
+import net.isger.brick.core.Console;
+import net.isger.brick.core.Context;
+import net.isger.brick.core.Module;
+import net.isger.brick.core.Preparer;
+import net.isger.util.Strings;
+import net.isger.util.anno.Alias;
+import net.isger.util.anno.Ignore;
+import net.isger.util.anno.Ignore.Mode;
+
+/**
+ * 认证预处理
+ * 
+ * @author issing
+ *
+ */
+public class AuthPreparer extends Preparer {
+
+    /** 控制台 */
+    @Ignore(mode = Mode.INCLUDE)
+    @Alias(Constants.SYSTEM)
+    private Console console;
+
+    /** 认证模块 */
+    @Ignore(mode = Mode.INCLUDE)
+    @Alias(Constants.MOD_AUTH)
+    private Module module;
+
+    /**
+     * 创建上下文（认证干涉）
+     */
+    protected Context createContext(BaseCommand command) {
+        return super.createContext(meddle(command));
+    }
+
+    /**
+     * 更新上下文（认证干涉）
+     */
+    protected void updateContext(Context context, BaseCommand command) {
+        super.updateContext(context, meddle(command));
+    }
+
+    /**
+     * 认证干涉
+     * 
+     * @param command
+     * @return
+     */
+    protected BaseCommand meddle(BaseCommand command) {
+        if (command instanceof AuthCommand) {
+            AuthCommand cmd = (AuthCommand) command;
+            boolean result;
+            Object token = cmd.getToken();
+            if (result = Strings.isEmpty(cmd.getDomain())
+                    && Strings.isEmpty(cmd.getOperate())
+                    && token instanceof Command) {
+                command = BaseCommand.cast((Command) token);
+            }
+            cmd.setResult(result);
+            return command;
+        }
+        String domain;
+        if (((AuthModule) module).getGate(domain = console
+                .getModuleName(command)) != null) {
+            AuthCommand cmd = new AuthCommand();
+            cmd.setIdentity(command.getIdentity());
+            cmd.setDomain(domain);
+            cmd.setOperate(AuthCommand.OPERATE_CHECK);
+            cmd.setToken(command);
+            command = cmd;
+        }
+        return command;
+    }
+}

@@ -1,10 +1,21 @@
 package net.isger.brick.test;
 
+import net.isger.brick.Constants;
+import net.isger.brick.cache.Cache;
+import net.isger.brick.cache.CacheModule;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Context;
 import net.isger.brick.core.GateModule;
+import net.isger.brick.core.Module;
+import net.isger.util.anno.Alias;
+import net.isger.util.anno.Ignore;
+import net.isger.util.anno.Ignore.Mode;
 
 public class TestModule extends GateModule {
+
+    @Ignore(mode = Mode.INCLUDE)
+    @Alias(Constants.MOD_CACHE)
+    private Module caches;
 
     private String something;
 
@@ -12,19 +23,21 @@ public class TestModule extends GateModule {
         try {
             super.operate();
         } catch (Exception e) {
-            System.out.println("TestModule does not implement the operate ["
-                    + Context.getAction().getCommand().getOperate() + "]");
             BaseCommand.getAction().setResult(
-                    "Result: TestModule does not implement the operate ["
+                    "TestModule does not implement the operate ["
                             + Context.getAction().getCommand().getOperate()
-                            + "]");
+                            + "] - cache.get(\"say\"): "
+                            + getCache().get("say"));
         }
     }
 
     public void say() {
-        System.out.println("TestModule say [" + something + "]");
-        BaseCommand.getAction().setResult(
-                "Result: TestModule say [" + something + "]");
+        getCache().set("say", something + " in the cache");
+        BaseCommand.getAction().setResult("TestModule say [" + something + "]");
+    }
+
+    private Cache getCache() {
+        return ((CacheModule) caches).getCache(Constants.SYSTEM);
     }
 
 }

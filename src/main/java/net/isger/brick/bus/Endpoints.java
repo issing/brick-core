@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import net.isger.util.Helpers;
+import net.isger.util.Strings;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,14 +35,21 @@ public class Endpoints {
     }
 
     public void put(String name, Endpoint endpoint) {
-        name = Helpers.getAliasName(endpoint.getClass(), "Endpoint$", name)
-                .toLowerCase();
-        if (LOG.isDebugEnabled()) {
-            LOG.info("Binding [{}] endpoint [{}]", name, endpoint);
+        int index = name.lastIndexOf(".");
+        String key;
+        if (index++ > 0) {
+            key = name.substring(0, index);
+            name = name.substring(index);
+        } else {
+            key = "";
         }
-        endpoint = endpoints.put(name, endpoint);
+        key += getName(endpoint.getClass(), name);
+        if (LOG.isDebugEnabled()) {
+            LOG.info("Binding [{}] endpoint [{}]", key, endpoint);
+        }
+        endpoint = endpoints.put(key, endpoint);
         if (endpoint != null) {
-            LOG.warn("(!) Discard [{}] endpoint [{}]", name, endpoint);
+            LOG.warn("(!) Discard [{}] endpoint [{}]", key, endpoint);
         }
 
     }
@@ -52,6 +60,15 @@ public class Endpoints {
 
     public Endpoint get(String name) {
         return endpoints.get(name);
+    }
+
+    public static final String getName(Class<? extends Endpoint> clazz) {
+        return getName(clazz, "");
+    }
+
+    public static final String getName(Class<? extends Endpoint> clazz,
+            String name) {
+        return Helpers.getAliasName(clazz, "Endpoint$", Strings.toLower(name));
     }
 
 }

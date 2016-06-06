@@ -11,6 +11,6 @@ import net.isger.util.Operator;
  */
 public interface Gate extends Operator, Manageable {
 
-    public static final String BRICK_GATE = "brick.core.gate";
+    public static final String KEY_GATE = "brick.core.gate";
 
 }

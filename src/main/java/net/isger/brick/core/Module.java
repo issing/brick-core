@@ -12,6 +12,8 @@ import net.isger.util.load.Loader;
  */
 public interface Module extends Loader, Manageable, Named {
 
+    public static final String KEY_MODULE = "brick.core.module";
+
     /**
      * 执行
      * 

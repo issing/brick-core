@@ -27,9 +27,11 @@ public class Preparer {
         BaseCommand cmd = BaseCommand.cast(command);
         Context context = Context.getAction();
         if (context == null) {
-            context = createContext(cmd);
+            context = new InternalContext(createContext(cmd));
+        } else {
+            updateContext(context = new InternalContext(context), cmd);
         }
-        Context.setAction(new InternalContext(console, context, cmd));
+        Context.setAction(context);
     }
 
     /**
@@ -48,6 +50,16 @@ public class Preparer {
                 return command;
             }
         };
+    }
+
+    /**
+     * 更新上下文
+     * 
+     * @param context
+     * @param cmd
+     */
+    protected void updateContext(Context context, BaseCommand cmd) {
+        ((InternalContext) context).command = cmd;
     }
 
     /**

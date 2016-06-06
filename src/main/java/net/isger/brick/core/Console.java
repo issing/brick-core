@@ -9,14 +9,20 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import net.isger.brick.Constants;
+import net.isger.brick.auth.AuthCommand;
+import net.isger.brick.auth.AuthModule;
 import net.isger.brick.bus.BusCommand;
 import net.isger.brick.bus.BusModule;
+import net.isger.brick.cache.CacheCommand;
+import net.isger.brick.cache.CacheModule;
 import net.isger.brick.config.ModuleDescribe;
 import net.isger.brick.inject.ConstantStrategy;
 import net.isger.brick.inject.Container;
+import net.isger.brick.stub.StubCommand;
+import net.isger.brick.stub.StubModule;
 import net.isger.brick.task.TaskCommand;
 import net.isger.brick.task.TaskModule;
-import net.isger.brick.util.DynamicOperator;
+import net.isger.brick.util.CommandOperator;
 import net.isger.raw.Artifact;
 import net.isger.raw.Depository;
 import net.isger.raw.Prober;
@@ -83,10 +89,6 @@ public class Console implements Constants, Manageable {
         dependency = new Dependency();
     }
 
-    public static Console getAction() {
-        return Context.getAction().getConsole();
-    }
-
     /**
      * 初始
      */
@@ -95,13 +97,13 @@ public class Console implements Constants, Manageable {
             return;
         }
         /* 实例化内核模块加载器 */
-        Class<?> describeType = container.getInstance(Class.class,
-                BRICK_MODULE_DESCRIBE);
-        Asserts.isAssignable(ModuleDescribe.class, describeType,
-                "Invalid module describe type");
-        loader = new BaseLoader(describeType);
+        Class<?> describeClass = container.getInstance(Class.class,
+                BRICK_DESCRIBE);
+        Asserts.isAssignable(ModuleDescribe.class, describeClass,
+                "Invalid module describe class");
+        loader = new BaseLoader(describeClass);
         /* 实例化动态操作器 */
-        operator = new DynamicOperator(this);
+        operator = new CommandOperator(this);
         loadKernel();
         loadApp();
         // 初始模块
@@ -124,18 +126,40 @@ public class Console implements Constants, Manageable {
      */
     protected void loadKernel() {
         /* 默认内核 */
+        // 缓存模块
+        Module module = getModule(MOD_CACHE);
+        if (module == null) {
+            addModule(MOD_CACHE, new CacheModule());
+        }
+        addCommand(MOD_CACHE, CacheCommand.class);
+        // 认证模块
+        module = getModule(MOD_AUTH);
+        if (module == null) {
+            addModule(MOD_AUTH, new AuthModule());
+        }
+        addDependencies(MOD_AUTH, MOD_CACHE);
+        addCommand(MOD_AUTH, AuthCommand.class);
         // 任务模块
-        Module module = getModule(Constants.MOD_TASK);
+        module = getModule(MOD_TASK);
         if (module == null) {
-            addModule(Constants.MOD_TASK, new TaskModule());
+            addModule(MOD_TASK, new TaskModule());
         }
-        addCommand(Constants.MOD_TASK, TaskCommand.class);
+        addDependencies(MOD_TASK, MOD_AUTH);
+        addCommand(MOD_TASK, TaskCommand.class);
         // 总线模块
-        module = getModule(Constants.MOD_BUS);
+        module = getModule(MOD_BUS);
         if (module == null) {
-            addModule(Constants.MOD_BUS, new BusModule(), MOD_TASK);
+            addModule(MOD_BUS, new BusModule());
         }
-        addCommand(Constants.MOD_BUS, BusCommand.class);
+        addDependencies(MOD_BUS, MOD_TASK);
+        addCommand(MOD_BUS, BusCommand.class);
+        // 存根模块
+        module = getModule(MOD_STUB);
+        if (module == null) {
+            addModule(MOD_STUB, new StubModule());
+        }
+        addDependencies(MOD_STUB, MOD_AUTH);
+        addCommand(MOD_STUB, StubCommand.class);
         /* 加载内核 */
         if (!Strings.matchsIgnoreCase(name, BRICK)) {
             loadKernel(BRICK);
@@ -150,14 +174,72 @@ public class Console implements Constants, Manageable {
      */
     @SuppressWarnings("unchecked")
     private void loadKernel(String name) {
+        /* 配置参数 */
         Object config;
-        /* 多配置文件 */
-        for (Artifact artifact : Depository.wrap(name + "-kernel", prober)) {
+        for (Artifact artifact : Depository.getArtifacts(name + "-config",
+                prober)) {
+            config = loadResource(artifact);
+            if (config instanceof Collection) {
+                loadConstants((Collection<?>) config);
+            } else if (config instanceof Map) {
+                loadConstants((Map<String, Object>) config);
+            }
+        }
+        /* 内核配置 */
+        for (Artifact artifact : Depository.getArtifacts(name + "-kernel",
+                prober)) {
             config = loadResource(artifact);
             if (config instanceof Collection) {
                 loadModule((Collection<?>) config);
             } else if (config instanceof Map) {
                 loadModule((Map<String, Object>) config);
+            }
+        }
+    }
+
+    /**
+     * 加载常量
+     * 
+     * @param res
+     */
+    @SuppressWarnings("unchecked")
+    private void loadConstants(Collection<?> res) {
+        String name;
+        for (Object config : res) {
+            if (config instanceof String) {
+                name = (String) config;
+                config = loadResource(name + "-constants");
+                if (!(config instanceof Map)) {
+                    LOG.warn("(!) Skipped invalid constants config {}", config);
+                    continue;
+                }
+            } else if (!(config instanceof Map)) {
+                LOG.warn("(!) Skipped invalid constants config {}", config);
+                continue;
+            }
+            loadConstants((Map<String, Object>) config);
+        }
+    }
+
+    /**
+     * 加载常量
+     * 
+     * @param config
+     */
+    protected void loadConstants(Map<String, Object> config) {
+        Loader loader = new BaseLoader();
+        Object value;
+        for (Entry<String, Object> entry : config.entrySet()) {
+            value = entry.getValue();
+            if (value != null) {
+                if (value instanceof Map) {
+                    try {
+                        value = loader.load(value);
+                    } catch (Exception e) {
+                    }
+                }
+                ConstantStrategy.set(container, value.getClass(),
+                        entry.getKey(), value);
             }
         }
     }
@@ -224,7 +306,7 @@ public class Console implements Constants, Manageable {
         Object config;
         for (Entry<String, Module> entry : getModules().entrySet()) {
             /* 多配置文件 */
-            for (Artifact artifact : Depository.wrap(
+            for (Artifact artifact : Depository.getArtifacts(
                     name + "-" + entry.getKey(), prober)) {
                 config = loadResource(artifact);
                 if (config != null) {
@@ -305,7 +387,7 @@ public class Console implements Constants, Manageable {
     private Object loadResource(Artifact artifact) {
         Object config = null;
         if (artifact != null) {
-            config = artifact.use("transform");
+            config = artifact.transform(Object.class);
         }
         return config;
     }
@@ -338,7 +420,7 @@ public class Console implements Constants, Manageable {
     }
 
     /**
-     * 获取模块名
+     * 获取模块
      * 
      * @param command
      * @return
@@ -363,21 +445,62 @@ public class Console implements Constants, Manageable {
     }
 
     /**
+     * 获取模块
+     * 
+     * @param commandType
+     * @return
+     */
+    public final Module getModule(Class<?> commandType) {
+        if (!Command.class.isAssignableFrom(commandType)
+                || Command.class.equals(commandType)) {
+            return null;
+        }
+        String name = container.getInstance(String.class, commandType.getName()
+                + SUFFIX_MODULE);
+        if (name == null) {
+            return getModule(commandType.getSuperclass());
+        }
+        return getModule(name);
+    }
+
+    /**
+     * 获取模块名
+     * 
+     * @param command
+     * @return
+     */
+    public final String getModuleName(BaseCommand command) {
+        Class<?> type = command.getClass();
+        String moduleName;
+        if (type != BaseCommand.class) {
+            moduleName = getModuleName(type);
+            if (moduleName != null) {
+                return moduleName;
+            }
+        }
+        moduleName = getModuleName(command.getSource().getClass());
+        if (moduleName == null) {
+            moduleName = command.getModule();
+        }
+        return moduleName;
+    }
+
+    /**
      * 获取模块名
      * 
      * @param type
      * @return
      */
-    public final Module getModule(Class<?> type) {
+    public final String getModuleName(Class<?> type) {
         if (!Command.class.isAssignableFrom(type) || Command.class.equals(type)) {
             return null;
         }
         String name = container.getInstance(String.class, type.getName()
                 + SUFFIX_MODULE);
         if (name == null) {
-            return getModule(type.getSuperclass());
+            return getModuleName(type.getSuperclass());
         }
-        return getModule(name);
+        return name;
     }
 
     /**
@@ -387,6 +510,14 @@ public class Console implements Constants, Manageable {
      */
     public final void addProber(Prober prober) {
         this.prober = ProberMulticaster.add(this.prober, prober);
+    }
+
+    public final void addDependencies(String name, Object... dependencies) {
+        addDependencies(name, Arrays.asList(dependencies));
+    }
+
+    public final void addDependencies(String name, List<Object> dependencies) {
+        this.dependency.addNode(name, dependencies);
     }
 
     /**
@@ -417,7 +548,7 @@ public class Console implements Constants, Manageable {
         if (module != null) {
             LOG.warn("(!) Discard [{}] module [{}]", name, module);
         }
-        this.dependency.addNode(name, dependencies);
+        addDependencies(name, dependencies);
     }
 
     /**
@@ -453,7 +584,7 @@ public class Console implements Constants, Manageable {
                 operate();
             } else {
                 /* 模块执行 */
-                context.setInternal(BRICK_MODULE, module);
+                context.setInternal(Module.KEY_MODULE, module);
                 module.execute();
             }
         } finally {

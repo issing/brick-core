@@ -12,7 +12,7 @@ public class TextEncoder implements Encoder {
     private String delimiter;
 
     public TextEncoder() {
-        this(Constants.ENCODING_UTF_8, TextProtocol.DELIMITER);
+        this(Constants.DEFAULT_ENCODING, TextProtocol.DELIMITER);
     }
 
     public TextEncoder(String encoding, String delimiter) {

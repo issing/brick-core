@@ -7,12 +7,12 @@ import java.util.concurrent.Executors;
 import net.isger.brick.Constants;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Console;
-import net.isger.brick.util.DynamicOperator;
+import net.isger.brick.util.CommandOperator;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 
-public class BaseTask extends DynamicOperator implements Task {
+public class BaseTask extends CommandOperator implements Task {
 
     /** 控制台 */
     @Ignore(mode = Mode.INCLUDE)

@@ -8,13 +8,13 @@ import net.isger.brick.Constants;
 import net.isger.brick.core.BaseHandler;
 import net.isger.brick.core.Handler;
 import net.isger.brick.inject.Container;
-import net.isger.brick.util.DynamicOperator;
+import net.isger.brick.util.CommandOperator;
 import net.isger.util.Strings;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 
-public abstract class SocketEndpoint extends DynamicOperator implements
+public abstract class SocketEndpoint extends CommandOperator implements
         Endpoint {
 
     public static final int MIN_RETRIES = 3;
@@ -38,7 +38,11 @@ public abstract class SocketEndpoint extends DynamicOperator implements
 
     protected Handler handler;
 
-    protected int retries = MIN_RETRIES;
+    protected int retries;
+
+    public SocketEndpoint() {
+        retries = MIN_RETRIES;
+    }
 
     public final void initial() {
         if (Strings.isEmpty(protocol)) {

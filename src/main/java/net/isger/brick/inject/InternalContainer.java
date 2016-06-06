@@ -3,6 +3,7 @@ package net.isger.brick.inject;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.isger.brick.Constants;
 import net.isger.util.Callable;
@@ -28,8 +29,8 @@ class InternalContainer implements Container {
     private ThreadLocal<InternalContext[]> context;
 
     InternalContainer(Map<Key<?>, InternalFactory<?>> factories) {
-        this.facs = new HashMap<Key<?>, InternalFactory<?>>(factories);
-        this.stgs = new HashMap<Key<?>, Strategy>();
+        this.facs = new ConcurrentHashMap<Key<?>, InternalFactory<?>>(factories);
+        this.stgs = new ConcurrentHashMap<Key<?>, Strategy>();
         this.context = new ThreadLocal<InternalContext[]>() {
             protected InternalContext[] initialValue() {
                 return new InternalContext[1];
@@ -187,16 +188,16 @@ class InternalContainer implements Container {
      */
     private void inject(Object instance, InternalContext context) {
         if (context.hasInject(instance)) {
-            BoundField field;
             Class<?> fieldType;
             for (List<BoundField> fields : Reflects.getBoundFields(
                     instance.getClass()).values()) {
-                field = fields.get(0);
-                // 根据字段类型及其绑定名称获取容器注册实例
-                fieldType = field.getField().getType();
-                if (!setInstance(instance, field, fieldType,
-                        Strings.empty(field.getAliasName(), Constants.DEFAULT))) {
-                    setInstance(instance, field, fieldType, field.getName());
+                for (BoundField field : fields) {
+                    // 根据字段类型及其绑定名称获取容器注册实例
+                    fieldType = field.getField().getType();
+                    if (!setInstance(instance, field, fieldType,
+                            Strings.empty(field.getAlias(), Constants.DEFAULT))) {
+                        setInstance(instance, field, fieldType, field.getName());
+                    }
                 }
             }
         }

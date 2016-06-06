@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 import net.isger.util.Reflects;
-import net.isger.util.Scanners;
+import net.isger.util.Scans;
 import net.isger.util.Strings;
-import net.isger.util.scanner.ScanFilter;
+import net.isger.util.scan.ScanFilter;
 
 /**
  * 扫描加载器
@@ -54,6 +54,8 @@ public class ScanLoader extends ConsoleLoader {
                 }
             }
             result = container;
+        } else {
+            result = make(clazz, res);
         }
         return result;
     }
@@ -75,8 +77,7 @@ public class ScanLoader extends ConsoleLoader {
         // 扫描实例
         Object instance;
         String className;
-        for (String name : Scanners.scan(path.replaceAll("[.\\\\]", "/"),
-                filter)) {
+        for (String name : Scans.scan(path.replaceAll("[.\\\\]", "/"), filter)) {
             name = Strings.replaceIgnoreCase(name, "[.]class$").replaceAll(
                     "[\\\\/]", ".");
             className = path.replaceAll("[\\\\/]", ".") + name;

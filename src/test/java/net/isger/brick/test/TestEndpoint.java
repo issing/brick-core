@@ -2,9 +2,9 @@ package net.isger.brick.test;
 
 import net.isger.brick.bus.Endpoint;
 import net.isger.brick.bus.Status;
-import net.isger.brick.util.DynamicOperator;
+import net.isger.brick.util.CommandOperator;
 
-public class TestEndpoint extends DynamicOperator implements Endpoint {
+public class TestEndpoint extends CommandOperator implements Endpoint {
 
     private Status status;
 

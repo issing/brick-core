@@ -33,6 +33,7 @@ public class BrickCoreTest extends TestCase {
         // 初始环境
         ConsoleManager manager = new ConsoleManager();
         Console console = manager.getConsole();
+        console.initial();
 
         // 模块操作
         TaskCommand taskCmd = new TaskCommand(new TestCommand());

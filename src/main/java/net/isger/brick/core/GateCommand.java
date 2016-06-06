@@ -1,8 +1,8 @@
 package net.isger.brick.core;
 
-public class GateCommand extends BaseCommand {
+import net.isger.util.Strings;
 
-    // public static final String KEY_DOMAIN = "brick-domain";
+public class GateCommand extends BaseCommand {
 
     public static final String KEY_DOMAIN = "gate-domain";
 
@@ -34,6 +34,23 @@ public class GateCommand extends BaseCommand {
     public static GateCommand cast(BaseCommand cmd) {
         return cmd == null || cmd.getClass() == GateCommand.class ? (GateCommand) cmd
                 : cmd.infect(new GateCommand(false));
+    }
+
+    public final String getPermission() {
+        StringBuffer buffer = new StringBuffer(128);
+        String section = getDomain();
+        if (Strings.isNotEmpty(section)) {
+            buffer.append(section).append(":");
+        }
+        if (Strings.isNotEmpty(section = getAccess())) {
+            buffer.append(section).append(":");
+        }
+        buffer.append(super.getPermission());
+        return buffer.toString();
+    }
+
+    protected String getAccess() {
+        return null;
     }
 
     public String getDomain() {
