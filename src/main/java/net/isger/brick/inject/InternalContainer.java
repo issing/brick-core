@@ -1,11 +1,16 @@
 package net.isger.brick.inject;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.isger.brick.Constants;
+import net.isger.brick.anno.Collect;
 import net.isger.util.Callable;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
@@ -210,10 +215,40 @@ class InternalContainer implements Container {
      * @param field
      * @param fieldType
      * @param fieldName
+     * @param isDefault
      * @return
      */
     private boolean setInstance(Object instance, BoundField field,
             Class<?> fieldType, String fieldName) {
+        if (field.getField().getAnnotation(Collect.class) != null) {
+            Type genericType = field.getField().getGenericType();
+            values: if (fieldType.isArray()) {
+                Class<?> componentType = fieldType.getComponentType();
+                Map<String, ?> instances = getInstances(componentType);
+                int size = instances.size();
+                if (size > 0) {
+                    Object value = Array.newInstance(componentType, size);
+                    System.arraycopy(instances.values().toArray(), 0, value, 0,
+                            size);
+                    field.setValue(instance, value);
+                    return true;
+                }
+            } else if (genericType instanceof ParameterizedType) {
+                ParameterizedType paramType = (ParameterizedType) genericType;
+                Type[] actualTypes = paramType.getActualTypeArguments();
+                Object value;
+                if (fieldType.isAssignableFrom(ArrayList.class)) {
+                    Map<String, ?> instances = getInstances((Class<?>) actualTypes[0]);
+                    value = new ArrayList<Object>(instances.values());
+                } else if (fieldType.isAssignableFrom(HashMap.class)) {
+                    value = getInstances((Class<?>) actualTypes[1]);
+                } else {
+                    break values;
+                }
+                field.setValue(instance, value);
+                return true;
+            }
+        }
         boolean result;
         if (result = contains(fieldType, fieldName)) {
             field.setValue(instance, getInstance(fieldType, fieldName));

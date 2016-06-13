@@ -1,6 +1,9 @@
 package net.isger.brick.test;
 
+import java.util.List;
+
 import net.isger.brick.Constants;
+import net.isger.brick.anno.Collect;
 import net.isger.brick.cache.Cache;
 import net.isger.brick.cache.CacheModule;
 import net.isger.brick.core.BaseCommand;
@@ -19,6 +22,9 @@ public class TestModule extends GateModule {
 
     private String something;
 
+    @Collect
+    private List<Module> modules;
+
     public void operate() {
         try {
             super.operate();
@@ -33,7 +39,9 @@ public class TestModule extends GateModule {
 
     public void say() {
         getCache().set("say", something + " in the cache");
-        BaseCommand.getAction().setResult("TestModule say [" + something + "]");
+        BaseCommand.getAction().setResult(
+                "TestModule say [" + something + "] - (Modules: " + modules
+                        + ")");
     }
 
     private Cache getCache() {
