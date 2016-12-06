@@ -1,5 +1,6 @@
 package net.isger.brick.stub;
 
+import net.isger.brick.auth.AuthCommand;
 import net.isger.brick.core.Gate;
 import net.isger.brick.core.GateModule;
 
@@ -29,6 +30,15 @@ public class StubModule extends GateModule {
 
     public Class<? extends Gate> getBaseClass() {
         return SqlStub.class;
+    }
+
+    protected void initial(String domain, Gate gate) {
+        AuthCommand cmd = new AuthCommand();
+        StubCommand token = new StubCommand();
+        token.setDomain(domain);
+        token.setOperate(StubCommand.OPERATE_INITIAL);
+        cmd.setToken(token);
+        console.execute(cmd);
     }
 
 }

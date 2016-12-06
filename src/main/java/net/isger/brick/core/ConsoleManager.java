@@ -8,7 +8,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import net.isger.brick.Constants;
 import net.isger.brick.auth.AuthPreparer;
 import net.isger.brick.config.ModuleDescribe;
-import net.isger.brick.inject.BootstrapBuilder;
 import net.isger.brick.inject.Container;
 import net.isger.brick.inject.ContainerBuilder;
 import net.isger.brick.inject.ContainerProvider;
@@ -223,7 +222,9 @@ public class ConsoleManager {
      * @return
      */
     protected Container createBootstrap() {
-        return BootstrapBuilder.build();
+        ContainerBuilder builder = new ContainerBuilder();
+        builder.constant(Constants.BRICK_RELOAD, Boolean.FALSE);
+        return builder.create();
     }
 
     /**

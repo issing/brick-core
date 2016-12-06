@@ -1,46 +1,51 @@
 package net.isger.brick.auth;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import net.isger.brick.core.BaseCommand;
-import net.isger.brick.core.BaseHandler;
 import net.isger.brick.core.Command;
+import net.isger.brick.core.CommandHandler;
+import net.isger.brick.core.Handler;
+import net.isger.util.anno.Infect;
 
-public class Authorizer extends BaseHandler {
+/**
+ * 授权器
+ * 
+ * @author issing
+ *
+ */
+public class Authorizer extends CommandHandler {
 
-    private List<String> ignores;
+    /** 自定义授权处理器 */
+    @Infect
+    private Handler handler;
 
     public Authorizer() {
-        ignores = new ArrayList<String>();
+        handler = Handler.NOP;
     }
 
-    public Boolean handle(Object message) {
+    /**
+     * 授权处理
+     */
+    public final AuthInfo handle(Object message) {
         AuthCommand cmd = (AuthCommand) message;
-        Object token = cmd.getToken();
-        boolean result = (Boolean) cmd.getResult();
-        if (result || check(token)) {
-            /* 绕过认证 */
+        Object info = cmd.getToken();
+        if (info instanceof Command) {
+            /* 绕过认证，执行命令 */
             cmd.setDomain(null);
             cmd.setOperate(null);
-            Object value = super.handle(cmd);
-            result = value instanceof Boolean ? (boolean) value : false;
+            info = super.handle(cmd);
+        } else {
+            info = handler.handle(message);
         }
-        return result;
+        return makeInfo(info);
     }
 
-    protected boolean check(Object token) {
-        return token instanceof Command
-                && isIgnore(BaseCommand.cast((Command) token).getPermission());
-    }
-
-    protected boolean isIgnore(String permission) {
-        return ignores.contains(permission);
-    }
-
-    public List<String> getIgnores() {
-        return Collections.unmodifiableList(ignores);
+    /**
+     * 制作授权
+     * 
+     * @param info
+     * @return
+     */
+    protected AuthInfo makeInfo(Object info) {
+        return info instanceof AuthInfo ? (AuthInfo) info : null;
     }
 
 }

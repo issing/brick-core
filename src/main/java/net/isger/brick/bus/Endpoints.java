@@ -54,7 +54,7 @@ public class Endpoints {
 
     }
 
-    public Map<String, Endpoint> get() {
+    public Map<String, Endpoint> gets() {
         return Collections.unmodifiableMap(endpoints);
     }
 

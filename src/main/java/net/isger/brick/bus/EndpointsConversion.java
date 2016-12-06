@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 public class EndpointsConversion extends DesignLoader implements Conversion {
 
+    private static final String KEY_NAME = "name";
+
     private static final Logger LOG;
 
     private static EndpointsConversion INSTANCE;
@@ -73,6 +75,7 @@ public class EndpointsConversion extends DesignLoader implements Conversion {
                 continue;
             }
             res = (Map<String, Object>) config;
+            res.put(KEY_NAME, name);
             result.put(
                     name,
                     createEndpoint((Class<? extends Endpoint>) super

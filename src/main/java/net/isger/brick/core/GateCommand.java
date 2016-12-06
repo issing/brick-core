@@ -8,9 +8,13 @@ public class GateCommand extends BaseCommand {
 
     public static final String KEY_TRANSIENT = "gate-transient";
 
+    public static final String OPERATE_INITIAL = "initial";
+
     public static final String OPERATE_CREATE = "create";
 
     public static final String OPERATE_REMOVE = "remove";
+
+    public static final String OPERATE_DESTROY = "destroy";
 
     public GateCommand() {
     }

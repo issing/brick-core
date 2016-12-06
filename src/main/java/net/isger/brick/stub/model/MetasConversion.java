@@ -7,56 +7,55 @@ import java.util.Map;
 import net.isger.util.Reflects;
 import net.isger.util.reflect.conversion.Conversion;
 
-public class OptionsConversion implements Conversion {
+public class MetasConversion implements Conversion {
 
-    public static final OptionsConversion CONVERSION = new OptionsConversion();
+    public static final MetasConversion CONVERSION = new MetasConversion();
 
-    private OptionsConversion() {
+    private MetasConversion() {
     }
 
     public boolean isSupport(Class<?> type) {
-        return Options.class.equals(type);
+        return Metas.class.equals(type);
     }
 
     public Object convert(Object value) {
-        return convert(Options.class, value);
+        return convert(Metas.class, value);
     }
 
     public Object convert(Class<?> type, Object value) {
-        Options options = new Options();
+        Metas metas = new Metas();
         if (value instanceof Object[]) {
             value = Arrays.asList((Object[]) value);
         }
         if (value instanceof List) {
             for (Object i : (List<?>) value) {
-                options.add(createOption(i));
+                metas.add(createMeta(i));
             }
         } else {
-            options.add(createOption(value));
+            metas.add(createMeta(value));
         }
-        return options;
+        return metas;
     }
 
     @SuppressWarnings("unchecked")
-    private Option createOption(Object value) {
-        Option option;
-        if (value instanceof Number) {
-            option = new Option();
-            option.setType((Number) value);
+    private Meta createMeta(Object value) {
+        Meta meta;
+        if (value instanceof Object[]) {
+            meta = new Meta((Object[]) value);
         } else if (value instanceof Map) {
-            option = Reflects.newInstance(Option.class,
-                    (Map<String, Object>) value);
-        } else if (value instanceof Option) {
-            option = (Option) value;
+            meta = Reflects
+                    .newInstance(Meta.class, (Map<String, Object>) value);
+        } else if (value instanceof Meta) {
+            meta = (Meta) value;
         } else {
             throw new IllegalStateException("Unexpected class conversion for "
                     + value);
         }
-        return option;
+        return meta;
     }
 
     public String toString() {
-        return Options.class.getName();
+        return Metas.class.getName();
     }
 
 }

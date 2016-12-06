@@ -37,6 +37,10 @@ public class StubCommand extends GateCommand {
         return cast(BaseCommand.getAction());
     }
 
+    public static StubCommand newAction() {
+        return cast(BaseCommand.newAction());
+    }
+
     public static StubCommand cast(BaseCommand cmd) {
         return cmd == null || cmd.getClass() == StubCommand.class ? (StubCommand) cmd
                 : cmd.infect(new StubCommand(false));

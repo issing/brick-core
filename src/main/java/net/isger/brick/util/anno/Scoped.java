@@ -1,4 +1,4 @@
-package net.isger.brick.inject.anno;
+package net.isger.brick.util.anno;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 

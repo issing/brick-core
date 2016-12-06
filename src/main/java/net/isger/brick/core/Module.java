@@ -1,7 +1,6 @@
 package net.isger.brick.core;
 
 import net.isger.util.Manageable;
-import net.isger.util.Named;
 import net.isger.util.load.Loader;
 
 /**
@@ -10,14 +9,15 @@ import net.isger.util.load.Loader;
  * @author issing
  * 
  */
-public interface Module extends Loader, Manageable, Named {
+public interface Module extends Loader, Manageable {
 
     public static final String KEY_MODULE = "brick.core.module";
 
     /**
      * 执行
      * 
+     * @param cmd
      */
-    public void execute();
+    public void execute(BaseCommand cmd);
 
 }

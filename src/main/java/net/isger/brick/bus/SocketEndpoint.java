@@ -2,84 +2,45 @@ package net.isger.brick.bus;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
-import net.isger.brick.Constants;
-import net.isger.brick.core.BaseHandler;
-import net.isger.brick.core.Handler;
-import net.isger.brick.inject.Container;
-import net.isger.brick.util.CommandOperator;
-import net.isger.util.Strings;
-import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 
-public abstract class SocketEndpoint extends CommandOperator implements
-        Endpoint {
+@Ignore
+public abstract class SocketEndpoint extends AbstractEndpoint {
 
     public static final int MIN_RETRIES = 3;
 
-    private static final String DEFAULT_PROTOCOL = "object";
-
     private static final int DEFAULT_PORT = 1109;
 
-    /** 容器 */
     @Ignore(mode = Mode.INCLUDE)
-    @Alias(Constants.SYSTEM)
-    private Container container;
+    private int retries;
 
-    protected String protocol;
-
+    @Ignore(mode = Mode.INCLUDE)
     private String host;
 
+    @Ignore(mode = Mode.INCLUDE)
     private Integer port;
 
-    protected transient InetSocketAddress address;
-
-    protected Handler handler;
-
-    protected int retries;
+    private SocketAddress address;
 
     public SocketEndpoint() {
         retries = MIN_RETRIES;
+        port = DEFAULT_PORT;
+        try {
+            host = InetAddress.getLocalHost().getCanonicalHostName();
+        } catch (UnknownHostException e) {
+        }
     }
 
-    public final void initial() {
-        if (Strings.isEmpty(protocol)) {
-            protocol = DEFAULT_PROTOCOL;
-        }
-        if (Strings.isEmpty(host)) {
-            try {
-                host = InetAddress.getLocalHost().getCanonicalHostName();
-            } catch (UnknownHostException e) {
-                throw new IllegalArgumentException(e.getMessage());
-            }
-        }
-        if (port == null) {
-            port = DEFAULT_PORT;
-        }
+    public SocketAddress getAddress() {
+        return address;
+    }
+
+    protected void open() {
         address = new InetSocketAddress(host, port);
-        if (handler == null) {
-            handler = new BaseHandler();
-        }
-        container.inject(handler);
-        open();
-    }
-
-    /**
-     * 打开
-     * 
-     * @param address
-     */
-    protected abstract void open();
-
-    /**
-     * 关闭
-     */
-    protected abstract void close();
-
-    public final void destroy() {
-        close();
     }
 
 }

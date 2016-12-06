@@ -6,9 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.isger.brick.stub.model.Field;
+import net.isger.brick.stub.model.Meta;
+import net.isger.brick.stub.model.Metas;
 import net.isger.brick.stub.model.Model;
 import net.isger.brick.stub.model.Option;
+import net.isger.brick.stub.model.Options;
 import net.isger.util.Dates;
 import net.isger.util.Helpers;
 import net.isger.util.Reflects;
@@ -46,14 +48,14 @@ public class SqlDialect implements Dialect {
 
     static {
         STRING_DESCRIBER = new DescriberAdapter() {
-            public String describe(Field field) {
+            public String describe(Meta field) {
                 return "VARCHAR(" + field.getLength() + ")";
             }
 
             public String describe(Option option, Object... extents) {
                 String value = null;
-                switch (option.getCode()) {
-                case DEFAULT:
+                switch (option.getType().intValue()) {
+                case OPTION_DEFAULT:
                     Object optionValue = option.getValue();
                     if (optionValue != null) {
                         value = "'"
@@ -66,7 +68,7 @@ public class SqlDialect implements Dialect {
             }
         };
         NUMBER_DESCRIBER = new DescriberAdapter() {
-            public String describe(Field field) {
+            public String describe(Meta field) {
                 StringBuffer describe = new StringBuffer("NUMBER");
                 int length = field.getLength();
                 if (length > 0) {
@@ -80,7 +82,7 @@ public class SqlDialect implements Dialect {
             }
         };
         DATE_DESCRIBER = new DescriberAdapter() {
-            public String describe(Field field) {
+            public String describe(Meta field) {
                 StringBuffer describe = new StringBuffer(64);
                 switch (field.getScale()) {
                 case SCALE_TIME:
@@ -97,8 +99,8 @@ public class SqlDialect implements Dialect {
 
             public String describe(Option option, Object... extents) {
                 String value;
-                switch (option.getCode()) {
-                case DEFAULT:
+                switch (option.getType().intValue()) {
+                case OPTION_DEFAULT:
                     value = ((SqlDialect) extents[1]).getDateDescribe(option
                             .getValue());
                     break;
@@ -124,7 +126,9 @@ public class SqlDialect implements Dialect {
         };
         NOTNULL_DESCRIBER = new DescriberAdapter() {
             public String describe(Option option, Object... extents) {
-                return "NOT NULL";
+                String value = option.getValue();
+                return Strings.isEmpty(value) || Boolean.parseBoolean(value) ? "NOT NULL"
+                        : "NULL";
             }
         };
         UNIQUE_DESCRIBER = new DescriberAdapter() {
@@ -136,13 +140,14 @@ public class SqlDialect implements Dialect {
 
     public SqlDialect() {
         describers = new HashMap<Object, Describer>();
+        addDescriber(REFERENCE, new DescriberAdapter());
         addDescriber(STRING, STRING_DESCRIBER);
         addDescriber(NUMBER, NUMBER_DESCRIBER);
         addDescriber(DATE, DATE_DESCRIBER);
-        addDescriber(DEFAULT, DEFAULT_DESCRIBER);
-        addDescriber(PRIMARY, PRIMARY_DESCRIBER);
-        addDescriber(NOTNULL, NOTNULL_DESCRIBER);
-        addDescriber(UNIQUE, UNIQUE_DESCRIBER);
+        addDescriber(OPTION_DEFAULT, DEFAULT_DESCRIBER);
+        addDescriber(OPTION_PRIMARY, PRIMARY_DESCRIBER);
+        addDescriber(OPTION_NOTNULL, NOTNULL_DESCRIBER);
+        addDescriber(OPTION_UNIQUE, UNIQUE_DESCRIBER);
     }
 
     public String name() {
@@ -340,7 +345,7 @@ public class SqlDialect implements Dialect {
 
     protected String getTableName(Object table) {
         if (table instanceof Model) {
-            return ((Model) table).getModelName();
+            return ((Model) table).modelName();
         } else if (table instanceof String) {
             return (String) table;
         }
@@ -349,15 +354,19 @@ public class SqlDialect implements Dialect {
     }
 
     protected String[] getColumnNames(Object table) {
-        if (table instanceof Model) {
+        if (table instanceof Model && ((Model) table).isModel()) {
             return getColumnNames((Model) table);
         }
         String column;
         List<String> columns = new ArrayList<String>();
+        Meta meta;
         BoundField field;
         for (List<BoundField> fields : Reflects
                 .getBoundFields(table.getClass()).values()) {
-            field = fields.get(0);
+            meta = Meta.createMeta(field = fields.get(0));
+            if (meta.isReference()) {
+                continue;
+            }
             column = field.getAlias();
             if (column == null) {
                 column = Sqls.toColumnName(field.getName());
@@ -367,85 +376,105 @@ public class SqlDialect implements Dialect {
         return columns.toArray(new String[columns.size()]);
     }
 
-    protected String[] getColumnNames(Model table) {
-        List<String> fieldNames = table.getFieldNames();
-        return fieldNames.toArray(new String[fieldNames.size()]);
+    protected String[] getColumnNames(Model model) {
+        List<String> names = model.metas().names();
+        return names.toArray(new String[names.size()]);
     }
 
     protected String[][] getColumnDescribes(Object table) {
-        if (table instanceof Model) {
-            return getColumnDescribes((Model) table);
-        } else if (!(table instanceof Class)) {
-            table = table.getClass();
+        Metas metas = Metas.createMetas(table);
+        List<String[]> describes = new ArrayList<String[]>(metas.size());
+        String[] decribe;
+        for (Meta meta : metas.values()) {
+            decribe = getColumnDescribe(meta);
+            if (decribe != null) {
+                describes.add(decribe);
+            }
         }
-        List<List<BoundField>> fields = new ArrayList<List<BoundField>>(
-                Reflects.getBoundFields((Class<?>) table).values());
-        int size = fields.size();
-        String[][] describes = new String[size][];
-        for (int i = 0; i < size; i++) {
-            describes[i] = getColumnDescribe(Field.create(fields.get(i).get(0)));
-        }
-        return describes;
+        return describes.toArray(new String[describes.size()][]);
     }
 
-    protected String[][] getColumnDescribes(Model table) {
-        List<String> fieldNames = table.getFieldNames();
-        int fieldCount = fieldNames.size();
+    protected String[][] getColumnDescribes(Model model) {
+        Metas metas = model.metas();
+        List<String> names = metas.names();
+        int fieldCount = names.size();
         String[][] describes = new String[fieldCount][];
         for (int i = 0; i < fieldCount; i++) {
-            describes[i] = getColumnDescribe(table.getField(fieldNames.get(i)));
+            describes[i] = getColumnDescribe(metas.get(names.get(i)));
         }
         return describes;
     }
 
-    protected String[] getColumnDescribe(Field field) {
-        String describe = field.getType().toUpperCase();
-        Describer describer = describers.get(describe);
-        if (describer != null) {
-            describe = describer.describe(field);
+    protected String[] getColumnDescribe(Meta meta) {
+        String describe;
+        switch (meta.getMode()) {
+        case Meta.MODE_VALUE_META:
+            Options options = meta.options();
+            String description = meta.getDescription();
+            meta = Meta.createMeta(Meta.ID, meta.getLabel(), meta.getName());
+            meta.setDescription(description);
+            meta.options().set(options);
         }
-        describe += getOptionDescribe(describer, field);
-        return new String[] { field.getName(), describe };
+        Describer describer = describers.get(describe = meta.getType()
+                .toUpperCase());
+        if (describer != null) {
+            describe = describer.describe(meta);
+            if (Strings.isEmpty(describe)) {
+                return null;
+            }
+        }
+        describe += getOptionDescribe(describer, meta);
+        return new String[] { meta.getName(), describe };
     }
 
-    protected String getOptionDescribe(Describer describer, Field field) {
+    protected String getOptionDescribe(Describer describer, Meta meta) {
         StringBuffer buffer = new StringBuffer(128);
         Describer optionDescriber;
-        for (Option option : field.getOptions()) {
-            optionDescriber = describers.get(option.getCode());
+        for (Option option : meta.options().values()) {
+            optionDescriber = describers.get(option.getType().intValue());
             if (optionDescriber != null) {
                 buffer.append(" ").append(
-                        optionDescriber.describe(option,
-                                describer.describe(option, field, this)));
+                        optionDescriber.describe(
+                                option,
+                                describer == null ? null : describer.describe(
+                                        option, meta, this)));
             }
         }
         return buffer.toString();
     }
 
     protected String getDateDescribe(Object value) {
-        if (value instanceof Number) {
+        if (value == null) {
+            return "CURRENT_TIMESTAMP";
+        } else if (value instanceof Number) {
             Number number = (Number) value;
             if (number.intValue() == 0) {
                 return "CURRENT_TIMESTAMP";
             }
-            value = Dates.toString(new Date(number.longValue()),
+            value = Dates.toString(
+                    new Date(System.currentTimeMillis() + number.longValue()),
                     Dates.PATTERN_COMMON);
         }
         return "TO_DATE('" + value + "', 'YYYY-MM-DD HH:mm:ss')";
     }
 
     protected Object[] getTableData(Object table) {
-        if (table instanceof Model) {
+        if (table instanceof Model && ((Model) table).isModel()) {
             return getTableData((Model) table);
         }
         String column;
         Object value;
         List<String> columns = new ArrayList<String>();
         List<Object> row = new ArrayList<Object>();
+        Meta meta;
         BoundField field;
         for (List<BoundField> fields : Reflects
                 .getBoundFields(table.getClass()).values()) {
-            field = fields.get(0);
+            meta = Meta.createMeta(field = fields.get(0));
+            if (REFERENCE.equals(meta.getType())) {
+                // TODO 暂不处理引用类型
+                continue;
+            }
             column = field.getAlias();
             if (column == null) {
                 column = Sqls.toColumnName(field.getName());
@@ -460,16 +489,17 @@ public class SqlDialect implements Dialect {
                 row.toArray() };
     }
 
-    protected Object[] getTableData(Model table) {
-        List<String> fieldNames = table.getFieldNames();
-        int fieldCount = fieldNames.size();
+    protected Object[] getTableData(Model model) {
+        Metas metas = model.metas();
+        List<String> names = metas.names();
+        int metaCount = names.size();
         String column;
         Object value;
         List<String> columns = new ArrayList<String>();
         List<Object> row = new ArrayList<Object>();
-        for (int i = 0; i < fieldCount; i++) {
-            column = fieldNames.get(i);
-            value = table.getField(column).getValue();
+        for (int i = 0; i < metaCount; i++) {
+            column = names.get(i);
+            value = metas.get(column).getValue();
             if (value != null) {
                 columns.add(column);
                 row.add(value);

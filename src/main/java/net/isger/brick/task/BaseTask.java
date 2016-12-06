@@ -12,23 +12,32 @@ import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 
-public class BaseTask extends CommandOperator implements Task {
+public class BaseTask implements Task {
 
     /** 控制台 */
     @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
     private Console console;
 
+    /** 操作器 */
+    @Ignore(mode = Mode.INCLUDE)
+    private CommandOperator operator;
+
     private ExecutorService executor;
 
-    public void initial() {
-        if (executor == null) {
-            executor = Executors.newCachedThreadPool();
-        }
+    public BaseTask() {
+        operator = new CommandOperator(this);
+        executor = Executors.newCachedThreadPool();
     }
 
-    public void submit() {
-        TaskCommand taskCmd = TaskCommand.getAction();
+    public void initial() {
+    }
+
+    public void operate(TaskCommand cmd) {
+        operator.operate(cmd);
+    }
+
+    public void submit(TaskCommand taskCmd) {
         final BaseCommand command = BaseCommand.cast(taskCmd.getCommand());
         final net.isger.util.Callable<?> callback = taskCmd.getCallback();
         taskCmd.setResult(executor.submit(command == null ? callback

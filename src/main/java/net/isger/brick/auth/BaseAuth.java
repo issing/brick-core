@@ -5,7 +5,6 @@ import net.isger.brick.cache.Cache;
 import net.isger.brick.cache.CacheModule;
 import net.isger.brick.core.BaseGate;
 import net.isger.brick.core.Console;
-import net.isger.brick.core.Module;
 import net.isger.brick.inject.Container;
 import net.isger.util.Helpers;
 import net.isger.util.Strings;
@@ -21,6 +20,8 @@ import net.isger.util.anno.Ignore.Mode;
  */
 public class BaseAuth extends BaseGate implements Auth {
 
+    private static final String KEY_IDENTITIES = "brick.auth.identities";
+
     @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
     private Console console;
@@ -29,9 +30,11 @@ public class BaseAuth extends BaseGate implements Auth {
     @Alias(Constants.SYSTEM)
     private Container container;
 
-    @Ignore(mode = Mode.INCLUDE)
-    @Alias(Constants.MOD_CACHE)
-    private Module caches;
+    /** 认证缓存 */
+    private transient Cache identities;
+
+    /** 检验器 */
+    private AuthChecker checker;
 
     /** 认证器 */
     private Authenticator authenticator;
@@ -39,29 +42,63 @@ public class BaseAuth extends BaseGate implements Auth {
     /** 授权器 */
     private Authorizer authorizer;
 
+    /**
+     * 初始
+     */
     public void initial() {
         super.initial();
+        /* 检验器 */
+        if (checker == null) {
+            checker = new AuthChecker();
+        }
+        container.inject(checker);
+        /* 认证器 */
         if (authenticator == null) {
             authenticator = new Authenticator();
         }
         container.inject(authenticator);
+        /* 授权器 */
         if (authorizer == null) {
             authorizer = new Authorizer();
         }
         container.inject(authorizer);
+        identities = ((CacheModule) console.getModule(Constants.MOD_CACHE))
+                .getCache(KEY_IDENTITIES);
+    }
+
+    /**
+     * 检查
+     */
+    public final void check(AuthCommand cmd) {
+        /* 认证初验 */
+        String identity = cmd.getIdentity();
+        cmd.setResult(checker.isIgnore(cmd.getToken())
+                || Strings.isNotEmpty(identity)
+                && Helpers.toBoolean(check(identity, cmd.getToken())));
+        /* 检验器终验 */
+        checker.handle(cmd);
+    }
+
+    /**
+     * 检查
+     * 
+     * @param identity
+     * @param token
+     * @return
+     */
+    protected Object check(String identity, Object token) {
+        return identities.get(identity);
     }
 
     /**
      * 登录
      */
-    public void login() {
-        Cache cache = ((CacheModule) caches).getCache(KEY_IDENTITIES);
-        AuthCommand cmd = AuthCommand.getAction();
+    public final void login(AuthCommand cmd) {
         String identity = cmd.getIdentity();
         if (Strings.isEmpty(identity)) {
             do {
                 identity = Helpers.makeUUID();
-            } while (cache.get(identity) != null);
+            } while (identities.get(identity) != null);
             cmd.setIdentity(identity);
         }
         cmd.setResult(save(identity, authenticator.handle(cmd)));
@@ -75,38 +112,25 @@ public class BaseAuth extends BaseGate implements Auth {
      * @return
      */
     protected Object save(String identity, Object token) {
-        Cache cache = ((CacheModule) caches).getCache(KEY_IDENTITIES);
         if (token != null) {
-            cache.set(identity, token);
+            identities.set(identity, token);
         }
         return token;
     }
 
     /**
-     * 检查
+     * 授权
      */
-    public void check() {
-        AuthCommand cmd = AuthCommand.getAction();
+    public final void auth(AuthCommand cmd) {
         String identity = cmd.getIdentity();
-        if (Strings.isNotEmpty(identity)) {
-            Object auth = auth(identity, cmd.getToken());
-            cmd.setResult(auth instanceof Boolean ? (Boolean) auth : false);
-        } else {
-            cmd.setResult(false);
+        if (identities.get(identity) != null) {
+            cmd.setResult(authorizer.handle(cmd));
         }
-        cmd.setResult(authorizer.handle(cmd));
     }
 
     /**
-     * 授权
-     * 
-     * @param identity
-     * @return
+     * 注销
      */
-    protected Object auth(String identity, Object token) {
-        return ((CacheModule) caches).getCache(KEY_IDENTITIES).get(identity);
-    }
-
     public void destroy() {
     }
 

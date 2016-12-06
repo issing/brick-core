@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.isger.brick.Constants;
-import net.isger.brick.anno.Collect;
+import net.isger.brick.util.anno.Collect;
 import net.isger.util.Callable;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
@@ -194,6 +194,7 @@ class InternalContainer implements Container {
     private void inject(Object instance, InternalContext context) {
         if (context.hasInject(instance)) {
             Class<?> fieldType;
+            Object infect;
             for (List<BoundField> fields : Reflects.getBoundFields(
                     instance.getClass()).values()) {
                 for (BoundField field : fields) {
@@ -202,6 +203,10 @@ class InternalContainer implements Container {
                     if (!setInstance(instance, field, fieldType,
                             Strings.empty(field.getAlias(), Constants.DEFAULT))) {
                         setInstance(instance, field, fieldType, field.getName());
+                    }
+                    if (field.isInfect()
+                            && (infect = field.getValue(instance)) != null) {
+                        inject(infect, context);
                     }
                 }
             }

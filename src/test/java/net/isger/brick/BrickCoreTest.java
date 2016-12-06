@@ -33,7 +33,6 @@ public class BrickCoreTest extends TestCase {
         // 初始环境
         ConsoleManager manager = new ConsoleManager();
         Console console = manager.getConsole();
-        console.initial();
 
         // 模块操作
         TaskCommand taskCmd = new TaskCommand(new TestCommand());
@@ -81,17 +80,6 @@ public class BrickCoreTest extends TestCase {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public static void main(String[] args) {
-        ConsoleManager manager = new ConsoleManager();
-        // Console console =
-        manager.getConsole();
-        // BusCommand cmd = new BusCommand();
-        // cmd.setEndpoint("cc");
-        // cmd.setOperate("send");
-        // cmd.setPayload(cmd);
-        // console.execute(cmd);
     }
 
 }

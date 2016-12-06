@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import net.isger.brick.inject.ConstantStrategy;
+import net.isger.brick.stub.StubCommand;
 import net.isger.util.Asserts;
 import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
@@ -16,12 +17,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 门模块
+ * 关卡模块
  * 
  * @author issing
  *
  */
-@Ignore
 public class GateModule extends AbstractModule {
 
     private static final String GATE = "gate";
@@ -147,8 +147,8 @@ public class GateModule extends AbstractModule {
         Asserts.argument(Strings.isNotEmpty(name) && gate != null,
                 "The gate cannot be null or empty");
         if (LOG.isDebugEnabled()) {
-            LOG.info("Binding [{}] gate [{}] for the [{}] module", name, gate,
-                    name());
+            LOG.info("Binding [{}] gate [{}] for the module {}", name, gate,
+                    this);
         }
         return set(name, gate.getClass(), gate);
     }
@@ -160,8 +160,8 @@ public class GateModule extends AbstractModule {
         }
         gate = ConstantStrategy.set(container, type, name, gate);
         if (gate != null) {
-            LOG.warn("(!) Discard [{}] gate [{}] in the [{}] module", name,
-                    gate, name());
+            LOG.warn("(!) Discard [{}] gate [{}] in the module {}", name, gate,
+                    this);
         }
         return gate;
     }
@@ -172,8 +172,13 @@ public class GateModule extends AbstractModule {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public Map<String, Gate> getGates() {
+    public final Map<String, Gate> getGates() {
         return container.getInstances((Class<Gate>) getTargetClass());
+    }
+
+    public final Gate getGate() {
+        return (Gate) ((InternalContext) Context.getAction())
+                .getInternal(Gate.KEY_GATE);
     }
 
     @SuppressWarnings("unchecked")
@@ -194,6 +199,9 @@ public class GateModule extends AbstractModule {
         return set(name, gate.getClass(), null);
     }
 
+    /**
+     * 初始门模块
+     */
     public void initial() {
         super.initial();
         /* 初始所有门 */
@@ -202,26 +210,41 @@ public class GateModule extends AbstractModule {
         }
     }
 
+    /**
+     * 初始指定门
+     * 
+     * @param domain
+     * @param gate
+     */
     protected void initial(String domain, Gate gate) {
         gate.initial();
     }
 
-    public final void execute() {
-        String domain = GateCommand.getAction().getDomain(); // 获取域
+    /**
+     * 执行门命令
+     */
+    public final void execute(BaseCommand cmd) {
+        GateCommand gcmd = cmd instanceof GateCommand ? (GateCommand) cmd
+                : GateCommand.cast(cmd);
+        String domain = gcmd.getDomain(); // 获取域
         if (domain == null) {
             /* 模块操作 */
-            operate();
+            super.execute(gcmd);
         } else {
             /* 关卡操作 */
             Gate gate = getGate(domain);
             setInternal(Gate.KEY_GATE, gate);
-            gate.operate();
+            gate.operate(gcmd);
         }
     }
 
+    /**
+     * 创建门
+     * 
+     * @param cmd
+     */
     @Ignore(mode = Mode.INCLUDE)
-    public void create() {
-        GateCommand cmd = GateCommand.getAction();
+    public void create(GateCommand cmd) {
         Map<String, Gate> gates = createGates(cmd.getParameter());
         if (!cmd.getTransient()) {
             /* 容器托管门 */
@@ -230,14 +253,23 @@ public class GateModule extends AbstractModule {
         Gate gate;
         for (Entry<String, Gate> entry : gates.entrySet()) {
             container.inject(gate = entry.getValue());
-            gate.initial();
+            StubCommand.mockAction();
+            try {
+                gate.initial();
+            } finally {
+                StubCommand.realAction();
+            }
         }
         cmd.setResult(gates);
     }
 
+    /**
+     * 移除门
+     * 
+     * @param cmd
+     */
     @Ignore(mode = Mode.INCLUDE)
-    public void remove() {
-        GateCommand cmd = GateCommand.getAction();
+    public void remove(GateCommand cmd) {
         Map<String, Object> params = cmd.getParameter();
         String name;
         Gate gate;
@@ -251,6 +283,9 @@ public class GateModule extends AbstractModule {
         cmd.setResult(result);
     }
 
+    /**
+     * 注销门模块
+     */
     public void destroy() {
         /* 注销所有门 */
         for (Entry<String, Gate> entry : getGates().entrySet()) {
@@ -259,6 +294,12 @@ public class GateModule extends AbstractModule {
         super.destroy();
     }
 
+    /**
+     * 注销指定门
+     * 
+     * @param key
+     * @param gate
+     */
     protected void destroy(String key, Gate gate) {
         gate.destroy();
     }

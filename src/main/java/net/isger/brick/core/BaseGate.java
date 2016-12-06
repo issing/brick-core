@@ -18,16 +18,21 @@ import net.isger.util.anno.Ignore.Mode;
  *
  */
 @Ignore
-public class BaseGate extends CommandOperator implements Gate {
+public class BaseGate implements Gate {
 
     @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
     protected Container container;
 
+    /** 操作器 */
+    @Ignore(mode = Mode.INCLUDE)
+    private CommandOperator operator;
+
     @Ignore(mode = Mode.INCLUDE)
     private Map<String, Object> parameters;
 
     public BaseGate() {
+        operator = new CommandOperator(this);
         parameters = new HashMap<String, Object>();
     }
 
@@ -40,6 +45,10 @@ public class BaseGate extends CommandOperator implements Gate {
 
     protected final Map<String, Object> getParameters() {
         return Collections.unmodifiableMap(parameters);
+    }
+
+    public void operate(GateCommand cmd) {
+        operator.operate(cmd);
     }
 
     public void destroy() {

@@ -1,15 +1,16 @@
 package net.isger.brick.auth;
 
-public abstract class AuthToken {
+public abstract class AuthToken<T> {
 
-    private Object source;
+    protected final T source;
 
-    public AuthToken(Object source) {
-        this.source = source;
+    @SuppressWarnings("unchecked")
+    public AuthToken() {
+        this.source = (T) this;
     }
 
-    public Object getSource() {
-        return source;
+    public AuthToken(T source) {
+        this.source = source;
     }
 
     public abstract Object getPrincipal();

@@ -40,17 +40,21 @@ public class BaseBus implements Bus {
     }
 
     public void initial() {
-        for (Protocol protocol : protocols.get().values()) {
+        for (Protocol protocol : protocols.gets().values()) {
             container.inject(protocol);
             protocol.initial();
         }
         TaskCommand cmd = new TaskCommand();
         cmd.setOperate(TaskCommand.OPERATE_SUBMIT);
-        for (final Endpoint endpoint : endpoints.get().values()) {
+        for (final Endpoint endpoint : endpoints.gets().values()) {
             container.inject(endpoint);
-            cmd.setCallback(new Callable<Void>() {
-                public Void call(Object... args) {
-                    endpoint.initial();
+            cmd.setCallback(new Callable<Object>() {
+                public Object call(Object... args) {
+                    try {
+                        endpoint.initial();
+                    } catch (Exception e) {
+                        return e;
+                    }
                     return null;
                 }
             });
@@ -61,11 +65,18 @@ public class BaseBus implements Bus {
 
     private void ready(Future<?> future, Endpoint endpoint) {
         do {
+            Exception result;
             try {
-                future.get(100, TimeUnit.MILLISECONDS);
+                result = (Exception) future.get(100, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
+                result = null;
             }
-        } while (endpoint.getStatus() == null);
+            if (result != null) {
+                throw new IllegalStateException(
+                        "Failure to initialize the endpoint of bus ["
+                                + endpoint.getClass().getName() + "]", result);
+            }
+        } while (endpoint.getStatus() == Status.INACTIVATE);
     }
 
     public Protocol getProtocol(String name) {
@@ -77,10 +88,10 @@ public class BaseBus implements Bus {
     }
 
     public void destroy() {
-        for (Protocol protocol : protocols.get().values()) {
+        for (Protocol protocol : protocols.gets().values()) {
             protocol.destroy();
         }
-        for (Endpoint endpoint : endpoints.get().values()) {
+        for (Endpoint endpoint : endpoints.gets().values()) {
             endpoint.destroy();
         }
     }

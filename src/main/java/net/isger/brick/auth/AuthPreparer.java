@@ -66,13 +66,12 @@ public class AuthPreparer extends Preparer {
         String domain;
         if (((AuthModule) module).getGate(domain = console
                 .getModuleName(command)) != null) {
-            AuthCommand cmd = new AuthCommand();
-            cmd.setIdentity(command.getIdentity());
-            cmd.setDomain(domain);
+            AuthCommand cmd = AuthHelper.toCommand(command.getIdentity(),
+                    domain, command);
             cmd.setOperate(AuthCommand.OPERATE_CHECK);
-            cmd.setToken(command);
             command = cmd;
         }
         return command;
     }
+
 }

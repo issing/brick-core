@@ -10,8 +10,13 @@ import javax.sql.DataSource;
 
 import net.isger.brick.stub.dialect.Dialect;
 import net.isger.brick.stub.dialect.Dialects;
+import net.isger.brick.stub.dialect.Page;
 import net.isger.brick.stub.dialect.PageSql;
 import net.isger.brick.stub.dialect.SqlDialect;
+import net.isger.brick.stub.model.Meta;
+import net.isger.brick.stub.model.Metas;
+import net.isger.brick.stub.model.Model;
+import net.isger.brick.stub.model.Option;
 import net.isger.util.Callable;
 import net.isger.util.Helpers;
 import net.isger.util.Sqls;
@@ -59,7 +64,7 @@ public class SqlStub extends AbstractStub {
         LOG = LoggerFactory.getLogger(SqlStub.class);
     }
 
-    @Ignore
+    @Ignore(mode = Mode.INCLUDE)
     public void initial() {
         /* 初始数据源 */
         if (dataSource == null) {
@@ -102,6 +107,44 @@ public class SqlStub extends AbstractStub {
             transformer = new SqlTransformerAdapter();
         } else {
             transformer.initial();
+        }
+        /* 标准化 */
+        initialStandard(StubCommand.getAction());
+    }
+
+    /**
+     * 初始标准化
+     * 
+     * @param cmd
+     */
+    protected void initialStandard(StubCommand cmd) {
+        cmd.setCondition(new Page());
+        /* 模型 */
+        initialModel(cmd, new Model());
+        /* 元数据 */
+        initialModel(cmd, new Meta());
+        /* 元数据选项 */
+        initialModel(cmd, new Option());
+    }
+
+    /**
+     * 初始模型
+     * 
+     * @param cmd
+     * @param table
+     */
+    private void initialModel(StubCommand cmd, Object table) {
+        cmd.setTable(table);
+        try {
+            select(cmd);
+        } catch (Exception e) {
+            create(cmd);
+            Model model;
+            for (Meta meta : Metas.createMetas(table).values()) {
+                if ((model = meta.toModel()) != null) {
+                    initialModel(cmd, model);
+                }
+            }
         }
     }
 
@@ -150,7 +193,7 @@ public class SqlStub extends AbstractStub {
     /**
      * 创建数据表
      */
-    @Ignore
+    @Ignore(mode = Mode.INCLUDE)
     public void create(StubCommand cmd) {
         Object table = cmd.getTable();
         final Connection conn = getConnection();
@@ -186,7 +229,7 @@ public class SqlStub extends AbstractStub {
     /**
      * 插入表数据
      */
-    @Ignore
+    @Ignore(mode = Mode.INCLUDE)
     public void insert(StubCommand cmd) {
         Object table = cmd.getTable();
         Object[] condition = getCondition(cmd, 3);
@@ -216,7 +259,7 @@ public class SqlStub extends AbstractStub {
     /**
      * 删除表数据
      */
-    @Ignore
+    @Ignore(mode = Mode.INCLUDE)
     public void delete(StubCommand cmd) {
         Object table = cmd.getTable();
         Object[] condition = getCondition(cmd, 3);
@@ -247,7 +290,7 @@ public class SqlStub extends AbstractStub {
     /**
      * 修改表数据
      */
-    @Ignore
+    @Ignore(mode = Mode.INCLUDE)
     public void update(StubCommand cmd) {
         Object table = cmd.getTable();
         Object[] condition = getCondition(cmd, 3);
@@ -281,7 +324,7 @@ public class SqlStub extends AbstractStub {
     /**
      * 查询表数据
      */
-    @Ignore
+    @Ignore(mode = Mode.INCLUDE)
     public void select(StubCommand cmd) {
         Object table = cmd.getTable();
         Object[] condition = getCondition(cmd, 3);
@@ -332,7 +375,7 @@ public class SqlStub extends AbstractStub {
     /**
      * 删除数据表
      */
-    @Ignore
+    @Ignore(mode = Mode.INCLUDE)
     public void remove(StubCommand cmd) {
         Object table = cmd.getTable();
         final Connection conn = getConnection();
@@ -450,7 +493,7 @@ public class SqlStub extends AbstractStub {
         }
     }
 
-    @Ignore
+    @Ignore(mode = Mode.INCLUDE)
     public void destroy() {
     }
 

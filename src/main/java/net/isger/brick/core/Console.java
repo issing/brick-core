@@ -29,8 +29,8 @@ import net.isger.raw.Prober;
 import net.isger.raw.ProberMulticaster;
 import net.isger.util.Asserts;
 import net.isger.util.Dependency;
+import net.isger.util.Helpers;
 import net.isger.util.Manageable;
-import net.isger.util.Operator;
 import net.isger.util.Strings;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
@@ -49,17 +49,18 @@ import org.slf4j.LoggerFactory;
  */
 public class Console implements Constants, Manageable {
 
-    public static final String PARAM_NAME = "name";
-
     private static final String SUFFIX_MODULE = ".module";
 
     private static final Logger LOG;
 
+    /** 初始化状态 */
     private volatile transient boolean initialized;
 
+    /** 配置加载器 */
     private transient Loader loader;
 
-    private transient Operator operator;
+    /** 命令操作器 */
+    private transient CommandOperator operator;
 
     @Ignore(mode = Mode.INCLUDE)
     @Alias(SYSTEM)
@@ -87,6 +88,7 @@ public class Console implements Constants, Manageable {
 
     public Console() {
         dependency = new Dependency();
+        operator = new CommandOperator(this);
     }
 
     /**
@@ -96,21 +98,6 @@ public class Console implements Constants, Manageable {
         if (initialized) {
             return;
         }
-        /* 实例化内核模块加载器 */
-        Class<?> describeClass = container.getInstance(Class.class,
-                BRICK_DESCRIBE);
-        Asserts.isAssignable(ModuleDescribe.class, describeClass,
-                "Invalid module describe class");
-        loader = new BaseLoader(describeClass);
-        /* 实例化动态操作器 */
-        operator = new CommandOperator(this);
-        loadKernel();
-        loadApp();
-        // 初始模块
-        Map<String, Module> modules = getModules();
-        for (Object node : dependency.getNodes()) {
-            modules.get(node).initial();
-        }
         // 注销钩子
         Runtime.getRuntime().addShutdownHook(hook = new Thread(new Runnable() {
             public void run() {
@@ -118,6 +105,23 @@ public class Console implements Constants, Manageable {
                 destroy();
             }
         }));
+        /* 实例化内核模块加载器 */
+        Class<?> describeClass = container.getInstance(Class.class,
+                BRICK_DESCRIBE);
+        Asserts.isAssignable(ModuleDescribe.class, describeClass,
+                "Invalid module describe [" + describeClass + "]");
+        loader = new BaseLoader(describeClass);
+        loadKernel();
+        loadApp();
+        // 初始模块
+        try {
+            Map<String, Module> modules = getModules();
+            for (Object node : dependency.getNodes()) {
+                modules.get(node).initial();
+            }
+        } catch (Throwable e) {
+            throw new IllegalStateException("Failure to initial module", e);
+        }
         initialized = true;
     }
 
@@ -174,18 +178,15 @@ public class Console implements Constants, Manageable {
      */
     @SuppressWarnings("unchecked")
     private void loadKernel(String name) {
-        /* 配置参数 */
-        Object config;
-        for (Artifact artifact : Depository.getArtifacts(name + "-config",
-                prober)) {
-            config = loadResource(artifact);
-            if (config instanceof Collection) {
-                loadConstants((Collection<?>) config);
-            } else if (config instanceof Map) {
-                loadConstants((Map<String, Object>) config);
-            }
+        /* 加载参数配置 */
+        Object config = loadResource(Depository.getArtifact(name + "-config",
+                prober));
+        if (config instanceof Collection) {
+            loadConstants((Collection<?>) config);
+        } else if (config instanceof Map) {
+            loadConstants((Map<String, Object>) config);
         }
-        /* 内核配置 */
+        /* 加载内核配置 */
         for (Artifact artifact : Depository.getArtifacts(name + "-kernel",
                 prober)) {
             config = loadResource(artifact);
@@ -204,19 +205,17 @@ public class Console implements Constants, Manageable {
      */
     @SuppressWarnings("unchecked")
     private void loadConstants(Collection<?> res) {
-        String name;
         for (Object config : res) {
+            /* 加载指定常量资源 */
             if (config instanceof String) {
-                name = (String) config;
-                config = loadResource(name + "-constants");
-                if (!(config instanceof Map)) {
-                    LOG.warn("(!) Skipped invalid constants config {}", config);
-                    continue;
-                }
-            } else if (!(config instanceof Map)) {
+                config = loadResource(config + "-constants");
+            }
+            /* 跳过非键值对集合 */
+            if (!(config instanceof Map)) {
                 LOG.warn("(!) Skipped invalid constants config {}", config);
                 continue;
             }
+            /* 加载键值对集合常量 */
             loadConstants((Map<String, Object>) config);
         }
     }
@@ -227,20 +226,15 @@ public class Console implements Constants, Manageable {
      * @param config
      */
     protected void loadConstants(Map<String, Object> config) {
-        Loader loader = new BaseLoader();
         Object value;
         for (Entry<String, Object> entry : config.entrySet()) {
             value = entry.getValue();
-            if (value != null) {
-                if (value instanceof Map) {
-                    try {
-                        value = loader.load(value);
-                    } catch (Exception e) {
-                    }
-                }
-                ConstantStrategy.set(container, value.getClass(),
-                        entry.getKey(), value);
+            /* 尝试加载为实例 */
+            if (value instanceof Map) {
+                value = BaseLoader.toLoad(value);
             }
+            ConstantStrategy.set(container, value.getClass(), entry.getKey(),
+                    value);
         }
     }
 
@@ -262,8 +256,8 @@ public class Console implements Constants, Manageable {
                     continue;
                 }
                 params = (Map<String, Object>) config;
-                if (!params.containsKey(PARAM_NAME)) {
-                    params.put(PARAM_NAME, name);
+                if (!params.containsKey(CONF_NAME)) {
+                    params.put(CONF_NAME, name);
                 }
             } else if (!(config instanceof Map)) {
                 LOG.warn("(!) Skipped invalid module config {}", config);
@@ -284,8 +278,9 @@ public class Console implements Constants, Manageable {
         Module module = entity.getModule();
         addModule: {
             if (Strings.isEmpty(name)) {
-                name = module.name();
+                name = Helpers.getAliasName(module.getClass(), "Module$");
             } else if (module == null) {
+                addDependencies(name, entity.getDependencies());
                 break addModule;
             }
             addModule(name, module, entity.getDependencies());
@@ -333,11 +328,8 @@ public class Console implements Constants, Manageable {
         for (Object config : res) {
             if (config instanceof String) {
                 config = loadResource((String) config);
-                if (!(config instanceof Map)) {
-                    LOG.warn("(!) Skipped invalid config {}", config);
-                    continue;
-                }
-            } else if (!(config instanceof Map)) {
+            }
+            if (!(config instanceof Map)) {
                 LOG.warn("(!) Skipped invalid config {}", config);
                 continue;
             }
@@ -385,11 +377,10 @@ public class Console implements Constants, Manageable {
      * @return
      */
     private Object loadResource(Artifact artifact) {
-        Object config = null;
         if (artifact != null) {
-            config = artifact.transform(Object.class);
+            return artifact.transform(Object.class);
         }
-        return config;
+        return artifact;
     }
 
     /**
@@ -407,6 +398,16 @@ public class Console implements Constants, Manageable {
      */
     public final Map<String, Module> getModules() {
         return container.getInstances(Module.class);
+    }
+
+    /**
+     * 获取模块
+     * 
+     * @return
+     */
+    public final Module getModule() {
+        return (Module) ((InternalContext) Context.getAction())
+                .getInternal(Module.KEY_MODULE);
     }
 
     /**
@@ -578,25 +579,19 @@ public class Console implements Constants, Manageable {
         preparer.prepare(command);
         InternalContext context = (InternalContext) Context.getAction();
         try {
-            Module module = getModule(context.getCommand());
+            BaseCommand cmd = context.getCommand();
+            Module module = getModule(cmd);
             if (module == null) {
                 /* 控制操作 */
-                operate();
+                operator.operate(cmd);
             } else {
                 /* 模块执行 */
                 context.setInternal(Module.KEY_MODULE, module);
-                module.execute();
+                module.execute(cmd);
             }
         } finally {
             preparer.cleanup();
         }
-    }
-
-    /**
-     * 控制台操作
-     */
-    protected void operate() {
-        operator.operate();
     }
 
     /**
@@ -607,9 +602,8 @@ public class Console implements Constants, Manageable {
             return;
         }
         Map<String, Module> modules = getModules();
-        List<Object> nodes;
-        Collections.reverse(nodes = new LinkedList<Object>(dependency
-                .getNodes()));
+        List<Object> nodes = new LinkedList<Object>(dependency.getNodes());
+        Collections.reverse(nodes);
         for (Object node : nodes) {
             modules.get(node).destroy();
         }

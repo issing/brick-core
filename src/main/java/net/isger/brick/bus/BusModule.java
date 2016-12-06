@@ -4,6 +4,7 @@ import java.util.Map;
 
 import net.isger.brick.Constants;
 import net.isger.brick.core.AbstractModule;
+import net.isger.brick.core.BaseCommand;
 import net.isger.brick.inject.ConstantStrategy;
 import net.isger.util.Asserts;
 
@@ -88,7 +89,7 @@ public class BusModule extends AbstractModule {
     private void setBus(Class<?> type, String name, Object bus) {
         bus = ConstantStrategy.set(container, type, name, bus);
         if (LOG.isDebugEnabled() && bus != null) {
-            LOG.info("Discard bus [{}]", bus);
+            LOG.info("(!) Discard bus [{}]", bus);
         }
     }
 
@@ -110,16 +111,17 @@ public class BusModule extends AbstractModule {
         bus.initial();
     }
 
-    public final void execute() {
-        String name = BusCommand.getAction().getEndpoint(); // 获取端点名
+    public final void execute(BaseCommand cmd) {
+        BusCommand bcmd = (BusCommand) cmd;
+        String name = bcmd.getEndpoint(); // 获取端点名
         if (name == null) {
             /* 模块操作 */
-            operate();
+            super.execute(bcmd);
         } else {
             /* 端点操作 */
             Endpoint endpoint = getBus().getEndpoint(name);
             setInternal(Endpoint.BRICK_ENDPOINT, endpoint);
-            endpoint.operate();
+            endpoint.operate(bcmd);
         }
     }
 

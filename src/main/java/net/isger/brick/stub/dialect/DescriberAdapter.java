@@ -1,11 +1,11 @@
 package net.isger.brick.stub.dialect;
 
-import net.isger.brick.stub.model.Field;
+import net.isger.brick.stub.model.Meta;
 import net.isger.brick.stub.model.Option;
 
 public class DescriberAdapter implements Describer {
 
-    public String describe(Field field) {
+    public String describe(Meta field) {
         return null;
     }
 

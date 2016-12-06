@@ -2,7 +2,7 @@ package net.isger.brick.inject;
 
 import java.util.concurrent.Callable;
 
-import net.isger.brick.inject.anno.Scoped;
+import net.isger.brick.util.anno.Scoped;
 
 /**
  * 作用域

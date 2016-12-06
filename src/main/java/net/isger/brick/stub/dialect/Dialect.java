@@ -11,6 +11,8 @@ import net.isger.util.sql.SqlEntry;
  */
 public interface Dialect extends Named {
 
+    public static final String REFERENCE = "reference";
+
     public static final String BOOLEAN = "boolean";
 
     public static final String INTEGER = "integer";
@@ -21,19 +23,19 @@ public interface Dialect extends Named {
 
     public static final String STRING = "string";
 
-    public static final int DEFAULT = 0;
+    public static final int OPTION_DEFAULT = 0;
 
-    public static final int PRIMARY = 1;
+    public static final int OPTION_PRIMARY = 1;
 
-    public static final int FOREIGN = 2;
+    public static final int OPTION_FOREIGN = 2;
 
-    public static final int NOTNULL = 3;
+    public static final int OPTION_NOTNULL = 3;
 
-    public static final int UNIQUE = 4;
+    public static final int OPTION_UNIQUE = 4;
 
-    public static final int CHECK = 5;
+    public static final int OPTION_CHECK = 5;
 
-    public static final int INDEX = 6;
+    public static final int OPTION_INDEX = 6;
 
     public static final int SCALE_DATE = 0;
 

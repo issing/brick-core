@@ -5,7 +5,7 @@ import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 
-public class BaseHandler implements Handler {
+public class CommandHandler implements Handler {
 
     /** 控制台 */
     @Ignore(mode = Mode.INCLUDE)

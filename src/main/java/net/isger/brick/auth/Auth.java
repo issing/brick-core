@@ -12,6 +12,10 @@ public interface Auth extends Gate {
 
     public static final String KEY_AUTH = "brick.core.auth";
 
-    public static final String KEY_IDENTITIES = "brick.auth.identities";
+    public void login(AuthCommand cmd);
+
+    public void check(AuthCommand cmd);
+
+    public void auth(AuthCommand cmd);
 
 }

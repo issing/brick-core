@@ -4,6 +4,7 @@ import java.util.Map;
 
 import net.isger.brick.Constants;
 import net.isger.brick.core.AbstractModule;
+import net.isger.brick.core.BaseCommand;
 import net.isger.brick.inject.ConstantStrategy;
 import net.isger.util.Asserts;
 import net.isger.util.Callable;
@@ -112,16 +113,17 @@ public class TaskModule extends AbstractModule {
         task.initial();
     }
 
-    public void execute() {
-        Callable<?> callable = TaskCommand.getAction().getCallback();
+    public final void execute(BaseCommand cmd) {
+        TaskCommand tcmd = (TaskCommand) cmd;
+        Callable<?> callable = tcmd.getCallback();
         if (callable == null) {
             /* 模块操作 */
-            operate();
+            super.execute(tcmd);
         } else {
             /* 任务操作 */
             Task task = getTask();
             setInternal(Task.BRICK_TASK, task);
-            task.operate();
+            task.operate(tcmd);
         }
     }
 

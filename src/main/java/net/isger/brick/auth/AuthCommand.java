@@ -14,6 +14,8 @@ public class AuthCommand extends GateCommand {
 
     public static final String OPERATE_LOGIN = "login";
 
+    public static final String OPERATE_AUTH = "auth";
+
     public static final String OPERATE_CHECK = "check";
 
     public static final String KEY_TOKEN = "auth-token";
@@ -33,6 +35,18 @@ public class AuthCommand extends GateCommand {
 
     public static AuthCommand getAction() {
         return cast(BaseCommand.getAction());
+    }
+
+    public static AuthCommand newAction() {
+        return cast(BaseCommand.newAction());
+    }
+
+    public static AuthCommand mockAction() {
+        return cast(BaseCommand.mockAction());
+    }
+
+    public static AuthCommand realAction() {
+        return cast(BaseCommand.realAction());
     }
 
     public static AuthCommand cast(BaseCommand cmd) {

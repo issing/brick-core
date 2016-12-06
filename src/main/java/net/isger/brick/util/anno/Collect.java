@@ -1,4 +1,4 @@
-package net.isger.brick.anno;
+package net.isger.brick.util.anno;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * 聚积注解
+ * 采集注解
  * 
  * @author issing
  *

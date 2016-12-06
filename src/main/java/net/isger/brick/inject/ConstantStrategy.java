@@ -2,6 +2,8 @@ package net.isger.brick.inject;
 
 import java.util.concurrent.Callable;
 
+import net.isger.util.reflect.Converter;
+
 public class ConstantStrategy implements Strategy {
 
     private Object instance;
@@ -24,6 +26,7 @@ public class ConstantStrategy implements Strategy {
         this.instance = instance;
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T set(Container container, Class<? extends T> type,
             String name, T instance) {
         T oldInstance = null;
@@ -41,7 +44,7 @@ public class ConstantStrategy implements Strategy {
             }
             container.setStrategy(type, name, new ConstantStrategy(instance));
         }
-        return oldInstance;
+        return (T) Converter.convert(type, oldInstance);
     }
 
 }

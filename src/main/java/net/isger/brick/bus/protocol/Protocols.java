@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import net.isger.util.Helpers;
+import net.isger.util.Strings;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,27 +47,43 @@ public class Protocols {
     }
 
     public void add(Protocol protocol) {
-        put(null, protocol);
+        put("", protocol);
     }
 
     public void put(String name, Protocol protocol) {
-        name = Helpers.getAliasName(protocol.getClass(), "Protocol$", name)
-                .toLowerCase();
+        int index = name.lastIndexOf(".");
+        String key;
+        if (index++ > 0) {
+            key = name.substring(0, index);
+            name = name.substring(index);
+        } else {
+            key = "";
+        }
+        key += getName(protocol.getClass(), name);
         if (LOG.isDebugEnabled()) {
-            LOG.info("Binding [{}] protocol [{}]", name, protocol);
+            LOG.info("Binding [{}] protocol [{}]", key, protocol);
         }
-        protocol = protocols.put(name, protocol);
+        protocol = protocols.put(key, protocol);
         if (protocol != null) {
-            LOG.warn("(!) Discard [{}] protocol [{}]", name, protocol);
+            LOG.warn("(!) Discard [{}] protocol [{}]", key, protocol);
         }
-    }
-
-    public Map<String, Protocol> get() {
-        return Collections.unmodifiableMap(protocols);
     }
 
     public Protocol get(String name) {
         return protocols.get(name);
+    }
+
+    public Map<String, Protocol> gets() {
+        return Collections.unmodifiableMap(protocols);
+    }
+
+    public static final String getName(Class<? extends Protocol> clazz) {
+        return getName(clazz, "");
+    }
+
+    public static final String getName(Class<? extends Protocol> clazz,
+            String name) {
+        return Helpers.getAliasName(clazz, "Protocol$", Strings.toLower(name));
     }
 
 }

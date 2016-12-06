@@ -1,8 +1,9 @@
 package net.isger.brick.auth;
 
 import net.isger.brick.core.BaseCommand;
-import net.isger.brick.core.BaseHandler;
 import net.isger.brick.core.Command;
+import net.isger.brick.core.CommandHandler;
+import net.isger.util.Helpers;
 
 /**
  * 认证器
@@ -10,24 +11,44 @@ import net.isger.brick.core.Command;
  * @author issing
  *
  */
-public class Authenticator extends BaseHandler {
+public class Authenticator extends CommandHandler {
 
-    public AuthToken handle(Object message) {
+    /**
+     * 认证处理
+     */
+    public final AuthToken<?> handle(Object message) {
         AuthCommand cmd = (AuthCommand) message;
         Object token = cmd.getToken();
-        if (token instanceof Command) {
-            /* 绕过认证 */
+        if (isSupport(cmd)) {
+            /* 绕过认证，执行命令 */
             cmd.setDomain(null);
             cmd.setOperate(null);
-            if ((Boolean) super.handle(cmd)) {
-                return makeToken(BaseCommand.cast((Command) token).getResult());
+            if (Helpers.toBoolean(super.handle(cmd))) {
+                token = BaseCommand.cast((Command) token).getResult();
             }
         }
-        return null;
+        return makeToken(cmd, token);
     }
 
-    protected AuthToken makeToken(Object token) {
-        return token instanceof AuthToken ? (AuthToken) token : null;
+    /**
+     * 支持认证
+     * 
+     * @param cmd
+     * @return
+     */
+    protected boolean isSupport(AuthCommand cmd) {
+        return cmd.getToken() instanceof Command;
+    }
+
+    /**
+     * 制作认证
+     * 
+     * @param cmd
+     * @param token
+     * @return
+     */
+    protected AuthToken<?> makeToken(AuthCommand cmd, Object token) {
+        return token instanceof AuthToken ? (AuthToken<?>) token : null;
     }
 
 }

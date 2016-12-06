@@ -48,6 +48,10 @@ public interface Constants {
 
     // =================================================================
 
+    public static final String CONF_NAME = "name";
+
+    // =================================================================
+
     /** 操作失败 */
     public static final int CODE_FAILURE = -1;
 

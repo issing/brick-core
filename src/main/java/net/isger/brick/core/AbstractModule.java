@@ -2,12 +2,9 @@ package net.isger.brick.core;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
-import net.isger.brick.util.DesignLoader;
 import net.isger.brick.util.CommandOperator;
-import net.isger.util.Helpers;
-import net.isger.util.Operator;
+import net.isger.brick.util.DesignLoader;
 import net.isger.util.Reflects;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
@@ -18,29 +15,20 @@ import net.isger.util.anno.Ignore.Mode;
  * @author issing
  * 
  */
-@Ignore
 public abstract class AbstractModule extends DesignLoader implements Module {
 
     public static final String TARGET = "target";
+
+    /** 模块操作器 */
+    private CommandOperator operator;
 
     /** 模块参数 */
     @Ignore(mode = Mode.INCLUDE)
     private Map<String, Object> parameters;
 
-    private Operator operator;
-
     public AbstractModule() {
-        parameters = new HashMap<String, Object>();
         operator = new CommandOperator(this);
-    }
-
-    public String name() {
-        for (Entry<String, Module> entry : console.getModules().entrySet()) {
-            if (entry.getValue() == this) {
-                return entry.getKey();
-            }
-        }
-        return Helpers.getAliasName(this.getClass(), "Module$");
+        parameters = new HashMap<String, Object>();
     }
 
     /**
@@ -116,13 +104,6 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      */
     protected abstract Class<?> getBaseClass();
 
-    /**
-     * 模块操作
-     */
-    protected void operate() {
-        operator.operate();
-    }
-
     protected void setInternal(String key, Object value) {
         ((InternalContext) Context.getAction()).setInternal(key, value);
     }
@@ -135,6 +116,13 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * 模块初始
      */
     public void initial() {
+    }
+
+    /**
+     * 模块执行
+     */
+    public void execute(BaseCommand cmd) {
+        operator.operate(cmd);
     }
 
     /**
