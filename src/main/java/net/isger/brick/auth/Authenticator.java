@@ -24,7 +24,7 @@ public class Authenticator extends CommandHandler {
             cmd.setDomain(null);
             cmd.setOperate(null);
             if (Helpers.toBoolean(super.handle(cmd))) {
-                token = BaseCommand.cast((Command) token).getResult();
+                token = BaseCommand.cast((Command) cmd.getToken()).getResult();
             }
         }
         return makeToken(cmd, token);

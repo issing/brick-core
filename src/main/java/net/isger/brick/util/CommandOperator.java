@@ -3,6 +3,7 @@ package net.isger.brick.util;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Command;
 import net.isger.util.DynamicOperator;
+import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
 import net.isger.util.reflect.BoundMethod;
 
@@ -38,6 +39,9 @@ public class CommandOperator extends DynamicOperator {
     public void operate(BaseCommand cmd) {
         BoundMethod method;
         String operate = cmd.getOperate();
+        if (Strings.isEmpty(operate)) {
+            return;
+        }
         /* 尝试带命令操作方法 */
         Class<?> paramType = cmd.getClass();
         do {
