@@ -13,6 +13,10 @@ public abstract class AuthToken<T> {
         this.source = source;
     }
 
+    public T getSource() {
+        return source;
+    }
+
     public abstract Object getPrincipal();
 
     public abstract Object getCredentials();
