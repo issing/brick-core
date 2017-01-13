@@ -27,9 +27,10 @@ public class MetaAssembler {
     protected MetaAssembler() {
         metas = new Metas();
         Class<?> clazz = this.getClass();
-        if (getAssembler(clazz) == null) {
-            ASSEMBLERS.put(clazz, this);
+        if (getAssembler(clazz) != null) {
+            throw new IllegalStateException("Exists meta assembler " + clazz);
         }
+        ASSEMBLERS.put(clazz, this);
     }
 
     public void add(Object... args) {

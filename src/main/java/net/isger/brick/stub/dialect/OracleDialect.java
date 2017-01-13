@@ -1,5 +1,8 @@
 package net.isger.brick.stub.dialect;
 
+import net.isger.util.sql.Page;
+import net.isger.util.sql.PageSql;
+
 public class OracleDialect extends SqlDialect {
 
     private static final String DRIVER_NAME = "oracle.jdbc.driver.OracleDriver";
@@ -10,16 +13,15 @@ public class OracleDialect extends SqlDialect {
 
     public PageSql getSearchEntry(Page page, String sql, Object[] values) {
         return new PageSql(page, sql, values) {
-            public String getSql() {
+            public String getWrapSql(String sql) {
                 return "select * from (select t1.*, rownum rn from (" + sql
                         + ") t1 where rownum <= ?) t2 where rn > ?";
             }
 
-            public Object[] getValues() {
+            public Object[] getWrapValues(Object[] values) {
                 Page page = super.getPage();
                 int valCount = 2;
                 Object[] wrapValues = null;
-                Object[] values = this.values;
                 if (values != null) {
                     valCount += values.length;
                     wrapValues = new Object[valCount];

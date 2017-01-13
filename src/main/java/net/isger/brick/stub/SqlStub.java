@@ -10,8 +10,6 @@ import javax.sql.DataSource;
 
 import net.isger.brick.stub.dialect.Dialect;
 import net.isger.brick.stub.dialect.Dialects;
-import net.isger.brick.stub.dialect.Page;
-import net.isger.brick.stub.dialect.PageSql;
 import net.isger.brick.stub.dialect.SqlDialect;
 import net.isger.brick.stub.model.Meta;
 import net.isger.brick.stub.model.Metas;
@@ -23,6 +21,8 @@ import net.isger.util.Sqls;
 import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
+import net.isger.util.sql.Page;
+import net.isger.util.sql.PageSql;
 import net.isger.util.sql.SqlEntry;
 import net.isger.util.sql.SqlTransformer;
 import net.isger.util.sql.SqlTransformerAdapter;

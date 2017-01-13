@@ -1,5 +1,8 @@
 package net.isger.brick.stub.dialect;
 
+import net.isger.util.sql.Page;
+import net.isger.util.sql.PageSql;
+
 /**
  * H2
  * 
@@ -17,11 +20,10 @@ public class H2Dialect extends SqlDialect {
     public PageSql getSearchEntry(Page page, String sql, Object[] values) {
         return new PageSql(page, sql, values) {
 
-            public Object[] getValues() {
+            public Object[] getWrapValues(Object[] values) {
                 Page page = super.getPage();
                 int valCount = 2;
                 Object[] wrapValues = null;
-                Object[] values = super.getValues();
                 if (values != null) {
                     valCount += values.length;
                     wrapValues = new Object[valCount];

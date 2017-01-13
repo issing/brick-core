@@ -174,6 +174,10 @@ public class BaseCommand extends Command implements Cloneable {
         return shell.getParameter(type);
     }
 
+    public <T> T getParameter(Class<T> type, String namespace) {
+        return shell.getParameter(type, namespace);
+    }
+
     public Map<String, Object> getParameter() {
         return shell.getParameter();
     }
@@ -406,6 +410,22 @@ public class BaseCommand extends Command implements Cloneable {
 
         public <T> T getParameter(Class<T> type) {
             return Reflects.newInstance(type, getParameter());
+        }
+
+        @SuppressWarnings("unchecked")
+        public <T> T getParameter(Class<T> type, String namespace) {
+            Map<String, Object> params = Helpers.canonicalize(getParameter());
+            Object value;
+            for (String name : namespace.split("[./]")) {
+                value = params.get(name);
+                if (value instanceof Map) {
+                    params = (Map<String, Object>) value;
+                } else {
+                    params = null;
+                    break;
+                }
+            }
+            return Reflects.newInstance(type, params);
         }
 
         public Map<String, Object> getParameter() {

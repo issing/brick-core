@@ -17,6 +17,8 @@ import net.isger.util.Reflects;
 import net.isger.util.Sqls;
 import net.isger.util.Strings;
 import net.isger.util.reflect.BoundField;
+import net.isger.util.sql.Page;
+import net.isger.util.sql.PageSql;
 import net.isger.util.sql.SqlEntry;
 
 /**
