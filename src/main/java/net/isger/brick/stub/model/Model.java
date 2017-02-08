@@ -1,5 +1,7 @@
 package net.isger.brick.stub.model;
 
+import java.util.Map;
+
 import net.isger.util.Sqls;
 import net.isger.util.Strings;
 import net.isger.util.anno.Affix;
@@ -13,7 +15,7 @@ import net.isger.util.reflect.Converter;
  *
  */
 @Alias("t_brick_stub_model")
-public class Model {
+public class Model implements Cloneable {
 
     /** 标识 */
     @Affix("{length : 20, options : [1, 3]}")
@@ -146,6 +148,23 @@ public class Model {
 
     public void metaValue(String name, Object value) {
         meta(name).setValue(value);
+    }
+
+    public void setValues(Map<?, ?> values) {
+        for (String name : this.metas().names()) {
+            this.metaValue(name, values.get(name));
+        }
+    }
+
+    public Model clone() {
+        Model model;
+        try {
+            model = (Model) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new IllegalStateException("Failure to clone model", e);
+        }
+        model.metas = metas.clone();
+        return model;
     }
 
 }

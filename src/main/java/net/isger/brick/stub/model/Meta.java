@@ -25,7 +25,7 @@ import net.isger.util.reflect.Converter;
  *
  */
 @Alias("t_brick_stub_meta")
-public final class Meta {
+public final class Meta implements Cloneable {
 
     public static final String ID = "id";
 
@@ -267,6 +267,17 @@ public final class Meta {
             }
         }
         return null;
+    }
+
+    public Meta clone() {
+        Meta meta;
+        try {
+            meta = (Meta) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new IllegalStateException("Failure to clone meta", e);
+        }
+        meta.options = options.clone();
+        return meta;
     }
 
     public static Meta create(String affix) {

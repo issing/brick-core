@@ -9,6 +9,8 @@ public class MetaAssembler {
 
     public static final String ID = "id";
 
+    public static final String DESCRIPTION = "description";
+
     public static final String INPUT_TIME = "input_time";
 
     private static final Map<Class<?>, MetaAssembler> ASSEMBLERS;
@@ -21,6 +23,7 @@ public class MetaAssembler {
         ASSEMBLERS = new HashMap<Class<?>, MetaAssembler>();
         base = new MetaAssembler();
         base.add("标识", ID, Dialect.STRING, 20, 0);
+        base.add("描述", DESCRIPTION, Dialect.STRING);
         base.add("入库时间", INPUT_TIME, Dialect.DATE);
     }
 

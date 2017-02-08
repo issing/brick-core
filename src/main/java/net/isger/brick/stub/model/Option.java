@@ -4,7 +4,7 @@ import net.isger.util.anno.Affix;
 import net.isger.util.anno.Alias;
 
 @Alias("t_brick_stub_option")
-public class Option {
+public class Option implements Cloneable {
 
     /** 标识 */
     @Affix("{length : 20, options : [1, 3]}")
@@ -59,6 +59,14 @@ public class Option {
             return ((Option) instance).type == type;
         }
         return result;
+    }
+
+    public Option clone() {
+        try {
+            return (Option) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new IllegalStateException("Failure to clone option", e);
+        }
     }
 
 }

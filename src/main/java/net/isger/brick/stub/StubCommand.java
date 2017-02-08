@@ -14,7 +14,9 @@ public class StubCommand extends GateCommand {
 
     public static final String OPERATE_SELECT = "select";
 
-    public static final String KEY_TRANSIENT = "stub-transient";
+    // public static final String KEY_TRANSIENT = "stub-transient";
+
+    public static final String KEY_TRANSACTION = "stub-transaction";
 
     public static final String KEY_TABLE = "stub-table";
 
@@ -50,24 +52,44 @@ public class StubCommand extends GateCommand {
         setTable(getParameter(clazz));
     }
 
+    public static Object getTable(BaseCommand cmd) {
+        return cmd.getHeader(KEY_TABLE);
+    }
+
+    public static void setTable(BaseCommand cmd, Object table) {
+        cmd.setHeader(KEY_TABLE, table);
+    }
+
     public Object getTable() {
-        return getHeader(KEY_TABLE);
+        return getTable(this);
     }
 
     public void setTable(Object table) {
-        setHeader(KEY_TABLE, table);
+        setTable(this, table);
+    }
+
+    public static Object getCondition(BaseCommand cmd) {
+        return cmd.getHeader(KEY_CONDITION);
+    }
+
+    public static void setCondition(BaseCommand cmd, Condition condition) {
+        cmd.setHeader(KEY_CONDITION, condition);
+    }
+
+    public static void setCondition(BaseCommand cmd, Object... condition) {
+        cmd.setHeader(KEY_CONDITION, condition);
     }
 
     public Object getCondition() {
-        return getHeader(KEY_CONDITION);
+        return getCondition(this);
     }
 
     public void setCondition(Condition condition) {
-        setHeader(KEY_CONDITION, condition);
+        setCondition(this, condition);
     }
 
     public void setCondition(Object... condition) {
-        setHeader(KEY_CONDITION, condition);
+        setCondition(this, condition);
     }
 
 }

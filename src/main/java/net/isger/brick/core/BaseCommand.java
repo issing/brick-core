@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.isger.brick.stub.model.Model;
 import net.isger.util.Helpers;
 import net.isger.util.Reflects;
 
@@ -168,6 +169,14 @@ public class BaseCommand extends Command implements Cloneable {
 
     public void setHeader(CharSequence key, Object value) {
         shell.setHeader(key, value);
+    }
+
+    public Model getParameter(Model model) {
+        return shell.getParameter(model);
+    }
+
+    public Model getParameter(Model model, String namespace) {
+        return shell.getParameter(model, namespace);
     }
 
     public <T> T getParameter(Class<T> type) {
@@ -408,24 +417,24 @@ public class BaseCommand extends Command implements Cloneable {
             set(HEADERS, key, value);
         }
 
+        public Model getParameter(Model model) {
+            model = model.clone();
+            model.setValues(getParameter());
+            return model;
+        }
+
+        public Model getParameter(Model model, String namespace) {
+            model = model.clone();
+            model.setValues(Helpers.getMap(getParameter(), namespace));
+            return model;
+        }
+
         public <T> T getParameter(Class<T> type) {
             return Reflects.newInstance(type, getParameter());
         }
 
-        @SuppressWarnings("unchecked")
         public <T> T getParameter(Class<T> type, String namespace) {
-            Map<String, Object> params = Helpers.canonicalize(getParameter());
-            Object value;
-            for (String name : namespace.split("[./]")) {
-                value = params.get(name);
-                if (value instanceof Map) {
-                    params = (Map<String, Object>) value;
-                } else {
-                    params = null;
-                    break;
-                }
-            }
-            return Reflects.newInstance(type, params);
+            return Reflects.newInstance(type, getParameter(), namespace);
         }
 
         public Map<String, Object> getParameter() {

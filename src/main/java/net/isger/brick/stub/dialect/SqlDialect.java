@@ -51,7 +51,8 @@ public class SqlDialect implements Dialect {
     static {
         STRING_DESCRIBER = new DescriberAdapter() {
             public String describe(Meta field) {
-                return "VARCHAR(" + field.getLength() + ")";
+                int length = field.getLength();
+                return length > 0 ? "VARCHAR(" + length + ")" : "TEXT";
             }
 
             public String describe(Option option, Object... extents) {
@@ -81,6 +82,19 @@ public class SqlDialect implements Dialect {
                     describe.append(")");
                 }
                 return describe.toString();
+            }
+
+            public String describe(Option option, Object... extents) {
+                String value = null;
+                switch (option.getType().intValue()) {
+                case OPTION_DEFAULT:
+                    Object optionValue = option.getValue();
+                    if (optionValue == null) {
+                        value = "0";
+                    }
+                    break;
+                }
+                return value;
             }
         };
         DATE_DESCRIBER = new DescriberAdapter() {
@@ -115,7 +129,7 @@ public class SqlDialect implements Dialect {
         DEFAULT_DESCRIBER = new DescriberAdapter() {
             public String describe(Option option, Object... extents) {
                 Object value = option.getValue();
-                if (extents != null) {
+                if (extents != null && extents[0] != null) {
                     value = extents[0].toString();
                 }
                 return "DEFAULT " + value;
@@ -432,14 +446,19 @@ public class SqlDialect implements Dialect {
     protected String getOptionDescribe(Describer describer, Meta meta) {
         StringBuffer buffer = new StringBuffer(128);
         Describer optionDescriber;
+        String describe;
+        Number type;
         for (Option option : meta.options().values()) {
-            optionDescriber = describers.get(option.getType().intValue());
-            if (optionDescriber != null) {
-                buffer.append(" ").append(
-                        optionDescriber.describe(
-                                option,
-                                describer == null ? null : describer.describe(
-                                        option, meta, this)));
+            if ((type = option.getType()) == null) {
+                continue;
+            }
+            optionDescriber = describers.get(type.intValue());
+            if (optionDescriber != null
+                    && ((describe = optionDescriber.describe(
+                            option,
+                            describer == null ? null : describer.describe(
+                                    option, meta, this))) != null)) {
+                buffer.append(" ").append(describe);
             }
         }
         return buffer.toString();

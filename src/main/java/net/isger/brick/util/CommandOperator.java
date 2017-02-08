@@ -60,7 +60,12 @@ public class CommandOperator extends DynamicOperator {
             return;
         }
         /* 采用无参数默认方法 */
-        super.operate();
+        try {
+            super.operate();
+        } catch (Throwable cause) {
+            throw new IllegalStateException("Failure to invoke [" + operate
+                    + "] in " + getSource(), cause);
+        }
     }
 
 }

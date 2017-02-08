@@ -1,9 +1,7 @@
 package net.isger.brick.stub;
 
-import java.lang.reflect.Array;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Collection;
 
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
@@ -181,7 +179,7 @@ public class SqlStub extends AbstractStub {
      * 
      * @return
      */
-    protected Connection getConnection() {
+    protected Connection getConnection(StubCommand cmd) {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
@@ -196,7 +194,7 @@ public class SqlStub extends AbstractStub {
     @Ignore(mode = Mode.INCLUDE)
     public void create(StubCommand cmd) {
         Object table = cmd.getTable();
-        final Connection conn = getConnection();
+        final Connection conn = getConnection(cmd);
         Object[] condition = getCondition(cmd, 3);
         Object result;
         try {
@@ -213,7 +211,7 @@ public class SqlStub extends AbstractStub {
                             condition, conn);
                 }
             } else {
-                result = each(table, new Callable<Object>() {
+                result = Helpers.each(table, new Callable<Object>() {
                     public Object call(Object... args) {
                         return Sqls.modify(transformer.transform(dialect
                                 .getCreateEntry(args[0])), conn);
@@ -233,20 +231,21 @@ public class SqlStub extends AbstractStub {
     public void insert(StubCommand cmd) {
         Object table = cmd.getTable();
         Object[] condition = getCondition(cmd, 3);
-        final Connection conn = getConnection();
+        final Connection conn = getConnection(cmd);
         Object result;
         try {
             if (table instanceof String) {
-                result = Sqls.modify(transformer.transform(dialect
-                        .getInsertEntry((String) table, condition)), conn);
+                result = Sqls
+                        .modify(dialect.getInsertEntry((String) table,
+                                condition), conn);
             } else if (table instanceof Class) {
                 result = modify(cmd.getOperate(), (Class<?>) table, condition,
                         conn);
             } else {
-                result = each(table, new Callable<Object>() {
+                result = Helpers.each(table, new Callable<Object>() {
                     public Object call(Object... args) {
-                        return Sqls.modify(transformer.transform(dialect
-                                .getInsertEntry(args[0])), conn);
+                        return Sqls.modify(dialect.getInsertEntry(args[0]),
+                                conn);
                     }
                 });
             }
@@ -263,21 +262,20 @@ public class SqlStub extends AbstractStub {
     public void delete(StubCommand cmd) {
         Object table = cmd.getTable();
         Object[] condition = getCondition(cmd, 3);
-        final Connection conn = getConnection();
+        final Connection conn = getConnection(cmd);
         Object result;
         try {
             if (table instanceof String) {
-                result = Sqls
-                        .modify(transformer.transform(dialect.getDeleteEntry(
-                                (String) table, (Object[]) condition[0])), conn);
+                result = Sqls.modify(dialect.getDeleteEntry((String) table,
+                        (Object[]) condition[0]), conn);
             } else if (table instanceof Class) {
                 result = modify(cmd.getOperate(), (Class<?>) table, condition,
                         conn);
             } else {
-                result = each(table, new Callable<Object>() {
+                result = Helpers.each(table, new Callable<Object>() {
                     public Object call(Object... args) {
-                        return Sqls.modify(transformer.transform(dialect
-                                .getDeleteEntry(args[0])), conn);
+                        return Sqls.modify(dialect.getDeleteEntry(args[0]),
+                                conn);
                     }
                 });
             }
@@ -294,26 +292,23 @@ public class SqlStub extends AbstractStub {
     public void update(StubCommand cmd) {
         Object table = cmd.getTable();
         Object[] condition = getCondition(cmd, 3);
-        final Connection conn = getConnection();
+        final Connection conn = getConnection(cmd);
         Object result;
         try {
             if (table instanceof String) {
                 Object[][] values = (Object[][]) condition[0];
-                result = Sqls.modify(transformer.transform(dialect
-                        .getUpdateEntry((String) table, values[0], values[1])),
-                        conn);
+                result = Sqls.modify(dialect.getUpdateEntry((String) table,
+                        values[0], values[1]), conn);
             } else if (table instanceof Class) {
                 result = modify(cmd.getOperate(), (Class<?>) table, condition,
                         conn);
             } else {
-                result = each(new Object[] { (Object[]) table },
-                        new Callable<Object>() {
-                            public Object call(Object... args) {
-                                return Sqls.modify(transformer
-                                        .transform(dialect.getUpdateEntry(
-                                                args[0], args[1])), conn);
-                            }
-                        });
+                result = Helpers.each(table, new Callable<Object>() {
+                    public Object call(Object... args) {
+                        return Sqls.modify(
+                                dialect.getUpdateEntry(args[0], args[1]), conn);
+                    }
+                });
             }
         } finally {
             close(conn);
@@ -328,14 +323,13 @@ public class SqlStub extends AbstractStub {
     public void select(StubCommand cmd) {
         Object table = cmd.getTable();
         Object[] condition = getCondition(cmd, 3);
-        final Connection conn = getConnection();
+        final Connection conn = getConnection(cmd);
         Object[] result;
         search: try {
             SqlEntry sqlEntry;
             if (table instanceof String) {
-                sqlEntry = transformer.transform(dialect.getSearchEntry(
-                        (String) table, (String[]) condition[0],
-                        (Object[]) condition[1]));
+                sqlEntry = dialect.getSearchEntry((String) table,
+                        (String[]) condition[0], (Object[]) condition[1]);
                 result = Sqls.query(sqlEntry, conn);
             } else if (table instanceof Class) {
                 canonicalize(cmd.getOperate(), condition);
@@ -345,10 +339,9 @@ public class SqlStub extends AbstractStub {
                         (Object[]) condition[1]));
                 result = Sqls.query(sqlEntry, conn);
             } else {
-                result = (Object[]) each(table, new Callable<Object>() {
+                result = (Object[]) Helpers.each(table, new Callable<Object>() {
                     public Object call(Object... args) {
-                        return Sqls.query(transformer.transform(dialect
-                                .getSearchEntry(args[0])), conn);
+                        return Sqls.query(dialect.getSearchEntry(args[0]), conn);
                     }
                 });
                 break search;
@@ -378,51 +371,18 @@ public class SqlStub extends AbstractStub {
     @Ignore(mode = Mode.INCLUDE)
     public void remove(StubCommand cmd) {
         Object table = cmd.getTable();
-        final Connection conn = getConnection();
+        final Connection conn = getConnection(cmd);
         Object result;
         try {
-            result = each(table, new Callable<Object>() {
+            result = Helpers.each(table, new Callable<Object>() {
                 public Object call(Object... args) {
-                    return Sqls.modify(transformer.transform(dialect
-                            .getRemoveEntry(args[0])), conn);
+                    return Sqls.modify(dialect.getRemoveEntry(args[0]), conn);
                 }
             });
         } finally {
             close(conn);
         }
         cmd.setResult(result);
-    }
-
-    /**
-     * 遍历操作
-     * 
-     * @param table
-     * @param callable
-     * @return
-     */
-    protected Object each(Object table, Callable<Object> callable) {
-        int size;
-        if (table instanceof Collection) {
-            Collection<?> instance = (Collection<?>) table;
-            size = instance.size();
-            table = instance.toArray(new Object[size]);
-        } else if (table.getClass().isArray()) {
-            size = Array.getLength(table);
-        } else {
-            size = 1;
-            table = new Object[] { table };
-        }
-        Object[] result = new Object[size];
-        Object instance;
-        for (int i = 0; i < size; i++) {
-            instance = Array.get(table, i);
-            if (instance != null && instance.getClass().isArray()) {
-                result[i] = callable.call((Object[]) instance);
-            } else {
-                result[i] = callable.call(instance);
-            }
-        }
-        return (size == 1) ? result[0] : result;
     }
 
     /**
@@ -485,11 +445,11 @@ public class SqlStub extends AbstractStub {
      * @param conn
      */
     public void close(Connection conn) {
-        if (conn != null) {
-            try {
+        try {
+            if (conn != null && conn.getAutoCommit()) {
                 conn.close();
-            } catch (SQLException e) {
             }
+        } catch (SQLException e) {
         }
     }
 

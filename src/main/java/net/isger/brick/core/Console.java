@@ -226,6 +226,7 @@ public class Console implements Constants, Manageable {
      * @param config
      */
     protected void loadConstants(Map<String, Object> config) {
+        Class<?> key;
         Object value;
         for (Entry<String, Object> entry : config.entrySet()) {
             value = entry.getValue();
@@ -233,8 +234,13 @@ public class Console implements Constants, Manageable {
             if (value instanceof Map) {
                 value = BaseLoader.toLoad(value);
             }
-            ConstantStrategy.set(container, value.getClass(), entry.getKey(),
-                    value);
+            key = value.getClass();
+            if (Map.class.isAssignableFrom(key)) {
+                key = Map.class;
+            } else if (List.class.isAssignableFrom(key)) {
+                key = List.class;
+            }
+            ConstantStrategy.set(container, key, entry.getKey(), value);
         }
     }
 

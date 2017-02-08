@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import net.isger.util.Helpers;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
 import net.isger.util.anno.Alias;
@@ -16,7 +18,7 @@ import net.isger.util.reflect.BoundField;
  * @author issing
  *
  */
-public class Metas {
+public class Metas implements Cloneable {
 
     private Map<String, Object> metas;
 
@@ -108,6 +110,27 @@ public class Metas {
         Metas metas = new Metas();
         for (List<BoundField> field : fields) {
             metas.add(Meta.createMeta(field.get(0)));
+        }
+        return metas;
+    }
+
+    public Metas clone() {
+        Metas metas;
+        try {
+            metas = (Metas) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new IllegalStateException("Failure to clone metas", e);
+        }
+        metas.metas = new HashMap<String, Object>();
+        Object value;
+        for (Entry<String, Object> entry : this.metas.entrySet()) {
+            value = entry.getValue();
+            if (value instanceof Meta) {
+                value = ((Meta) value).clone();
+            } else if (value instanceof Object[]) {
+                value = Helpers.copyArray(value);
+            }
+            metas.metas.put(entry.getKey(), value);
         }
         return metas;
     }

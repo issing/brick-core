@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-public class Options {
+public class Options implements Cloneable {
 
     private List<Option> options;
 
@@ -45,6 +45,20 @@ public class Options {
 
     public int size() {
         return options.size();
+    }
+
+    public Options clone() {
+        Options options;
+        try {
+            options = (Options) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new IllegalStateException("Failure to clone options", e);
+        }
+        options.options = new ArrayList<Option>();
+        for (Option option : this.options) {
+            options.options.add(option.clone());
+        }
+        return options;
     }
 
 }
