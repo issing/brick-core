@@ -292,7 +292,7 @@ public class SqlDialect implements Dialect {
                 sql.append(" AND ").append(columns[i]).append(" = ?");
             }
         }
-        return new SqlEntry(sql.toString(), (Object[]) Helpers.getArray(
+        return new SqlEntry(sql.toString(), (Object[]) Helpers.newArray(
                 newGridData[1], oldGridData[1]));
     }
 

@@ -1,13 +1,16 @@
 package net.isger.brick.core;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import net.isger.brick.stub.model.Model;
 import net.isger.util.Helpers;
 import net.isger.util.Reflects;
+import net.isger.util.reflect.BoundField;
 
 import org.apache.avro.Schema;
 
@@ -172,19 +175,37 @@ public class BaseCommand extends Command implements Cloneable {
     }
 
     public Model getParameter(Model model) {
-        return shell.getParameter(model);
+        return (Model) getParameter(model, null, false);
     }
 
     public Model getParameter(Model model, String namespace) {
-        return shell.getParameter(model, namespace);
+        return (Model) getParameter(model, namespace, false);
     }
 
+    public Object getParameter(Model model, boolean isBatch) {
+        return getParameter(model, null, isBatch);
+    }
+
+    public Object getParameter(Model model, String namespace, boolean isBatch) {
+        return shell.getParameter(model, namespace, isBatch);
+    }
+
+    @SuppressWarnings("unchecked")
     public <T> T getParameter(Class<T> type) {
-        return shell.getParameter(type);
+        return (T) getParameter(type, null, false);
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T getParameter(Class<T> type, String namespace) {
-        return shell.getParameter(type, namespace);
+        return (T) getParameter(type, namespace, false);
+    }
+
+    public Object getParameter(Class<?> type, boolean isBatch) {
+        return getParameter(type, null, isBatch);
+    }
+
+    public Object getParameter(Class<?> type, String namespace, boolean isBatch) {
+        return shell.getParameter(type, namespace, isBatch);
     }
 
     public Map<String, Object> getParameter() {
@@ -263,7 +284,7 @@ public class BaseCommand extends Command implements Cloneable {
         shell.setResult(result);
     }
 
-    public Object clone() {
+    public BaseCommand clone() {
         BaseCommand cmd;
         try {
             cmd = (BaseCommand) super.clone();
@@ -417,24 +438,72 @@ public class BaseCommand extends Command implements Cloneable {
             set(HEADERS, key, value);
         }
 
-        public Model getParameter(Model model) {
-            model = model.clone();
-            model.setValues(getParameter());
-            return model;
+        public Object getParameter(Model model, String namespace,
+                boolean isBatch) {
+            Map<String, Object> params = Helpers.getMap(getParameter(),
+                    namespace);
+            Model instance;
+            if (!isBatch) {
+                instance = model.clone();
+                instance.metaValue(params);
+                return instance;
+            }
+            List<Model> result = new ArrayList<Model>();
+            List<String> names = new ArrayList<String>();
+            List<Object> values = new ArrayList<Object>();
+            Object value;
+            for (String name : model.metas().names()) {
+                value = params.get(name + "[]");
+                if (value == null) {
+                    value = params.get(name);
+                }
+                if (value == null) {
+                    continue;
+                }
+                names.add(name);
+                values.add(value);
+            }
+            Object[] columns = names.toArray();
+            for (Object[] row : Helpers.newGrid(true, values.toArray())) {
+                instance = model.clone();
+                instance.metaValue(Reflects.toMap(columns, row));
+                result.add(instance);
+            }
+            return result;
         }
 
-        public Model getParameter(Model model, String namespace) {
-            model = model.clone();
-            model.setValues(Helpers.getMap(getParameter(), namespace));
-            return model;
-        }
-
-        public <T> T getParameter(Class<T> type) {
-            return Reflects.newInstance(type, getParameter());
-        }
-
-        public <T> T getParameter(Class<T> type, String namespace) {
-            return Reflects.newInstance(type, getParameter(), namespace);
+        public Object getParameter(Class<?> type, String namespace,
+                boolean isBatch) {
+            Map<String, Object> params = Helpers.getMap(getParameter(),
+                    namespace);
+            if (!isBatch) {
+                return Reflects.newInstance(type, params);
+            }
+            List<Object> result = new ArrayList<Object>();
+            List<String> names = new ArrayList<String>();
+            List<Object> values = new ArrayList<Object>();
+            String name;
+            Object value;
+            Map<String, List<BoundField>> fields = Reflects
+                    .getBoundFields(type);
+            for (Entry<String, List<BoundField>> entry : fields.entrySet()) {
+                name = entry.getKey();
+                value = params.get(name + "[]");
+                if (value == null) {
+                    value = params.get(name);
+                }
+                if (value == null) {
+                    continue;
+                }
+                names.add(name);
+                values.add(value);
+            }
+            Object[] columns = names.toArray();
+            for (Object[] row : Helpers.newGrid(true, values.toArray())) {
+                result.add(Reflects.newInstance(type,
+                        Reflects.toMap(columns, row)));
+            }
+            return result;
         }
 
         public Map<String, Object> getParameter() {

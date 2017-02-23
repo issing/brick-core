@@ -128,7 +128,7 @@ public class Metas implements Cloneable {
             if (value instanceof Meta) {
                 value = ((Meta) value).clone();
             } else if (value instanceof Object[]) {
-                value = Helpers.copyArray(value);
+                value = Helpers.newArray(value);
             }
             metas.metas.put(entry.getKey(), value);
         }

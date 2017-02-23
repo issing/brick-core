@@ -214,7 +214,7 @@ public class SqlStub extends AbstractStub {
                 result = Helpers.each(table, new Callable<Object>() {
                     public Object call(Object... args) {
                         return Sqls.modify(transformer.transform(dialect
-                                .getCreateEntry(args[0])), conn);
+                                .getCreateEntry(args[1])), conn);
                     }
                 });
             }
@@ -244,7 +244,7 @@ public class SqlStub extends AbstractStub {
             } else {
                 result = Helpers.each(table, new Callable<Object>() {
                     public Object call(Object... args) {
-                        return Sqls.modify(dialect.getInsertEntry(args[0]),
+                        return Sqls.modify(dialect.getInsertEntry(args[1]),
                                 conn);
                     }
                 });
@@ -274,7 +274,7 @@ public class SqlStub extends AbstractStub {
             } else {
                 result = Helpers.each(table, new Callable<Object>() {
                     public Object call(Object... args) {
-                        return Sqls.modify(dialect.getDeleteEntry(args[0]),
+                        return Sqls.modify(dialect.getDeleteEntry(args[1]),
                                 conn);
                     }
                 });
@@ -305,8 +305,10 @@ public class SqlStub extends AbstractStub {
             } else {
                 result = Helpers.each(table, new Callable<Object>() {
                     public Object call(Object... args) {
+                        Object[] values = (Object[]) args[1];
                         return Sqls.modify(
-                                dialect.getUpdateEntry(args[0], args[1]), conn);
+                                dialect.getUpdateEntry(values[0], values[1]),
+                                conn);
                     }
                 });
             }
@@ -341,7 +343,7 @@ public class SqlStub extends AbstractStub {
             } else {
                 result = (Object[]) Helpers.each(table, new Callable<Object>() {
                     public Object call(Object... args) {
-                        return Sqls.query(dialect.getSearchEntry(args[0]), conn);
+                        return Sqls.query(dialect.getSearchEntry(args[1]), conn);
                     }
                 });
                 break search;
@@ -356,7 +358,6 @@ public class SqlStub extends AbstractStub {
                             countSql, sqlEntry.getValues(), conn)[1])[0][0])
                             .longValue();
                     result = (Object[]) target;
-
                 }
             }
         } finally {
@@ -376,7 +377,7 @@ public class SqlStub extends AbstractStub {
         try {
             result = Helpers.each(table, new Callable<Object>() {
                 public Object call(Object... args) {
-                    return Sqls.modify(dialect.getRemoveEntry(args[0]), conn);
+                    return Sqls.modify(dialect.getRemoveEntry(args[1]), conn);
                 }
             });
         } finally {
@@ -398,7 +399,7 @@ public class SqlStub extends AbstractStub {
             throw new IllegalStateException(
                     "Unsupported feature in the current version");
         }
-        return (Object[]) Helpers.getArray(config, length);
+        return (Object[]) Helpers.newArray(config, length);
     }
 
     /**

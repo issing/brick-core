@@ -2,6 +2,9 @@ package net.isger.brick.stub.model;
 
 import java.util.Map;
 
+import net.isger.raw.Artifact;
+import net.isger.raw.Depository;
+import net.isger.raw.StringRaw;
 import net.isger.util.Sqls;
 import net.isger.util.Strings;
 import net.isger.util.anno.Affix;
@@ -33,6 +36,9 @@ public class Model implements Cloneable {
     @Affix("{type : 'text'}")
     private String description;
 
+    /** 纲要 */
+    private transient Object schema;
+
     /** 字段（桥接多对多引用） */
     @Affix("{name : 't_brick_stub_item', type : 'reference', mode : 1, scale : 3, "
             + "value : {"
@@ -58,7 +64,7 @@ public class Model implements Cloneable {
                 meta = new Meta((Object[]) instance);
                 isBelong = true;
             } else if (instance instanceof Meta) {
-                meta = (Meta) instance;
+                meta = ((Meta) instance).clone();
                 isBelong = false;
             } else {
                 throw new IllegalArgumentException(String.valueOf(instance));
@@ -112,6 +118,21 @@ public class Model implements Cloneable {
         this.description = description;
     }
 
+    public Object modelSchema() {
+        return schema;
+    }
+
+    public void modelSchema(Object schema) {
+        if (schema instanceof String) {
+            Artifact artifact = Depository.getArtifact(new StringRaw(
+                    (String) schema));
+            if (artifact != null) {
+                schema = artifact.transform(Map.class);
+            }
+        }
+        this.schema = schema;
+    }
+
     public Metas metas() {
         return metas;
     }
@@ -150,7 +171,7 @@ public class Model implements Cloneable {
         meta(name).setValue(value);
     }
 
-    public void setValues(Map<?, ?> values) {
+    public void metaValue(Map<?, ?> values) {
         for (String name : this.metas().names()) {
             this.metaValue(name, values.get(name));
         }

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import net.isger.brick.core.BaseCommand;
 import net.isger.brick.stub.dialect.Dialect;
 import net.isger.brick.stub.dialect.SqlDialect;
 import net.isger.raw.Artifact;
@@ -210,12 +209,12 @@ public final class Meta implements Cloneable {
     }
 
     public Object getValue() {
-        if (value == null) {
-            BaseCommand cmd = BaseCommand.getAction();
-            if (cmd != null) {
-                value = cmd.getParameter(name);
-            }
-        }
+        // if (value == null) {
+        // BaseCommand cmd = BaseCommand.getAction();
+        // if (cmd != null) {
+        // value = cmd.getParameter(name);
+        // }
+        // }
         return value;
     }
 
