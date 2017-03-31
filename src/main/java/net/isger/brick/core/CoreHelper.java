@@ -46,7 +46,7 @@ public class CoreHelper {
     protected CoreHelper() {
     }
 
-    public static Object to(BaseCommand cmd, Callable<Object> callable) {
+    protected static Object to(BaseCommand cmd, Callable<Object> callable) {
         return callable.call(cmd);
     }
 

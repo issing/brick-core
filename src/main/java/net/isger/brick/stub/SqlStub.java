@@ -138,7 +138,7 @@ public class SqlStub extends AbstractStub {
         } catch (Exception e) {
             create(cmd);
             Model model;
-            for (Meta meta : Metas.createMetas(table).values()) {
+            for (Meta meta : Metas.getMetas(table).values()) {
                 if ((model = meta.toModel()) != null) {
                     initialModel(cmd, model);
                 }

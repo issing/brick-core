@@ -24,12 +24,10 @@ import net.isger.util.anno.Ignore.Mode;
 @Ignore
 public abstract class AbstractEndpoint implements Endpoint {
 
-    private static final String DEFAULT_PROTOCOL = "object";
-
     /** 容器 */
     @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
-    private Container container;
+    protected Container container;
 
     @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
@@ -62,19 +60,30 @@ public abstract class AbstractEndpoint implements Endpoint {
     }
 
     public final void initial() {
-        if (Strings.isEmpty(protocol)) {
-            protocol = DEFAULT_PROTOCOL;
+        if (Strings.isEmpty(this.protocol)) {
+            this.protocol = name();
         }
-        endpointProtocol = bus.getProtocol(this.protocol);
-        if (protocol == null) {
-            endpointProtocol = bus.getProtocol(DEFAULT_PROTOCOL);
-        }
+        findProtocol(this.protocol, this.getClass(), null);
         if (handler == null) {
             handler = new CommandHandler();
         }
         container.inject(handler);
         open();
         status = Status.ACTIVATED;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void findProtocol(String protocol, Class<?> clazz, String namespace) {
+        if (Strings.isEmpty(namespace)) {
+            endpointProtocol = bus.getProtocol(protocol);
+        } else {
+            endpointProtocol = bus.getProtocol(protocol + "." + namespace);
+        }
+        if (endpointProtocol != null || clazz == AbstractEndpoint.class) {
+            return;
+        }
+        findProtocol(protocol, clazz.getSuperclass(),
+                Endpoints.getName((Class<Endpoint>) clazz));
     }
 
     public String name() {

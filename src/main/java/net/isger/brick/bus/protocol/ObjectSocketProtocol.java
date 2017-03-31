@@ -1,20 +1,20 @@
 package net.isger.brick.bus.protocol;
 
-import net.isger.brick.bus.Decoder;
-import net.isger.brick.bus.Encoder;
+import net.isger.util.anno.Alias;
 
-public class ObjectProtocol implements Protocol {
+@Alias("object.socket")
+public class ObjectSocketProtocol implements SocketProtocol {
 
-    private transient ObjectEncoder encoder;
+    private transient ObjectSocketEncoder encoder;
 
-    private transient ObjectDecoder decoder;
+    private transient ObjectSocketDecoder decoder;
 
     public void initial() {
         if (encoder == null) {
-            encoder = new ObjectEncoder();
+            encoder = new ObjectSocketEncoder();
         }
         if (decoder == null) {
-            decoder = new ObjectDecoder();
+            decoder = new ObjectSocketDecoder();
         }
     }
 

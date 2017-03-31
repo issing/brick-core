@@ -13,10 +13,8 @@ import net.isger.brick.stub.model.Option;
 import net.isger.brick.stub.model.Options;
 import net.isger.util.Dates;
 import net.isger.util.Helpers;
-import net.isger.util.Reflects;
 import net.isger.util.Sqls;
 import net.isger.util.Strings;
-import net.isger.util.reflect.BoundField;
 import net.isger.util.sql.Page;
 import net.isger.util.sql.PageSql;
 import net.isger.util.sql.SqlEntry;
@@ -370,55 +368,29 @@ public class SqlDialect implements Dialect {
     }
 
     protected String[] getColumnNames(Object table) {
-        if (table instanceof Model && ((Model) table).isModel()) {
-            return getColumnNames((Model) table);
-        }
-        String column;
+        Metas metas = Metas.getMetas(table);
         List<String> columns = new ArrayList<String>();
-        Meta meta;
-        BoundField field;
-        for (List<BoundField> fields : Reflects
-                .getBoundFields(table.getClass()).values()) {
-            meta = Meta.createMeta(field = fields.get(0));
+        for (Meta meta : metas.values()) {
             if (meta.isReference()) {
+                // TODO 暂不处理引用类型
                 continue;
             }
-            column = field.getAlias();
-            if (column == null) {
-                column = Sqls.toColumnName(field.getName());
-            }
-            columns.add(column);
+            columns.add(meta.getName());
         }
         return columns.toArray(new String[columns.size()]);
     }
 
-    protected String[] getColumnNames(Model model) {
-        List<String> names = model.metas().names();
-        return names.toArray(new String[names.size()]);
-    }
-
     protected String[][] getColumnDescribes(Object table) {
-        Metas metas = Metas.createMetas(table);
+        Metas metas = Metas.getMetas(table);
         List<String[]> describes = new ArrayList<String[]>(metas.size());
-        String[] decribe;
+        String[] describe;
         for (Meta meta : metas.values()) {
-            decribe = getColumnDescribe(meta);
-            if (decribe != null) {
-                describes.add(decribe);
+            describe = getColumnDescribe(meta);
+            if (describe != null) {
+                describes.add(describe);
             }
         }
         return describes.toArray(new String[describes.size()][]);
-    }
-
-    protected String[][] getColumnDescribes(Model model) {
-        Metas metas = model.metas();
-        List<String> names = metas.names();
-        int fieldCount = names.size();
-        String[][] describes = new String[fieldCount][];
-        for (int i = 0; i < fieldCount; i++) {
-            describes[i] = getColumnDescribe(metas.get(names.get(i)));
-        }
-        return describes;
     }
 
     protected String[] getColumnDescribe(Meta meta) {
@@ -435,6 +407,7 @@ public class SqlDialect implements Dialect {
                 .toUpperCase());
         if (describer != null) {
             describe = describer.describe(meta);
+            /* 跳过非从属列描述 */
             if (Strings.isEmpty(describe)) {
                 return null;
             }
@@ -480,29 +453,17 @@ public class SqlDialect implements Dialect {
     }
 
     protected Object[] getTableData(Object table) {
-        if (table instanceof Model && ((Model) table).isModel()) {
-            return getTableData((Model) table);
-        }
-        String column;
         Object value;
+        Metas metas = Metas.getMetas(table);
         List<String> columns = new ArrayList<String>();
         List<Object> row = new ArrayList<Object>();
-        Meta meta;
-        BoundField field;
-        for (List<BoundField> fields : Reflects
-                .getBoundFields(table.getClass()).values()) {
-            meta = Meta.createMeta(field = fields.get(0));
-            if (REFERENCE.equals(meta.getType())) {
+        for (Meta meta : metas.values()) {
+            if (meta.isReference()) {
                 // TODO 暂不处理引用类型
                 continue;
             }
-            column = field.getAlias();
-            if (column == null) {
-                column = Sqls.toColumnName(field.getName());
-            }
-            value = field.getValue(table);
-            if (value != null) {
-                columns.add(column);
+            if ((value = meta.getValue(table)) != null) {
+                columns.add(meta.getName());
                 row.add(value);
             }
         }

@@ -1,20 +1,20 @@
 package net.isger.brick.bus.protocol;
 
-import net.isger.brick.bus.Decoder;
-import net.isger.brick.bus.Encoder;
+import net.isger.util.anno.Alias;
 
-public class CommandProtocol implements Protocol {
+@Alias("command.socket")
+public class CommandSocketProtocol implements SocketProtocol {
 
-    private CommandEncoder encoder;
+    private CommandSocketEncoder encoder;
 
-    private CommandDecoder decoder;
+    private CommandSocketDecoder decoder;
 
     public void initial() {
         if (encoder == null) {
-            encoder = new CommandEncoder();
+            encoder = new CommandSocketEncoder();
         }
         if (decoder == null) {
-            decoder = new CommandDecoder();
+            decoder = new CommandSocketDecoder();
         }
     }
 

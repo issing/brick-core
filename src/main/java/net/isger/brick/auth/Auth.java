@@ -18,4 +18,6 @@ public interface Auth extends Gate {
 
     public void auth(AuthCommand cmd);
 
+    public void logout(AuthCommand cmd);
+
 }

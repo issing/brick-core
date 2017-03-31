@@ -1,16 +1,15 @@
 package net.isger.brick.bus.protocol;
 
 import java.io.IOException;
-import java.io.InputStream;
 
-import net.isger.brick.bus.Decoder;
+import net.isger.brick.bus.protocol.SocketProtocol.Decoder;
 import net.isger.brick.core.Command;
 
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
 import org.apache.avro.specific.SpecificDatumReader;
 
-public class CommandDecoder implements Decoder {
+public class CommandSocketDecoder implements Decoder {
 
     private static final DatumReader<Command> READER;
 
@@ -18,10 +17,10 @@ public class CommandDecoder implements Decoder {
         READER = new SpecificDatumReader<Command>(Command.class);
     }
 
-    public Object decode(InputStream is) {
+    public Object decode(byte[] data) {
         try {
             return READER.read(null,
-                    DecoderFactory.get().binaryDecoder(is, null));
+                    DecoderFactory.get().binaryDecoder(data, null));
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }

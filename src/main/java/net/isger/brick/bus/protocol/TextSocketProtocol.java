@@ -1,10 +1,10 @@
 package net.isger.brick.bus.protocol;
 
 import net.isger.brick.Constants;
-import net.isger.brick.bus.Decoder;
-import net.isger.brick.bus.Encoder;
+import net.isger.util.anno.Alias;
 
-public class TextProtocol implements Protocol {
+@Alias("text.socket")
+public class TextSocketProtocol implements SocketProtocol {
 
     public static final String DELIMITER = "\n";
 
@@ -12,21 +12,21 @@ public class TextProtocol implements Protocol {
 
     private String delimiter;
 
-    private transient TextEncoder encoder;
+    private transient TextSocketEncoder encoder;
 
-    private transient TextDecoder decoder;
+    private transient TextSocketDecoder decoder;
 
-    public TextProtocol() {
+    public TextSocketProtocol() {
         encoding = Constants.DEFAULT_ENCODING;
         delimiter = DELIMITER;
     }
 
     public void initial() {
         if (encoder == null) {
-            encoder = new TextEncoder(encoding, delimiter);
+            encoder = new TextSocketEncoder(encoding, delimiter);
         }
         if (decoder == null) {
-            decoder = new TextDecoder(encoding, delimiter);
+            decoder = new TextSocketDecoder(encoding, delimiter);
         }
     }
 

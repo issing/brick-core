@@ -144,7 +144,7 @@ public class GateModule extends AbstractModule {
     }
 
     protected Gate setGate(String name, Gate gate) {
-        Asserts.argument(Strings.isNotEmpty(name) && gate != null,
+        Asserts.throwArgument(Strings.isNotEmpty(name) && gate != null,
                 "The gate cannot be null or empty");
         if (LOG.isDebugEnabled()) {
             LOG.info("Binding [{}] gate [{}] for the module {}", name, gate,

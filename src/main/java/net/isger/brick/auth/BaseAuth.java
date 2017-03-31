@@ -1,16 +1,7 @@
 package net.isger.brick.auth;
 
-import net.isger.brick.Constants;
-import net.isger.brick.cache.Cache;
-import net.isger.brick.cache.CacheModule;
 import net.isger.brick.core.BaseGate;
-import net.isger.brick.core.Console;
-import net.isger.brick.inject.Container;
 import net.isger.util.Helpers;
-import net.isger.util.Strings;
-import net.isger.util.anno.Alias;
-import net.isger.util.anno.Ignore;
-import net.isger.util.anno.Ignore.Mode;
 
 /**
  * 认证基类
@@ -19,19 +10,6 @@ import net.isger.util.anno.Ignore.Mode;
  *
  */
 public class BaseAuth extends BaseGate implements Auth {
-
-    private static final String KEY_IDENTITIES = "brick.auth.identities";
-
-    @Ignore(mode = Mode.INCLUDE)
-    @Alias(Constants.SYSTEM)
-    private Console console;
-
-    @Ignore(mode = Mode.INCLUDE)
-    @Alias(Constants.SYSTEM)
-    private Container container;
-
-    /** 认证缓存 */
-    private transient Cache identities;
 
     /** 检验器 */
     private AuthChecker checker;
@@ -62,8 +40,42 @@ public class BaseAuth extends BaseGate implements Auth {
             authorizer = new Authorizer();
         }
         container.inject(authorizer);
-        identities = ((CacheModule) console.getModule(Constants.MOD_CACHE))
-                .getCache(KEY_IDENTITIES);
+    }
+
+    /**
+     * 登录
+     */
+    public final void login(AuthCommand cmd) {
+        AuthIdentity identity = cmd.getIdentity();
+        if (identity == null) {
+            cmd.setIdentity(identity = createIdentity());
+        } else if (identity.isLogin()) {
+            logout(identity);
+        }
+        cmd.setResult(login(identity, authenticator.handle(cmd)));
+    }
+
+    /**
+     * 创建身份
+     * 
+     * @return
+     */
+    protected AuthIdentity createIdentity() {
+        return new AuthIdentity();
+    }
+
+    /**
+     * 登录
+     * 
+     * @param identity
+     * @param token
+     * @return
+     */
+    protected Object login(AuthIdentity identity, Object token) {
+        if (token != null) {
+            identity.setToken(token);
+        }
+        return token;
     }
 
     /**
@@ -71,9 +83,8 @@ public class BaseAuth extends BaseGate implements Auth {
      */
     public final void check(AuthCommand cmd) {
         /* 认证初验 */
-        String identity = cmd.getIdentity();
-        cmd.setResult(checker.isIgnore(cmd.getToken())
-                || Strings.isNotEmpty(identity)
+        AuthIdentity identity = cmd.getIdentity();
+        cmd.setResult(checker.isIgnore(cmd.getToken()) || identity != null
                 && Helpers.toBoolean(check(identity, cmd.getToken())));
         /* 检验器终验 */
         checker.handle(cmd);
@@ -86,46 +97,41 @@ public class BaseAuth extends BaseGate implements Auth {
      * @param token
      * @return
      */
-    protected Object check(String identity, Object token) {
-        return identities.get(identity);
-    }
-
-    /**
-     * 登录
-     */
-    public final void login(AuthCommand cmd) {
-        String identity = cmd.getIdentity();
-        if (Strings.isEmpty(identity)) {
-            do {
-                identity = Helpers.makeUUID();
-            } while (identities.get(identity) != null);
-            cmd.setIdentity(identity);
-        }
-        cmd.setResult(save(identity, authenticator.handle(cmd)));
-    }
-
-    /**
-     * 保存
-     * 
-     * @param identity
-     * @param token
-     * @return
-     */
-    protected Object save(String identity, Object token) {
-        if (token != null) {
-            identities.set(identity, token);
-        }
-        return token;
+    protected Object check(AuthIdentity identity, Object token) {
+        return identity.getToken().equals(token);
     }
 
     /**
      * 授权
      */
     public final void auth(AuthCommand cmd) {
-        String identity = cmd.getIdentity();
-        if (identities.get(identity) != null) {
-            cmd.setResult(authorizer.handle(cmd));
+        // String identity = cmd.getIdentity();
+        // if (identities.get(identity) != null) {
+        cmd.setResult(authorizer.handle(cmd));
+        // }
+    }
+
+    /**
+     * 登出
+     */
+    public final void logout(AuthCommand cmd) {
+        AuthIdentity identity = cmd.getIdentity();
+        if (identity != null && identity.isLogin()) {
+            logout(identity);
         }
+    }
+
+    /**
+     * 登出
+     * 
+     * @param identity
+     */
+    protected void logout(AuthIdentity identity) {
+        if (identity == null) {
+            return;
+        }
+        identity.setToken(null);
+        identity.clear();
     }
 
     /**

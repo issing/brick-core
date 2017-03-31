@@ -1,13 +1,14 @@
 package net.isger.brick.bus.protocol;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import net.isger.brick.Constants;
-import net.isger.brick.bus.Decoder;
+import net.isger.brick.bus.protocol.SocketProtocol.Decoder;
 
-public class TextDecoder implements Decoder {
+public class TextSocketDecoder implements Decoder {
 
     private static final int MIN_CACHE = 64;
 
@@ -23,11 +24,11 @@ public class TextDecoder implements Decoder {
 
     private transient byte[] delimiters;
 
-    public TextDecoder() {
-        this(Constants.DEFAULT_ENCODING, TextProtocol.DELIMITER);
+    public TextSocketDecoder() {
+        this(Constants.DEFAULT_ENCODING, TextSocketProtocol.DELIMITER);
     }
 
-    public TextDecoder(String encoding, String delimiter) {
+    public TextSocketDecoder(String encoding, String delimiter) {
         this.encoding = encoding;
         try {
             delimiters = delimiter.getBytes(encoding);
@@ -44,6 +45,10 @@ public class TextDecoder implements Decoder {
         }
         capacity = limit + delimiters.length;
         cache = capacity + MIN_CACHE;
+    }
+
+    public Object decode(byte[] data) {
+        return decode(new ByteArrayInputStream(data));
     }
 
     public Object decode(InputStream in) {

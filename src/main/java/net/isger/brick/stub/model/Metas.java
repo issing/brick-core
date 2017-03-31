@@ -99,7 +99,7 @@ public class Metas implements Cloneable {
         return this.metas.size();
     }
 
-    public static Metas createMetas(Object table) {
+    public static Metas getMetas(Object table) {
         if (table instanceof Model && ((Model) table).isModel()) {
             return ((Model) table).metas();
         } else if (!(table instanceof Class)) {

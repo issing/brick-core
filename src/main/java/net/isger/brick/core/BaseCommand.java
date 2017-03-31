@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import net.isger.brick.auth.AuthIdentity;
 import net.isger.brick.stub.model.Model;
 import net.isger.util.Helpers;
 import net.isger.util.Reflects;
@@ -252,11 +253,11 @@ public class BaseCommand extends Command implements Cloneable {
         return getOperate();
     }
 
-    public String getIdentity() {
+    public AuthIdentity getIdentity() {
         return shell.getIdentity();
     }
 
-    public void setIdentity(String identity) {
+    public void setIdentity(AuthIdentity identity) {
         shell.setIdentity(identity);
     }
 
@@ -538,11 +539,11 @@ public class BaseCommand extends Command implements Cloneable {
             set(FOOTERS, key, value);
         }
 
-        public String getIdentity() {
+        public AuthIdentity getIdentity() {
             return getHeader(KEY_IDENTITY);
         }
 
-        public void setIdentity(String identity) {
+        public void setIdentity(AuthIdentity identity) {
             setHeader(KEY_IDENTITY, identity);
         }
 

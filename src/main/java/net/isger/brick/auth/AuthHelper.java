@@ -22,7 +22,7 @@ public class AuthHelper extends CoreHelper {
         return cmd;
     }
 
-    public static AuthCommand toCommand(String identity, String domain,
+    public static AuthCommand toCommand(AuthIdentity identity, String domain,
             Object token) {
         AuthCommand cmd = toCommand(domain, token);
         cmd.setIdentity(identity);
@@ -46,6 +46,13 @@ public class AuthHelper extends CoreHelper {
     public static AuthCommand toCheck(String domain, Object token) {
         AuthCommand cmd = toCommand(domain, token);
         cmd.setOperate(AuthCommand.OPERATE_CHECK);
+        CoreHelper.toConsole(cmd);
+        return cmd;
+    }
+
+    public static AuthCommand toLogout(Object token) {
+        AuthCommand cmd = toCommand(token);
+        cmd.setOperate(AuthCommand.OPERATE_LOGOUT);
         CoreHelper.toConsole(cmd);
         return cmd;
     }

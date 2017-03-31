@@ -17,7 +17,7 @@ import net.isger.util.scan.ScanFilter;
  * @author issing
  *
  */
-public class ScanLoader extends ConsoleLoader {
+public class ScanLoader extends DesignLoader {
 
     public static final String PARAM_PATH = "path";
 

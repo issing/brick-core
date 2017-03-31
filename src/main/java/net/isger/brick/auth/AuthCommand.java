@@ -18,6 +18,8 @@ public class AuthCommand extends GateCommand {
 
     public static final String OPERATE_CHECK = "check";
 
+    public static final String OPERATE_LOGOUT = "logout";
+
     public static final String KEY_TOKEN = "auth-token";
 
     volatile transient boolean checked;

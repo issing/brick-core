@@ -2,18 +2,23 @@ package net.isger.brick.bus;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
+import net.isger.brick.bus.protocol.SocketProtocol;
+import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 
+/**
+ * 套接字端点
+ * 
+ * @author issing
+ *
+ */
 @Ignore
 public abstract class SocketEndpoint extends AbstractEndpoint {
 
     public static final int MIN_RETRIES = 3;
-
-    private static final int DEFAULT_PORT = 1109;
 
     @Ignore(mode = Mode.INCLUDE)
     private int retries;
@@ -22,25 +27,42 @@ public abstract class SocketEndpoint extends AbstractEndpoint {
     private String host;
 
     @Ignore(mode = Mode.INCLUDE)
-    private Integer port;
+    private int port;
 
-    private SocketAddress address;
+    private InetSocketAddress address;
 
     public SocketEndpoint() {
-        retries = MIN_RETRIES;
-        port = DEFAULT_PORT;
-        try {
-            host = InetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException e) {
-        }
+        this(null, 0);
     }
 
-    public SocketAddress getAddress() {
+    public SocketEndpoint(String host, int port) {
+        if (Strings.isEmpty(host)) {
+            try {
+                host = InetAddress.getLocalHost().getCanonicalHostName();
+            } catch (UnknownHostException e) {
+                host = "localhost";
+            }
+        }
+        this.host = host;
+        this.port = port;
+    }
+
+    public InetSocketAddress getAddress() {
         return address;
+    }
+
+    public SocketProtocol getProtocol() {
+        return (SocketProtocol) super.getProtocol();
     }
 
     protected void open() {
         address = new InetSocketAddress(host, port);
+        if (retries < MIN_RETRIES) {
+            retries = MIN_RETRIES;
+        }
+    }
+
+    protected void close() {
     }
 
 }

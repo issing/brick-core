@@ -55,21 +55,23 @@ public class AuthPreparer extends Preparer {
             AuthCommand cmd = (AuthCommand) command;
             boolean result;
             Object token = cmd.getToken();
+            /* 绕过权限 */
             if (result = Strings.isEmpty(cmd.getDomain())
                     && Strings.isEmpty(cmd.getOperate())
                     && token instanceof Command) {
                 command = BaseCommand.cast((Command) token);
             }
             cmd.setResult(result);
-            return command;
-        }
-        String domain;
-        if (((AuthModule) module).getGate(domain = console
-                .getModuleName(command)) != null) {
-            AuthCommand cmd = AuthHelper.toCommand(command.getIdentity(),
-                    domain, command);
-            cmd.setOperate(AuthCommand.OPERATE_CHECK);
-            command = cmd;
+        } else {
+            String domain;
+            if (((AuthModule) module).getGate(domain = console
+                    .getModuleName(command)) != null) {
+                /* 检测干涉 */
+                AuthCommand cmd = AuthHelper.toCommand(command.getIdentity(),
+                        domain, command);
+                cmd.setOperate(AuthCommand.OPERATE_CHECK);
+                command = cmd;
+            }
         }
         return command;
     }

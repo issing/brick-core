@@ -32,7 +32,7 @@ class InternalContext {
 
     public Strategy getStrategy(Class<?> type, String name) {
         Strategy strategy = container.getStrategy(type, name);
-        Asserts.state(strategy != null,
+        Asserts.throwState(strategy != null,
                 "Scope strategy not set. Please call Container.setStrategy().");
         return strategy;
     }

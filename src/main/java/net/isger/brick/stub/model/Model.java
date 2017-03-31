@@ -173,7 +173,8 @@ public class Model implements Cloneable {
 
     public void metaValue(Map<?, ?> values) {
         for (String name : this.metas().names()) {
-            this.metaValue(name, values.get(name));
+            this.metaValue(name, values.get(values.containsKey(name) ? name
+                    : Sqls.toFieldName(name)));
         }
     }
 

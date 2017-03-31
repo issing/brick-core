@@ -3,19 +3,19 @@ package net.isger.brick.bus.protocol;
 import java.io.UnsupportedEncodingException;
 
 import net.isger.brick.Constants;
-import net.isger.brick.bus.Encoder;
+import net.isger.brick.bus.protocol.SocketProtocol.Encoder;
 
-public class TextEncoder implements Encoder {
+public class TextSocketEncoder implements Encoder {
 
     private String encoding;
 
     private String delimiter;
 
-    public TextEncoder() {
-        this(Constants.DEFAULT_ENCODING, TextProtocol.DELIMITER);
+    public TextSocketEncoder() {
+        this(Constants.DEFAULT_ENCODING, TextSocketProtocol.DELIMITER);
     }
 
-    public TextEncoder(String encoding, String delimiter) {
+    public TextSocketEncoder(String encoding, String delimiter) {
         this.encoding = encoding;
         this.delimiter = delimiter;
     }

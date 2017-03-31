@@ -86,6 +86,9 @@ public final class Meta implements Cloneable {
     @Affix("{type : 'reference'}")
     private Object value;
 
+    /** 绑定字段 */
+    private transient BoundField field;
+
     static {
         Converter.addConversion(OptionsConversion.CONVERSION);
     }
@@ -218,6 +221,13 @@ public final class Meta implements Cloneable {
         return value;
     }
 
+    public Object getValue(Object instance) {
+        if (field != null) {
+            return field.getValue(instance);
+        }
+        return getValue();
+    }
+
     public void setValue(Object value) {
         this.value = value;
     }
@@ -275,7 +285,7 @@ public final class Meta implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new IllegalStateException("Failure to clone meta", e);
         }
-        meta.options = options.clone();
+        meta.options = options().clone();
         return meta;
     }
 
@@ -312,6 +322,7 @@ public final class Meta implements Cloneable {
         if (Strings.isEmpty(meta.type)) {
             meta.type = field.getField().getType().getSimpleName();
         }
+        meta.field = field;
         return meta;
     }
 
