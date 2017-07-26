@@ -233,6 +233,10 @@ public class GateModule extends AbstractModule {
         } else {
             /* 关卡操作 */
             Gate gate = getGate(domain);
+            Asserts.isNotNull(
+                    gate,
+                    "Unfound the specified domain [%s] in the module [%s], Check whether it is configured in the brick configuration file",
+                    domain, this.getClass().getName());
             setInternal(Gate.KEY_GATE, gate);
             gate.operate(gcmd);
         }

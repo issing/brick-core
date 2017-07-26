@@ -352,6 +352,17 @@ public class SqlDialect implements Dialect {
         return null;
     }
 
+    public SqlEntry getExistsEntry(Object table) {
+        return getExistsEntry(getTableName(table));
+    }
+
+    public SqlEntry getExistsEntry(String tableName) {
+        StringBuffer sql = new StringBuffer(128);
+        sql.append("SELECT count(1) FROM ").append(tableName)
+                .append(" WHERE 1 <> 1");
+        return new SqlEntry(sql.toString());
+    }
+
     public SqlEntry getRemoveEntry(Object table) {
         return new SqlEntry(new StringBuffer("DROP TABLE ").append(
                 getTableName(table)).toString());

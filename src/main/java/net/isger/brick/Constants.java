@@ -34,6 +34,8 @@ public interface Constants {
 
     public static final String BRICK_DESCRIBE = "brick.module.describe";
 
+    public static final String BRICK_CACHES = "brick.caches";
+
     // =================================================================
 
     public static final String MOD_CACHE = "cache";

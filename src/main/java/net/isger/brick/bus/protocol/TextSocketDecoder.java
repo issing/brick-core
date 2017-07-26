@@ -1,80 +1,88 @@
 package net.isger.brick.bus.protocol;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import net.isger.brick.Constants;
-import net.isger.brick.bus.protocol.SocketProtocol.Decoder;
+import net.isger.brick.bus.protocol.SocketProtocol.DecoderAdapter;
+import net.isger.util.Asserts;
+import net.isger.util.Strings;
 
-public class TextSocketDecoder implements Decoder {
+public class TextSocketDecoder extends DecoderAdapter {
 
     private static final int MIN_CACHE = 64;
 
     public static final int MAX_LIMIT = Integer.MAX_VALUE - MIN_CACHE;
 
-    private String encoding;
+    private String sourceCharset;
 
-    private int limit;
+    private String targetCharset;
 
-    private transient int capacity;
-
-    private transient int cache;
-
-    private transient byte[] delimiters;
+    private transient byte[] delimiter;
 
     public TextSocketDecoder() {
-        this(Constants.DEFAULT_ENCODING, TextSocketProtocol.DELIMITER);
+        this(Constants.DEFAULT_ENCODING, Constants.DEFAULT_ENCODING,
+                TextSocketProtocol.DELIMITER);
     }
 
-    public TextSocketDecoder(String encoding, String delimiter) {
-        this.encoding = encoding;
+    public TextSocketDecoder(String sourceCharset, String targetCharset,
+            String delimiter) {
+        this.sourceCharset = sourceCharset;
+        this.targetCharset = targetCharset;
         try {
-            delimiters = delimiter.getBytes(encoding);
+            this.delimiter = delimiter.getBytes(sourceCharset);
         } catch (UnsupportedEncodingException e) {
-            throw new IllegalArgumentException("Unsupported encoding ["
-                    + encoding + "]");
+            throw Asserts.argument("Unsupported encoding [{}]", sourceCharset);
         }
-        int maxLimit = MAX_LIMIT - delimiters.length;
-        /* 缓存容量 */
-        if (limit < 0) {
-            limit = 0;
-        } else if (limit > maxLimit) {
-            limit = maxLimit;
-        }
-        capacity = limit + delimiters.length;
-        cache = capacity + MIN_CACHE;
     }
 
-    public Object decode(byte[] data) {
-        return decode(new ByteArrayInputStream(data));
-    }
-
-    public Object decode(InputStream in) {
-        in.mark(0);
-        byte[] data = new byte[cache];
+    public Object decode(InputStream is) {
+        is.mark(0);
         try {
-            int size = in.read(data);
-            if (size >= capacity) {
-                size -= delimiters.length;
-                next: for (int i = limit; i <= size; i++) {
-                    int j = 0;
-                    do {
-                        if (data[i + j] != delimiters[j]) {
-                            continue next;
-                        }
-                    } while (++j < delimiters.length);
-                    in.reset();
-                    in.skip(i + j);
-                    return new String(data, 0, i, encoding);
+            String value;
+            byte[] data = new byte[Math.max(is.available(), delimiter.length)];
+            int size = is.read(data) - delimiter.length;
+            int i = 0;
+            next: while (i++ < size) {
+                int j = 0;
+                do {
+                    if (data[i + j] != delimiter[j]) {
+                        continue next;
+                    }
+                } while (++j < delimiter.length);
+                is.reset();
+                is.skip(i + j);
+                value = new String(data, 0, i, sourceCharset).trim();
+                if (value.length() == 0
+                        || value.equals(new String(delimiter, targetCharset))) {
+                    is.mark(0);
+                    continue;
                 }
+                return Strings.toCharset(value.getBytes(sourceCharset),
+                        sourceCharset, targetCharset);
             }
-            in.reset();
+            is.reset();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
         return null;
+    }
+
+    public String getSourceCharset() {
+        return sourceCharset;
+    }
+
+    public String getTargetCharset() {
+        return targetCharset;
+    }
+
+    public String getEncoding() {
+        return getTargetCharset();
+    }
+
+    public byte[] getDelimiter() {
+        return delimiter;
     }
 
 }

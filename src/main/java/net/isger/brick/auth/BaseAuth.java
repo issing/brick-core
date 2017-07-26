@@ -52,7 +52,12 @@ public class BaseAuth extends BaseGate implements Auth {
         } else if (identity.isLogin()) {
             logout(identity);
         }
-        cmd.setResult(login(identity, authenticator.handle(cmd)));
+        Object result = null;
+        AuthToken<?> token = login(identity, authenticator.handle(cmd));
+        if (token != null) {
+            result = token.getSource();
+        }
+        cmd.setResult(result);
     }
 
     /**
@@ -71,7 +76,7 @@ public class BaseAuth extends BaseGate implements Auth {
      * @param token
      * @return
      */
-    protected Object login(AuthIdentity identity, Object token) {
+    protected AuthToken<?> login(AuthIdentity identity, AuthToken<?> token) {
         if (token != null) {
             identity.setToken(token);
         }
@@ -84,8 +89,9 @@ public class BaseAuth extends BaseGate implements Auth {
     public final void check(AuthCommand cmd) {
         /* 认证初验 */
         AuthIdentity identity = cmd.getIdentity();
-        cmd.setResult(checker.isIgnore(cmd.getToken()) || identity != null
-                && Helpers.toBoolean(check(identity, cmd.getToken())));
+        cmd.setResult(identity != null
+                && Helpers.toBoolean(check(identity, cmd.getToken()))
+                || checker.isIgnore(cmd.getToken()));
         /* 检验器终验 */
         checker.handle(cmd);
     }
@@ -105,10 +111,7 @@ public class BaseAuth extends BaseGate implements Auth {
      * 授权
      */
     public final void auth(AuthCommand cmd) {
-        // String identity = cmd.getIdentity();
-        // if (identities.get(identity) != null) {
         cmd.setResult(authorizer.handle(cmd));
-        // }
     }
 
     /**
@@ -130,8 +133,8 @@ public class BaseAuth extends BaseGate implements Auth {
         if (identity == null) {
             return;
         }
-        identity.setToken(null);
         identity.clear();
+        identity.setToken(null);
     }
 
     /**

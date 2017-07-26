@@ -1,10 +1,10 @@
-﻿{
-    module : {
-        class : "net.isger.brick.test.TestModule",
-        parameters : {
-            target : "net.isger.brick.test.TestGate"
+{
+    "module": {
+        "class": "net.isger.brick.test.TestModule",
+        "parameters": {
+            "target": "net.isger.brick.test.TestGate"
         },
-        something : "this is module"
+        "something": "this is module"
     },
-    command : "net.isger.brick.test.TestCommand"
+    "command": "net.isger.brick.test.TestCommand"
 }

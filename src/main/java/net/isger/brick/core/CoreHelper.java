@@ -1,7 +1,6 @@
 package net.isger.brick.core;
 
 import net.isger.brick.Constants;
-import net.isger.brick.cache.Cache;
 import net.isger.brick.cache.CacheModule;
 import net.isger.util.Callable;
 
@@ -76,10 +75,6 @@ public class CoreHelper {
 
     public static CacheModule getCacheModule() {
         return (CacheModule) getConsole().getModule(Constants.MOD_CACHE);
-    }
-
-    public static Cache getCache(String name) {
-        return getCacheModule().getCache(name);
     }
 
 }

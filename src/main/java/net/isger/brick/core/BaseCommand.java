@@ -7,13 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.avro.Schema;
+
 import net.isger.brick.auth.AuthIdentity;
 import net.isger.brick.stub.model.Model;
 import net.isger.util.Helpers;
 import net.isger.util.Reflects;
 import net.isger.util.reflect.BoundField;
-
-import org.apache.avro.Schema;
 
 /**
  * 基本命令
@@ -205,7 +205,8 @@ public class BaseCommand extends Command implements Cloneable {
         return getParameter(type, null, isBatch);
     }
 
-    public Object getParameter(Class<?> type, String namespace, boolean isBatch) {
+    public Object getParameter(Class<?> type, String namespace,
+            boolean isBatch) {
         return shell.getParameter(type, namespace, isBatch);
     }
 
@@ -368,7 +369,8 @@ public class BaseCommand extends Command implements Cloneable {
 
         @SuppressWarnings("unchecked")
         private Map<String, Object> gets(int index) {
-            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(index);
+            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(
+                    index);
             Map<String, Object> result = new HashMap<String, Object>(
                     indeces.size());
             ByteBuffer buffer;
@@ -382,34 +384,48 @@ public class BaseCommand extends Command implements Cloneable {
 
         @SuppressWarnings("unchecked")
         private void sets(int index, Map<String, Object> values) {
-            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(index);
-            for (Entry<String, Object> entry : values.entrySet()) {
-                set(indeces, entry.getKey(), entry.getValue());
+            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(
+                    index);
+            if (values == null) {
+                clear(indeces);
+            } else {
+                for (Entry<String, Object> entry : values.entrySet()) {
+                    set(indeces, entry.getKey(), entry.getValue());
+                }
             }
         }
 
         @SuppressWarnings("unchecked")
         public <T> T get(int index, CharSequence key) {
-            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(index);
+            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(
+                    index);
             return (T) this.mappings.get(indeces.get(key));
         }
 
         @SuppressWarnings("unchecked")
         public void set(int index, CharSequence key, Object value) {
-            Map<CharSequence, ByteBuffer> buffers = (Map<CharSequence, ByteBuffer>) get(index);
+            Map<CharSequence, ByteBuffer> buffers = (Map<CharSequence, ByteBuffer>) get(
+                    index);
             set(buffers, key, value);
         }
 
         private void set(Map<CharSequence, ByteBuffer> indeces,
                 CharSequence key, Object value) {
-            ByteBuffer index;
-            synchronized (indeces) {
-                if ((index = indeces.get(key)) == null) {
-                    indeces.put(key, index = mapping(value));
-                    return;
+            ByteBuffer index = indeces.get(key);
+            if (value == null) {
+                if (index != null) {
+                    indeces.remove(key);
+                    mappings.remove(index);
                 }
+            } else {
+                synchronized (indeces) {
+                    if (index == null) {
+                        indeces.put(key, index = mapping(value));
+                        return;
+                    }
+                }
+                mappings.put(index, value);
             }
-            this.mappings.put(index, value);
         }
 
         private ByteBuffer mapping(Object value) {
@@ -417,10 +433,17 @@ public class BaseCommand extends Command implements Cloneable {
             synchronized (mappings) {
                 do {
                     index = ByteBuffer.wrap(Helpers.makeUUID().getBytes());
-                } while (this.mappings.containsKey(index));
-                this.mappings.put(index, value);
+                } while (mappings.containsKey(index));
+                mappings.put(index, value);
             }
             return index;
+        }
+
+        private void clear(Map<CharSequence, ByteBuffer> indeces) {
+            for (ByteBuffer index : indeces.values()) {
+                mappings.remove(index);
+            }
+            indeces.clear();
         }
 
         public Map<String, Object> getHeader() {
@@ -477,7 +500,9 @@ public class BaseCommand extends Command implements Cloneable {
                 boolean isBatch) {
             Map<String, Object> params = Helpers.getMap(getParameter(),
                     namespace);
-            if (!isBatch) {
+            if (Map.class.isAssignableFrom(type)) {
+                return params;
+            } else if (!isBatch) {
                 return Reflects.newInstance(type, params);
             }
             List<Object> result = new ArrayList<Object>();

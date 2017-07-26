@@ -1,17 +1,15 @@
 package net.isger.brick.bus.protocol;
 
-import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 
-import net.isger.brick.bus.protocol.SocketProtocol.Decoder;
+import net.isger.brick.bus.protocol.SocketProtocol.DecoderAdapter;
 
-public class ObjectSocketDecoder implements Decoder {
+public class ObjectSocketDecoder extends DecoderAdapter {
 
-    public Object decode(byte[] data) {
+    public Object decode(InputStream is) {
         try {
-            ObjectInputStream oos = new ObjectInputStream(
-                    new ByteArrayInputStream(data));
-            return oos.readObject();
+            return new ObjectInputStream(is).readObject();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }

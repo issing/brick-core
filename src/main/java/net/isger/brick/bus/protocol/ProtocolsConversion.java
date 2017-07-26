@@ -1,5 +1,7 @@
 package net.isger.brick.bus.protocol;
 
+import java.io.File;
+
 import net.isger.brick.util.ScanLoader;
 import net.isger.util.Strings;
 import net.isger.util.reflect.conversion.Conversion;
@@ -13,7 +15,7 @@ public class ProtocolsConversion extends ScanLoader implements Conversion {
 
     static {
         FILTER = new ScanFilter() {
-            public boolean isDeep() {
+            public boolean isDeep(File root, File path) {
                 return true;
             }
 

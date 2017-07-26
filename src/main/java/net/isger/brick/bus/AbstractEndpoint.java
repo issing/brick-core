@@ -6,8 +6,6 @@ import java.util.Map;
 
 import net.isger.brick.Constants;
 import net.isger.brick.bus.protocol.Protocol;
-import net.isger.brick.core.CommandHandler;
-import net.isger.brick.core.Handler;
 import net.isger.brick.inject.Container;
 import net.isger.brick.util.CommandOperator;
 import net.isger.util.Strings;
@@ -48,7 +46,7 @@ public abstract class AbstractEndpoint implements Endpoint {
     private Protocol endpointProtocol;
 
     @Ignore(mode = Mode.INCLUDE)
-    private Handler handler;
+    private IdentityHandler handler;
 
     @Ignore(mode = Mode.INCLUDE)
     private Map<String, Object> parameters;
@@ -63,27 +61,28 @@ public abstract class AbstractEndpoint implements Endpoint {
         if (Strings.isEmpty(this.protocol)) {
             this.protocol = name();
         }
-        findProtocol(this.protocol, this.getClass(), null);
-        if (handler == null) {
-            handler = new CommandHandler();
+        this.endpointProtocol = findProtocol(this.protocol, this.getClass(),
+                null);
+        if (handler != null) {
+            container.inject(handler);
         }
-        container.inject(handler);
         open();
         status = Status.ACTIVATED;
     }
 
     @SuppressWarnings("unchecked")
-    private void findProtocol(String protocol, Class<?> clazz, String namespace) {
+    private Protocol findProtocol(String name, Class<?> clazz, String namespace) {
+        Protocol protocol;
         if (Strings.isEmpty(namespace)) {
-            endpointProtocol = bus.getProtocol(protocol);
+            protocol = bus.getProtocol(name);
         } else {
-            endpointProtocol = bus.getProtocol(protocol + "." + namespace);
+            protocol = bus.getProtocol(name + "." + namespace);
         }
-        if (endpointProtocol != null || clazz == AbstractEndpoint.class) {
-            return;
+        if (protocol == null && clazz != AbstractEndpoint.class) {
+            protocol = findProtocol(name, clazz.getSuperclass(),
+                    Endpoints.getName((Class<Endpoint>) clazz));
         }
-        findProtocol(protocol, clazz.getSuperclass(),
-                Endpoints.getName((Class<Endpoint>) clazz));
+        return protocol;
     }
 
     public String name() {
@@ -105,7 +104,7 @@ public abstract class AbstractEndpoint implements Endpoint {
         return endpointProtocol;
     }
 
-    public Handler getHandler() {
+    public IdentityHandler getHandler() {
         return handler;
     }
 

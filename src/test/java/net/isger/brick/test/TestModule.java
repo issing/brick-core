@@ -4,7 +4,6 @@ import java.util.List;
 
 import net.isger.brick.Constants;
 import net.isger.brick.cache.Cache;
-import net.isger.brick.cache.CacheModule;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Context;
 import net.isger.brick.core.GateModule;
@@ -17,8 +16,8 @@ import net.isger.util.anno.Ignore.Mode;
 public class TestModule extends GateModule {
 
     @Ignore(mode = Mode.INCLUDE)
-    @Alias(Constants.MOD_CACHE)
-    private Module caches;
+    @Alias(Constants.SYSTEM)
+    private Cache cache;
 
     private String something;
 
@@ -29,18 +28,14 @@ public class TestModule extends GateModule {
         BaseCommand.getAction().setResult(
                 "TestModule does not implement the operate ["
                         + Context.getAction().getCommand().getOperate()
-                        + "] - cache.get(\"say\"): " + getCache().get("say"));
+                        + "] - cache.get(\"say\"): " + cache.get("say"));
     }
 
     public void say() {
-        getCache().set("say", something + " in the cache");
+        cache.set("say", something + " in the cache");
         BaseCommand.getAction().setResult(
                 "TestModule say [" + something + "] - (Modules: " + modules
                         + ")");
-    }
-
-    private Cache getCache() {
-        return ((CacheModule) caches).getCache(Constants.SYSTEM);
     }
 
 }

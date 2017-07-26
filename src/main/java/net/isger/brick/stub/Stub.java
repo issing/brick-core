@@ -40,6 +40,13 @@ public interface Stub extends Gate {
     public void select(StubCommand cmd);
 
     /**
+     * 存在
+     * 
+     * @param cmd
+     */
+    public void exists(StubCommand cmd);
+
+    /**
      * 移除
      * 
      * @param cmd

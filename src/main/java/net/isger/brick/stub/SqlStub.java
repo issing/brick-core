@@ -134,7 +134,7 @@ public class SqlStub extends AbstractStub {
     private void initialModel(StubCommand cmd, Object table) {
         cmd.setTable(table);
         try {
-            select(cmd);
+            exists(cmd);
         } catch (Exception e) {
             create(cmd);
             Model model;
@@ -359,6 +359,44 @@ public class SqlStub extends AbstractStub {
                             .longValue();
                     result = (Object[]) target;
                 }
+            }
+        } finally {
+            close(conn);
+        }
+        cmd.setResult(result);
+    }
+
+    /**
+     * 检查表是否存在
+     * 
+     * @param cmd
+     */
+    @Ignore(mode = Mode.INCLUDE)
+    public void exists(StubCommand cmd) {
+        Object table = cmd.getTable();
+        Object[] condition = getCondition(cmd, 3);
+        final Connection conn = getConnection(cmd);
+        Object[] result;
+        search: try {
+            SqlEntry sqlEntry;
+            if (table instanceof String) {
+                sqlEntry = dialect.getExistsEntry((String) table);
+                result = Sqls.query(sqlEntry, conn);
+            } else if (table instanceof Class) {
+                canonicalize(cmd.getOperate(), condition);
+                String sql = Sqls.getSQL((Class<?>) table, dialect.name(),
+                        Strings.empty(condition[0], "exists"),
+                        (Object[]) condition[2]);
+                sqlEntry = transformer.transform(dialect.getSearchEntry(sql,
+                        (Object[]) condition[1]));
+                result = Sqls.query(sqlEntry, conn);
+            } else {
+                result = (Object[]) Helpers.each(table, new Callable<Object>() {
+                    public Object call(Object... args) {
+                        return Sqls.query(dialect.getExistsEntry(args[1]), conn);
+                    }
+                });
+                break search;
             }
         } finally {
             close(conn);

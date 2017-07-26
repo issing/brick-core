@@ -1,32 +1,49 @@
 package net.isger.brick.auth;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.isger.util.Helpers;
+
 public class AuthIdentity {
 
-    private Object token;
+    private String id;
+
+    private long time;
+
+    private AuthToken<?> token;
 
     private Map<String, Object> attributes;
 
     public AuthIdentity() {
+        this.id = Helpers.makeUUID();
+        this.time = System.currentTimeMillis();
         this.attributes = new HashMap<String, Object>();
     }
 
-    public AuthIdentity(Object token) {
+    public AuthIdentity(AuthToken<?> token) {
         this();
         this.token = token;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public Date getTime() {
+        return new Date(time);
     }
 
     public boolean isLogin() {
         return this.token != null;
     }
 
-    public Object getToken() {
+    public AuthToken<?> getToken() {
         return token;
     }
 
-    public void setToken(Object token) {
+    void setToken(AuthToken<?> token) {
         this.token = token;
     }
 
@@ -35,7 +52,15 @@ public class AuthIdentity {
     }
 
     public void setAttribute(String name, Object value) {
-        attributes.put(name, value);
+        if (value == null) {
+            attributes.remove(name);
+        } else {
+            attributes.put(name, value);
+        }
+    }
+
+    public void active() {
+        this.time = System.currentTimeMillis();
     }
 
     public void clear() {

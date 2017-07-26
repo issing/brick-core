@@ -39,9 +39,9 @@ public class BaseTask implements Task {
 
     public void submit(TaskCommand taskCmd) {
         final BaseCommand command = BaseCommand.cast(taskCmd.getCommand());
-        final net.isger.util.Callable<?> callback = taskCmd.getCallback();
-        taskCmd.setResult(executor.submit(command == null ? callback
-                : new Callable<Object>() {
+        final net.isger.util.Callable<Object> callback = taskCmd.getCallback();
+        taskCmd.setResult(executor
+                .submit(command == null ? callback : new Callable<Object>() {
                     public Object call() throws Exception {
                         console.execute(command);
                         return callback == null ? command.getResult()

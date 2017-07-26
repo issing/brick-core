@@ -2,6 +2,7 @@ package net.isger.brick.util;
 
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Command;
+import net.isger.util.Asserts;
 import net.isger.util.DynamicOperator;
 import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
@@ -63,8 +64,8 @@ public class CommandOperator extends DynamicOperator {
         try {
             super.operate();
         } catch (Throwable cause) {
-            throw new IllegalStateException("Failure to invoke [" + operate
-                    + "] in " + getSource(), cause);
+            throw Asserts.state("Failure to invoke [%s] in %s", operate,
+                    getSource(), cause);
         }
     }
 

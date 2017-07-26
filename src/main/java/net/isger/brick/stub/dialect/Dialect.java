@@ -69,6 +69,10 @@ public interface Dialect extends Named {
 
     public SqlEntry getSearchEntry(String sql, Object[] values);
 
+    public SqlEntry getExistsEntry(Object table);
+    
+    public SqlEntry getExistsEntry(String tableName);
+
     public SqlEntry getRemoveEntry(Object table);
 
 }

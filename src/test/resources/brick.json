@@ -1,36 +1,37 @@
-﻿{
-    /** 认证模块 */
-    auth : {
-        test : {
-            checker : {
-                ignores : [ "test-domain:say", "test-domain:other", "say", "other" ]
+{
+    "auth": {
+        "test": {
+            "checker": {
+                "ignores": [
+                    "test-domain:say",
+                    "test-domain:other",
+                    "say",
+                    "other"
+                ]
             }
         }
     },
-    /** 总线模块 */
-    bus : {
-        endpoints : {
-            test : {
-                class : "net.isger.brick.test.TestEndpoint"
+    "bus": {
+        "endpoints": {
+            "test": {
+                "class": "net.isger.brick.test.TestEndpoint"
             }
         }
     },
-    /** 测试模块 */
-    test : {
-        test-domain : {
-            something : "this is gate."
+    "test": {
+        "test-domain": {
+            "something": "this is gate."
         }
     },
-    /** 未知模块（系统忽略） */
-    other : {
+    "other": {
+        
     },
-    /** 存根模块 */
-    stub : {
-        test : {
-            parameters : {
-                driverName : "org.h2.Driver",
-                url : "jdbc:h2:mem:activiti;DB_CLOSE_DELAY=1000",
-                user : "sa"
+    "stub": {
+        "test": {
+            "parameters": {
+                "driverName": "org.h2.Driver",
+                "url": "jdbc:h2:mem:activiti;DB_CLOSE_DELAY=1000",
+                "user": "sa"
             }
         }
     }

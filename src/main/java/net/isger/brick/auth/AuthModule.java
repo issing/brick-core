@@ -1,5 +1,6 @@
 package net.isger.brick.auth;
 
+import net.isger.brick.Constants;
 import net.isger.brick.core.Gate;
 import net.isger.brick.core.GateModule;
 
@@ -11,8 +12,6 @@ import net.isger.brick.core.GateModule;
  */
 public class AuthModule extends GateModule {
 
-    private static final String AUTH = "auth";
-
     public Class<? extends Gate> getTargetClass() {
         return Auth.class;
     }
@@ -20,7 +19,7 @@ public class AuthModule extends GateModule {
     @SuppressWarnings("unchecked")
     public Class<? extends Gate> getImplementClass() {
         Class<? extends Gate> implClass = (Class<? extends Gate>) getImplementClass(
-                AUTH, null);
+                Constants.MOD_AUTH, null);
         if (implClass == null) {
             implClass = super.getImplementClass();
         }
@@ -29,6 +28,23 @@ public class AuthModule extends GateModule {
 
     public Class<? extends Gate> getBaseClass() {
         return BaseAuth.class;
+    }
+
+    public void initial() {
+        makeAuth(Constants.SYSTEM);
+        super.initial();
+    }
+
+    /**
+     * 获取缓存
+     * 
+     * @param name
+     * @return
+     */
+    private void makeAuth(String name) {
+        if (this.getGate(name) == null) {
+            this.setGate(name, createGate());
+        }
     }
 
 }
