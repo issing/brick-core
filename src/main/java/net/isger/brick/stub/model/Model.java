@@ -54,23 +54,14 @@ public class Model implements Cloneable {
         Converter.addConversion(MetasConversion.CONVERSION);
     }
 
-    public Model(Object... metas) {
-        this.metas = new Metas();
+    public Model() {
         this.name = Sqls.getTableName(this.getClass(), "Model$");
-        Meta meta;
-        boolean isBelong;
-        for (Object instance : metas) {
-            if (instance instanceof Object[]) {
-                meta = new Meta((Object[]) instance);
-                isBelong = true;
-            } else if (instance instanceof Meta) {
-                meta = ((Meta) instance).clone();
-                isBelong = false;
-            } else {
-                throw new IllegalArgumentException(String.valueOf(instance));
-            }
-            meta(isBelong, meta);
-        }
+        this.metas = new Metas();
+    }
+
+    public Model(Object[] metas) {
+        this();
+        this.metas(metas);
     }
 
     public Model(String name, Object... metas) {
@@ -80,10 +71,14 @@ public class Model implements Cloneable {
         }
     }
 
+    public Model(String name, Metas metas) {
+        this.name = name;
+        this.metas = metas;
+    }
+
     public boolean isModel() {
-        return Model.class != this.getClass()
-                || !modelName()
-                        .equalsIgnoreCase(Sqls.getTableName(Model.class));
+        return Model.class != this.getClass() || !modelName()
+                .equalsIgnoreCase(Sqls.getTableName(Model.class));
     }
 
     public String modelId() {
@@ -124,8 +119,8 @@ public class Model implements Cloneable {
 
     public void modelSchema(Object schema) {
         if (schema instanceof String) {
-            Artifact artifact = Depository.getArtifact(new StringRaw(
-                    (String) schema));
+            Artifact artifact = Depository
+                    .getArtifact(new StringRaw((String) schema));
             if (artifact != null) {
                 schema = artifact.transform(Map.class);
             }
@@ -135,6 +130,23 @@ public class Model implements Cloneable {
 
     public Metas metas() {
         return metas;
+    }
+
+    public void metas(Object[] metas) {
+        Meta meta;
+        boolean isBelong;
+        for (Object instance : metas) {
+            if (instance instanceof Object[]) {
+                meta = new Meta((Object[]) instance);
+                isBelong = true;
+            } else if (instance instanceof Meta) {
+                meta = ((Meta) instance).clone();
+                isBelong = false;
+            } else {
+                throw new IllegalArgumentException(String.valueOf(instance));
+            }
+            meta(isBelong, meta);
+        }
     }
 
     public void meta(Meta meta) {
@@ -173,8 +185,14 @@ public class Model implements Cloneable {
 
     public void metaValue(Map<?, ?> values) {
         for (String name : this.metas().names()) {
-            this.metaValue(name, values.get(values.containsKey(name) ? name
-                    : Sqls.toFieldName(name)));
+            this.metaValue(name, values.get(
+                    values.containsKey(name) ? name : Sqls.toFieldName(name)));
+        }
+    }
+
+    public void metaEmpty() {
+        for (Meta meta : this.metas().values()) {
+            meta.setValue(null);
         }
     }
 
@@ -187,6 +205,28 @@ public class Model implements Cloneable {
         }
         model.metas = metas.clone();
         return model;
+    }
+
+    public static String getName(Object instance) {
+        if (instance instanceof Model) {
+            return ((Model) instance).modelName();
+        } else if (instance instanceof String) {
+            return (String) instance;
+        }
+        return Sqls.getTableName(instance instanceof Class ? (Class<?>) instance
+                : instance.getClass());
+    }
+
+    public static Model create(Object instance) {
+        if (instance instanceof Model) {
+            return (Model) instance;
+        } else if (instance instanceof String) {
+            return new Model((String) instance);
+        }
+        return new Model(
+                Sqls.getTableName(instance instanceof Class
+                        ? (Class<?>) instance : instance.getClass()),
+                Metas.getMetas(instance));
     }
 
 }

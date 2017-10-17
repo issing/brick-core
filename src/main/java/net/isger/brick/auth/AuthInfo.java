@@ -51,8 +51,8 @@ public class AuthInfo {
     }
 
     public void setPermissions(List<String> permissions) {
+        this.permissions.clear();
         if (permissions != null) {
-            this.permissions.clear();
             this.permissions.addAll(permissions);
         }
     }

@@ -2,14 +2,14 @@ package net.isger.brick.bus;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.isger.brick.Constants;
 import net.isger.brick.core.AbstractModule;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.inject.ConstantStrategy;
 import net.isger.util.Asserts;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class BusModule extends AbstractModule {
 
@@ -94,10 +94,10 @@ public class BusModule extends AbstractModule {
     }
 
     /**
-     * 创建总线实例（暂不支持键值对以外配置方式）
+     * 创建默认总线
      */
-    protected Object create(Object res) {
-        throw new IllegalArgumentException("Unexpected config " + res);
+    protected Bus create() {
+        return (Bus) super.create();
     }
 
     public void initial() {
@@ -105,8 +105,8 @@ public class BusModule extends AbstractModule {
         /* 初始总线 */
         Bus bus = getBus();
         if (bus == null) {
-            setBus(bus = new BaseBus());
-            container.inject(bus);
+            setBus(create());
+            bus = getBus();
         }
         bus.initial();
     }

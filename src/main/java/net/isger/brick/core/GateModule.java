@@ -6,15 +6,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.isger.brick.inject.ConstantStrategy;
 import net.isger.brick.stub.StubCommand;
 import net.isger.util.Asserts;
 import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 关卡模块
@@ -71,10 +71,10 @@ public class GateModule extends AbstractModule {
     }
 
     /**
-     * 创建目标实例（暂不支持键值对以外配置方式）
+     * 创建门
      */
-    protected Object create(Object res) {
-        throw new IllegalArgumentException("Unexpected config " + res);
+    protected Gate create() {
+        return (Gate) super.create();
     }
 
     /**
@@ -118,10 +118,6 @@ public class GateModule extends AbstractModule {
     protected Gate createGate(Class<? extends Gate> clazz,
             Map<String, Object> config) {
         return (Gate) super.create(clazz, config);
-    }
-
-    protected Gate createGate() {
-        return (Gate) super.create(getImplementClass(), null);
     }
 
     /**
@@ -233,8 +229,7 @@ public class GateModule extends AbstractModule {
         } else {
             /* 关卡操作 */
             Gate gate = getGate(domain);
-            Asserts.isNotNull(
-                    gate,
+            Asserts.isNotNull(gate,
                     "Unfound the specified domain [%s] in the module [%s], Check whether it is configured in the brick configuration file",
                     domain, this.getClass().getName());
             setInternal(Gate.KEY_GATE, gate);

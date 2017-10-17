@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.CommandHandler;
 import net.isger.brick.core.Handler;
-import net.isger.util.anno.Infect;
+import net.isger.util.Helpers;
 
 /**
  * 检验器
@@ -17,10 +19,11 @@ import net.isger.util.anno.Infect;
  */
 public class AuthChecker extends CommandHandler {
 
+    /** 忽略项集合 */
     private List<String> ignores;
 
     /** 自定义检验处理器 */
-    @Infect
+    @Inject
     private Handler handler;
 
     public AuthChecker() {
@@ -38,7 +41,7 @@ public class AuthChecker extends CommandHandler {
     public final Object handle(Object message) {
         AuthCommand cmd = (AuthCommand) message;
         Object result;
-        if ((boolean) cmd.getResult()) {
+        if (Helpers.toBoolean(cmd.getResult())) {
             /* 绕过认证，执行命令 */
             cmd.setDomain(null);
             cmd.setOperate(null);

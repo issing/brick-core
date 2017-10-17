@@ -46,12 +46,14 @@ public class BaseAuth extends BaseGate implements Auth {
      * 登录
      */
     public final void login(AuthCommand cmd) {
+        /* 身份处理 */
         AuthIdentity identity = cmd.getIdentity();
         if (identity == null) {
             cmd.setIdentity(identity = createIdentity());
         } else if (identity.isLogin()) {
             logout(identity);
         }
+        /* 登录处理 */
         Object result = null;
         AuthToken<?> token = login(identity, authenticator.handle(cmd));
         if (token != null) {
@@ -141,6 +143,7 @@ public class BaseAuth extends BaseGate implements Auth {
      * 注销
      */
     public void destroy() {
+        super.destroy();
     }
 
 }

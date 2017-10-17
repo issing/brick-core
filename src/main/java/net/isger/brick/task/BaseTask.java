@@ -12,6 +12,11 @@ import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 
+/**
+ * 基础任务
+ * 
+ * @author issing
+ */
 public class BaseTask implements Task {
 
     /** 控制台 */
@@ -37,10 +42,15 @@ public class BaseTask implements Task {
         operator.operate(cmd);
     }
 
-    public void submit(TaskCommand taskCmd) {
-        final BaseCommand command = BaseCommand.cast(taskCmd.getCommand());
-        final net.isger.util.Callable<Object> callback = taskCmd.getCallback();
-        taskCmd.setResult(executor
+    /**
+     * 提交任务
+     *
+     * @param cmd
+     */
+    public void submit(TaskCommand cmd) {
+        final BaseCommand command = BaseCommand.cast(cmd.getCommand());
+        final net.isger.util.Callable<Object> callback = cmd.getCallback();
+        cmd.setResult(executor
                 .submit(command == null ? callback : new Callable<Object>() {
                     public Object call() throws Exception {
                         console.execute(command);

@@ -2,6 +2,11 @@ package net.isger.brick.auth;
 
 import net.isger.brick.core.CoreHelper;
 
+/**
+ * 认证助手
+ * 
+ * @author issing
+ */
 public class AuthHelper extends CoreHelper {
 
     protected AuthHelper() {

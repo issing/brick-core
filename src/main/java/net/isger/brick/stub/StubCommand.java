@@ -44,8 +44,8 @@ public class StubCommand extends GateCommand {
     }
 
     public static StubCommand cast(BaseCommand cmd) {
-        return cmd == null || cmd.getClass() == StubCommand.class ? (StubCommand) cmd
-                : cmd.infect(new StubCommand(false));
+        return cmd == null || cmd.getClass() == StubCommand.class
+                ? (StubCommand) cmd : cmd.infect(new StubCommand(false));
     }
 
     public void useModel(Class<?> clazz) {
@@ -90,6 +90,10 @@ public class StubCommand extends GateCommand {
 
     public void setCondition(Object... condition) {
         setCondition(this, condition);
+    }
+
+    public StubCommand clone() {
+        return (StubCommand) super.clone();
     }
 
 }

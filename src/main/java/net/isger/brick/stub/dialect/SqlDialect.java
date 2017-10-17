@@ -14,7 +14,6 @@ import net.isger.brick.stub.model.Options;
 import net.isger.util.Dates;
 import net.isger.util.Helpers;
 import net.isger.util.Reflects;
-import net.isger.util.Sqls;
 import net.isger.util.Strings;
 import net.isger.util.reflect.BoundField;
 import net.isger.util.sql.Page;
@@ -371,13 +370,7 @@ public class SqlDialect implements Dialect {
     }
 
     protected String getTableName(Object table) {
-        if (table instanceof Model) {
-            return ((Model) table).modelName();
-        } else if (table instanceof String) {
-            return (String) table;
-        }
-        return Sqls.getTableName(
-                table instanceof Class ? (Class<?>) table : table.getClass());
+        return Model.getName(table);
     }
 
     protected String[] getColumnNames(Object table) {
@@ -477,8 +470,11 @@ public class SqlDialect implements Dialect {
                 continue;
             }
             if ((value = meta.getValue(table)) != null) {
-                columns.add(column = meta.getName());
-                row.add(getColumnValue(column, value));
+                column = meta.getName();
+                if ((value = getColumnValue(column, value)) != null) {
+                    columns.add(column);
+                    row.add(value);
+                }
             }
         }
         return new Object[] { columns.toArray(new String[columns.size()]),
@@ -510,6 +506,7 @@ public class SqlDialect implements Dialect {
                 || value instanceof CharSequence) {
             return value;
         }
+        // TODO 根据名称规则获取对象属性（临时解决方案）
         String[] pending = name.split("[_]", 2);
         if (pending.length == 1) {
             return value;

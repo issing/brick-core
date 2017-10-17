@@ -55,7 +55,7 @@ public class CacheModule extends GateModule {
      */
     private void makeCache(String name) {
         if (this.getGate(name) == null) {
-            this.setGate(name, createGate());
+            this.setGate(name, create());
         }
     }
 

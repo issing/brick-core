@@ -1,12 +1,17 @@
 package net.isger.brick.auth;
 
-public class BaseAuthToken extends AuthToken<BaseAuthToken> {
+/**
+ * 基础令牌
+ * 
+ * @author issing
+ */
+public class BaseToken extends AuthToken<BaseToken> {
 
     private Object principal;
 
     private Object credentials;
 
-    public BaseAuthToken(Object principal, Object credentials) {
+    public BaseToken(Object principal, Object credentials) {
         this.principal = principal;
         this.credentials = credentials;
     }

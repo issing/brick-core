@@ -1,9 +1,11 @@
 package net.isger.brick.stub.model;
 
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import net.isger.util.Asserts;
 import net.isger.util.Reflects;
 import net.isger.util.reflect.conversion.Conversion;
 
@@ -14,15 +16,15 @@ public class OptionsConversion implements Conversion {
     private OptionsConversion() {
     }
 
-    public boolean isSupport(Class<?> type) {
-        return Options.class.equals(type);
+    public boolean isSupport(Type type) {
+        return Options.class.equals(Reflects.getRawClass(type));
     }
 
     public Object convert(Object value) {
         return convert(Options.class, value);
     }
 
-    public Object convert(Class<?> type, Object value) {
+    public Object convert(Type type, Object value) {
         Options options = new Options();
         if (value instanceof Object[]) {
             value = Arrays.asList((Object[]) value);
@@ -49,8 +51,7 @@ public class OptionsConversion implements Conversion {
         } else if (value instanceof Option) {
             option = (Option) value;
         } else {
-            throw new IllegalStateException("Unexpected class conversion for "
-                    + value);
+            throw Asserts.state("Unexpected class conversion for %s", value);
         }
         return option;
     }

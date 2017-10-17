@@ -1,8 +1,10 @@
 package net.isger.brick.bus.protocol;
 
 import java.io.File;
+import java.lang.reflect.Type;
 
 import net.isger.brick.util.ScanLoader;
+import net.isger.util.Reflects;
 import net.isger.util.Strings;
 import net.isger.util.reflect.conversion.Conversion;
 import net.isger.util.scan.ScanFilter;
@@ -36,11 +38,11 @@ public class ProtocolsConversion extends ScanLoader implements Conversion {
         return INSTANCE;
     }
 
-    public boolean isSupport(Class<?> type) {
-        return Protocols.class.isAssignableFrom(type);
+    public boolean isSupport(Type type) {
+        return Protocols.class.isAssignableFrom(Reflects.getRawClass(type));
     }
 
-    public Object convert(Class<?> type, Object res) {
+    public Object convert(Type type, Object res) {
         return new Protocols(toList(load(res)));
     }
 

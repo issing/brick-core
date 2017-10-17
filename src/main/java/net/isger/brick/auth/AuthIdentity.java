@@ -6,6 +6,11 @@ import java.util.Map;
 
 import net.isger.util.Helpers;
 
+/**
+ * 认证身份
+ * 
+ * @author issing
+ */
 public class AuthIdentity {
 
     private String id;

@@ -4,6 +4,11 @@ import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Command;
 import net.isger.util.Callable;
 
+/**
+ * 任务命令
+ * 
+ * @author issing
+ */
 public class TaskCommand extends BaseCommand {
 
     public static final String OPERATE_SUBMIT = "submit";
@@ -28,8 +33,8 @@ public class TaskCommand extends BaseCommand {
     }
 
     public static TaskCommand cast(BaseCommand cmd) {
-        return cmd == null || cmd.getClass() == TaskCommand.class ? (TaskCommand) cmd
-                : cmd.infect(new TaskCommand(false));
+        return cmd == null || cmd.getClass() == TaskCommand.class
+                ? (TaskCommand) cmd : cmd.infect(new TaskCommand(false));
     }
 
     public Command getCommand() {

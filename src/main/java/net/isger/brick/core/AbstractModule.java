@@ -5,6 +5,7 @@ import java.util.Map;
 
 import net.isger.brick.util.CommandOperator;
 import net.isger.brick.util.DesignLoader;
+import net.isger.util.Asserts;
 import net.isger.util.Reflects;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
@@ -49,15 +50,19 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * @return
      */
     protected void setParameter(String name, Object value) {
-        parameters.put(name, value);
+        if (value == null) {
+            parameters.remove(name);
+        } else {
+            parameters.put(name, value);
+        }
     }
 
     /**
      * 获取目标类型
      */
     public Class<?> getTargetClass() {
-        throw new IllegalStateException("The " + this.getClass()
-                + " must override the method getTargetClass()");
+        throw Asserts.state("The %s must override the method getTargetClass()",
+                this.getClass());
     }
 
     /**
@@ -86,7 +91,8 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * @param baseClass
      * @return
      */
-    protected final Class<?> getImplementClass(String name, Class<?> baseClass) {
+    protected final Class<?> getImplementClass(String name,
+            Class<?> baseClass) {
         Class<?> implClass = Reflects.getClass(getParameter(name));
         if (implClass == null) {
             implClass = super.getImplementClass();
@@ -98,16 +104,44 @@ public abstract class AbstractModule extends DesignLoader implements Module {
     }
 
     /**
-     * 获取默认实现
+     * 获取基础实现
      * 
      * @return
      */
     protected abstract Class<?> getBaseClass();
 
+    /**
+     * 创建目标实例（默认不支持键值对以外配置方式）
+     */
+    protected Object create(Object res) {
+        throw Asserts.argument("Unexpected config: %s", res);
+    }
+
+    /**
+     * 创建默认实现
+     *
+     * @return
+     */
+    protected Object create() {
+        return super.create(getImplementClass(), null);
+    }
+
+    /**
+     * 设置内部参数（只限于命令会话生命周期内）
+     *
+     * @param key
+     * @param value
+     */
     protected void setInternal(String key, Object value) {
         ((InternalContext) Context.getAction()).setInternal(key, value);
     }
 
+    /**
+     * 获取内部参数（只限于命令会话生命周期内）
+     *
+     * @param key
+     * @return
+     */
     protected Object getInternal(String key) {
         return ((InternalContext) Context.getAction()).getInternal(key);
     }

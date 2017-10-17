@@ -44,6 +44,14 @@ public final class Meta implements Cloneable {
 
     public static final int MODE_HOOK = 2;
 
+    public static final int SCALE_O2O = 0;
+
+    public static final int SCALE_O2M = 1;
+
+    public static final int SCALE_M2O = 2;
+
+    public static final int SCALE_M2M = 3;
+
     /** 标识 */
     @Affix("{length : 20, options : [1, 3]}")
     private String id;
@@ -222,7 +230,8 @@ public final class Meta implements Cloneable {
     }
 
     public Object getValue(Object instance) {
-        if (field != null) {
+        if (field != null
+                && field.getField().getDeclaringClass().isInstance(instance)) {
             return field.getValue(instance);
         }
         return getValue();
@@ -252,9 +261,8 @@ public final class Meta implements Cloneable {
                     if (target != null) {
                         paramMetas.add(target);
                     }
-                    model.metas().set(
-                            (Metas) MetasConversion.CONVERSION
-                                    .convert(paramMetas));
+                    model.metas().set((Metas) MetasConversion.CONVERSION
+                            .convert(paramMetas));
                     return model;
                 }
                 break;

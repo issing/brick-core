@@ -153,7 +153,7 @@ public abstract class Context {
      * 
      * @param context
      */
-    static void setAction(Context context) {
+    public static void setAction(Context context) {
         ACTION.set(context);
     }
 

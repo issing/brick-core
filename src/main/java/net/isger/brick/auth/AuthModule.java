@@ -31,20 +31,10 @@ public class AuthModule extends GateModule {
     }
 
     public void initial() {
-        makeAuth(Constants.SYSTEM);
-        super.initial();
-    }
-
-    /**
-     * 获取缓存
-     * 
-     * @param name
-     * @return
-     */
-    private void makeAuth(String name) {
-        if (this.getGate(name) == null) {
-            this.setGate(name, createGate());
+        if (this.getGate(Constants.SYSTEM) == null) {
+            this.setGate(Constants.SYSTEM, create());
         }
+        super.initial();
     }
 
 }

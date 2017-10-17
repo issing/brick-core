@@ -1,9 +1,10 @@
 package net.isger.brick.auth;
 
+import javax.inject.Inject;
+
 import net.isger.brick.core.Command;
 import net.isger.brick.core.CommandHandler;
 import net.isger.brick.core.Handler;
-import net.isger.util.anno.Infect;
 
 /**
  * 授权器
@@ -14,7 +15,7 @@ import net.isger.util.anno.Infect;
 public class Authorizer extends CommandHandler {
 
     /** 自定义授权处理器 */
-    @Infect
+    @Inject
     private Handler handler;
 
     public Authorizer() {

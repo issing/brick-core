@@ -2,16 +2,20 @@ package net.isger.brick.task;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.isger.brick.Constants;
 import net.isger.brick.core.AbstractModule;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.inject.ConstantStrategy;
 import net.isger.util.Asserts;
-import net.isger.util.Callable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+/**
+ * 任务模块
+ * 
+ * @author issing
+ */
 public class TaskModule extends AbstractModule {
 
     private static final String TASK = "task";
@@ -74,11 +78,7 @@ public class TaskModule extends AbstractModule {
         if (LOG.isDebugEnabled()) {
             LOG.info("Achieve task [{}]", task);
         }
-        Class<?> type = getTargetClass();
-        setTask(type, Constants.SYSTEM, task);
-        if (type != task.getClass()) {
-            setTask(task.getClass(), Constants.SYSTEM, task);
-        }
+        setTask(Task.class, Constants.SYSTEM, task);
     }
 
     /**
@@ -96,10 +96,10 @@ public class TaskModule extends AbstractModule {
     }
 
     /**
-     * 创建任务实例（暂不支持键值对以外配置方式）
+     * 创建默认任务
      */
-    protected Object create(Object res) {
-        throw new IllegalArgumentException("Unexpected config " + res);
+    protected Task create() {
+        return (Task) super.create();
     }
 
     public void initial() {
@@ -107,23 +107,22 @@ public class TaskModule extends AbstractModule {
         /* 初始任务 */
         Task task = getTask();
         if (task == null) {
-            setTask(task = new BaseTask());
-            container.inject(task);
+            setTask(create());
+            task = getTask();
         }
         task.initial();
     }
 
     public final void execute(BaseCommand cmd) {
-        TaskCommand tcmd = (TaskCommand) cmd;
-        Callable<?> callable = tcmd.getCallback();
-        if (callable == null) {
+        TaskCommand payload = (TaskCommand) cmd;
+        if (payload.getCallback() == null && payload.getCommand() == null) {
             /* 模块操作 */
-            super.execute(tcmd);
+            super.execute(payload);
         } else {
             /* 任务操作 */
             Task task = getTask();
             setInternal(Task.BRICK_TASK, task);
-            task.operate(tcmd);
+            task.operate(payload);
         }
     }
 

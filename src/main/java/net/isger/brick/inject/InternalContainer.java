@@ -34,7 +34,8 @@ class InternalContainer implements Container {
     private ThreadLocal<InternalContext[]> context;
 
     InternalContainer(Map<Key<?>, InternalFactory<?>> factories) {
-        this.facs = new ConcurrentHashMap<Key<?>, InternalFactory<?>>(factories);
+        this.facs = new ConcurrentHashMap<Key<?>, InternalFactory<?>>(
+                factories);
         this.stgs = new ConcurrentHashMap<Key<?>, Strategy>();
         this.context = new ThreadLocal<InternalContext[]>() {
             protected InternalContext[] initialValue() {
@@ -195,16 +196,17 @@ class InternalContainer implements Container {
         if (context.hasInject(instance)) {
             Class<?> fieldType;
             Object infect;
-            for (List<BoundField> fields : Reflects.getBoundFields(
-                    instance.getClass()).values()) {
+            for (List<BoundField> fields : Reflects
+                    .getBoundFields(instance.getClass()).values()) {
                 for (BoundField field : fields) {
                     // 根据字段类型及其绑定名称获取容器注册实例
                     fieldType = field.getField().getType();
-                    if (!setInstance(instance, field, fieldType,
-                            Strings.empty(field.getAlias(), Constants.DEFAULT))) {
-                        setInstance(instance, field, fieldType, field.getName());
+                    if (!setInstance(instance, field, fieldType, Strings
+                            .empty(field.getAlias(), Constants.DEFAULT))) {
+                        setInstance(instance, field, fieldType,
+                                field.getName());
                     }
-                    if (field.isInfect()
+                    if (field.isInject()
                             && (infect = field.getValue(instance)) != null) {
                         inject(infect, context);
                     }
@@ -243,7 +245,8 @@ class InternalContainer implements Container {
                 Type[] actualTypes = paramType.getActualTypeArguments();
                 Object value;
                 if (fieldType.isAssignableFrom(ArrayList.class)) {
-                    Map<String, ?> instances = getInstances((Class<?>) actualTypes[0]);
+                    Map<String, ?> instances = getInstances(
+                            (Class<?>) actualTypes[0]);
                     value = new ArrayList<Object>(instances.values());
                 } else if (fieldType.isAssignableFrom(HashMap.class)) {
                     value = getInstances((Class<?>) actualTypes[1]);

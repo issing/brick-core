@@ -1,15 +1,18 @@
 package net.isger.brick.bus;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import net.isger.brick.util.DesignLoader;
-import net.isger.util.reflect.conversion.Conversion;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.isger.brick.util.DesignLoader;
+import net.isger.util.Asserts;
+import net.isger.util.Reflects;
+import net.isger.util.reflect.conversion.Conversion;
 
 public class EndpointsConversion extends DesignLoader implements Conversion {
 
@@ -34,12 +37,12 @@ public class EndpointsConversion extends DesignLoader implements Conversion {
         return INSTANCE;
     }
 
-    public boolean isSupport(Class<?> type) {
-        return Endpoints.class.isAssignableFrom(type);
+    public boolean isSupport(Type type) {
+        return Endpoints.class.isAssignableFrom(Reflects.getRawClass(type));
     }
 
     @SuppressWarnings("unchecked")
-    public Object convert(Class<?> type, Object res) {
+    public Object convert(Type type, Object res) {
         Map<String, Endpoint> result;
         Object instance = load(res);
         if (instance instanceof List) {
@@ -76,10 +79,9 @@ public class EndpointsConversion extends DesignLoader implements Conversion {
             }
             res = (Map<String, Object>) config;
             res.put(KEY_NAME, name);
-            result.put(
-                    name,
-                    createEndpoint((Class<? extends Endpoint>) super
-                            .getImplementClass(res), res));
+            result.put(name, createEndpoint(
+                    (Class<? extends Endpoint>) super.getImplementClass(res),
+                    res));
         }
         return result;
     }
@@ -88,7 +90,7 @@ public class EndpointsConversion extends DesignLoader implements Conversion {
      * 创建目标实例（暂不支持键值对以外配置方式）
      */
     protected Object create(Object res) {
-        throw new IllegalArgumentException("Unexpected config " + res);
+        throw Asserts.argument("Unexpected config " + res);
     }
 
     protected Endpoint createEndpoint(Class<? extends Endpoint> clazz,
