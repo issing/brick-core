@@ -11,11 +11,11 @@ import net.isger.util.Callable;
  */
 public class TaskCommand extends BaseCommand {
 
+    public static final String CTRL_COMMAND = "task-command";
+
+    public static final String CTRL_CALLBACK = "task-callback";
+
     public static final String OPERATE_SUBMIT = "submit";
-
-    public static final String KEY_COMMAND = "task-command";
-
-    public static final String KEY_CALLBACK = "task-callback";
 
     public TaskCommand() {
     }
@@ -34,23 +34,24 @@ public class TaskCommand extends BaseCommand {
 
     public static TaskCommand cast(BaseCommand cmd) {
         return cmd == null || cmd.getClass() == TaskCommand.class
-                ? (TaskCommand) cmd : cmd.infect(new TaskCommand(false));
+                ? (TaskCommand) cmd
+                : cmd.infect(new TaskCommand(false));
     }
 
     public Command getCommand() {
-        return getHeader(KEY_COMMAND);
+        return getHeader(CTRL_COMMAND);
     }
 
     public void setCommand(Command command) {
-        setHeader(KEY_COMMAND, command);
+        setHeader(CTRL_COMMAND, command);
     }
 
     public <T> Callable<T> getCallback() {
-        return getHeader(KEY_CALLBACK);
+        return getHeader(CTRL_CALLBACK);
     }
 
     public void setCallback(Callable<?> callback) {
-        setHeader(KEY_CALLBACK, callback);
+        setHeader(CTRL_CALLBACK, callback);
     }
 
 }

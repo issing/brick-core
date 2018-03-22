@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.isger.brick.Constants;
 import net.isger.brick.auth.AuthPreparer;
 import net.isger.brick.config.ModuleDescribe;
@@ -19,9 +22,6 @@ import net.isger.util.Strings;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 控制台管理器
@@ -236,8 +236,8 @@ public class ConsoleManager {
         ContainerBuilder builder = new ContainerBuilder();
         builder.factory(Prober.class, new Callable<Prober>() {
             public Prober call(Object... args) {
-                return SuffixProber.create(((Container) args[0]).getInstance(
-                        String.class, Constants.BRICK_RAW));
+                return SuffixProber.create(((Container) args[0])
+                        .getInstance(String.class, Constants.BRICK_RAW));
             }
         });
         builder.factory(Preparer.class, AuthPreparer.class);

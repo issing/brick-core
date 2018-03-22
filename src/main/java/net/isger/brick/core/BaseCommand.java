@@ -13,6 +13,7 @@ import net.isger.brick.auth.AuthIdentity;
 import net.isger.brick.stub.model.Model;
 import net.isger.util.Helpers;
 import net.isger.util.Reflects;
+import net.isger.util.Strings;
 import net.isger.util.reflect.BoundField;
 
 /**
@@ -29,13 +30,13 @@ public class BaseCommand extends Command implements Cloneable {
 
     public static final int FOOTERS = 2;
 
-    public static final String KEY_IDENTITY = "brick-identity";
+    public static final String CTRL_IDENTITY = "brick-identity";
 
-    public static final String KEY_MODULE = "brick-module";
+    public static final String CTRL_MODULE = "brick-module";
 
-    public static final String KEY_OPERATE = "brick-operate";
+    public static final String CTRL_OPERATE = "brick-operate";
 
-    public static final String KEY_RESULT = "brick-result";
+    public static final String DRCT_RESULT = "brick-result";
 
     private ShellCommand shell;
 
@@ -176,38 +177,38 @@ public class BaseCommand extends Command implements Cloneable {
     }
 
     public Model getParameter(Model model) {
-        return (Model) getParameter(model, null, false);
+        return getParameter(model, null, false);
     }
 
     public Model getParameter(Model model, String namespace) {
-        return (Model) getParameter(model, namespace, false);
+        return getParameter(model, namespace, false);
     }
 
-    public Object getParameter(Model model, boolean isBatch) {
+    public <T> T getParameter(Model model, boolean isBatch) {
         return getParameter(model, null, isBatch);
     }
 
-    public Object getParameter(Model model, String namespace, boolean isBatch) {
-        return shell.getParameter(model, namespace, isBatch);
+    @SuppressWarnings("unchecked")
+    public <T> T getParameter(Model model, String namespace, boolean isBatch) {
+        return (T) shell.getParameter(model, namespace, isBatch);
     }
 
-    @SuppressWarnings("unchecked")
     public <T> T getParameter(Class<T> type) {
-        return (T) getParameter(type, null, false);
+        return getParameter(type, null, false);
     }
 
-    @SuppressWarnings("unchecked")
     public <T> T getParameter(Class<T> type, String namespace) {
-        return (T) getParameter(type, namespace, false);
+        return getParameter(type, namespace, false);
     }
 
-    public Object getParameter(Class<?> type, boolean isBatch) {
+    public <T> T getParameter(Class<?> type, boolean isBatch) {
         return getParameter(type, null, isBatch);
     }
 
-    public Object getParameter(Class<?> type, String namespace,
+    @SuppressWarnings("unchecked")
+    public <T> T getParameter(Class<?> type, String namespace,
             boolean isBatch) {
-        return shell.getParameter(type, namespace, isBatch);
+        return (T) shell.getParameter(type, namespace, isBatch);
     }
 
     public Map<String, Object> getParameter() {
@@ -215,7 +216,31 @@ public class BaseCommand extends Command implements Cloneable {
     }
 
     public <T> T getParameter(CharSequence key) {
-        return shell.getParameter(key);
+        return getParameter(key, null, false, null);
+    }
+
+    public <T> T getParameter(CharSequence key, String namespace) {
+        return getParameter(key, namespace, false, null);
+    }
+
+    public <T> T getParameter(CharSequence key, boolean isBatch) {
+        return getParameter(key, null, isBatch, null);
+    }
+
+    public <T> T getParameter(CharSequence key, boolean isBatch,
+            String suffix) {
+        return getParameter(key, null, isBatch, suffix);
+    }
+
+    public <T> T getParameter(CharSequence key, String namespace,
+            boolean isBatch) {
+        return getParameter(key, namespace, isBatch, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getParameter(CharSequence key, String namespace,
+            boolean isBatch, String suffix) {
+        return (T) shell.getParameter(key, namespace, isBatch, suffix);
     }
 
     public void setParameter(Map<String, Object> parameters) {
@@ -532,12 +557,35 @@ public class BaseCommand extends Command implements Cloneable {
             return result;
         }
 
-        public Map<String, Object> getParameter() {
-            return gets(PARAMETERS);
+        public Object getParameter(CharSequence key, String namespace,
+                boolean isBatch, String suffix) {
+            Map<String, Object> params = Helpers.getMap(getParameter(),
+                    namespace);
+            if (!isBatch) {
+                return params.get(key);
+            }
+            suffix = Strings.empty(suffix);
+            Object values = params.get(key + "[]" + suffix);
+            if (values == null) {
+                Object pending;
+                int amount = 0;
+                List<Object> container = new ArrayList<Object>();
+                while ((pending = params
+                        .get(key + "[" + (amount++) + "]" + suffix)) != null) {
+                    container.add(pending);
+                }
+                if (container.size() > 0) {
+                    return Helpers.newArray(container.get(0).getClass(),
+                            container.toArray(), container.size());
+                } else {
+                    values = params.get(key);
+                }
+            }
+            return Helpers.newArray(values);
         }
 
-        public <T> T getParameter(CharSequence key) {
-            return get(PARAMETERS, key);
+        public Map<String, Object> getParameter() {
+            return gets(PARAMETERS);
         }
 
         public void setParameter(Map<String, Object> parameters) {
@@ -565,35 +613,35 @@ public class BaseCommand extends Command implements Cloneable {
         }
 
         public AuthIdentity getIdentity() {
-            return getHeader(KEY_IDENTITY);
+            return getHeader(CTRL_IDENTITY);
         }
 
         public void setIdentity(AuthIdentity identity) {
-            setHeader(KEY_IDENTITY, identity);
+            setHeader(CTRL_IDENTITY, identity);
         }
 
         public String getModule() {
-            return getHeader(KEY_MODULE);
+            return getHeader(CTRL_MODULE);
         }
 
         public void setModule(String module) {
-            setHeader(KEY_MODULE, module);
+            setHeader(CTRL_MODULE, module);
         }
 
         public String getOperate() {
-            return getHeader(KEY_OPERATE);
+            return getHeader(CTRL_OPERATE);
         }
 
         public void setOperate(String operate) {
-            setHeader(KEY_OPERATE, operate);
+            setHeader(CTRL_OPERATE, operate);
         }
 
         public Object getResult() {
-            return getFooter(KEY_RESULT);
+            return getFooter(DRCT_RESULT);
         }
 
         public void setResult(Object result) {
-            setFooter(KEY_RESULT, result);
+            setFooter(DRCT_RESULT, result);
         }
 
     }

@@ -6,6 +6,16 @@ import net.isger.brick.core.GateCommand;
 
 public class StubCommand extends GateCommand {
 
+    // public static final String KEY_TRANSIENT = "stub-transient";
+
+    public static final String CTRL_TRANSACTION = "stub-transaction";
+
+    public static final String CTRL_TABLE = "stub-table";
+
+    public static final String CTRL_OPERATE = "stub-operate";
+
+    public static final String CTRL_CONDITION = "stub-condition";
+
     public static final String OPERATE_INSERT = "insert";
 
     public static final String OPERATE_DELETE = "delete";
@@ -13,16 +23,6 @@ public class StubCommand extends GateCommand {
     public static final String OPERATE_UPDATE = "update";
 
     public static final String OPERATE_SELECT = "select";
-
-    // public static final String KEY_TRANSIENT = "stub-transient";
-
-    public static final String KEY_TRANSACTION = "stub-transaction";
-
-    public static final String KEY_TABLE = "stub-table";
-
-    public static final String KEY_OPERATE = "stub-operate";
-
-    public static final String KEY_CONDITION = "stub-condition";
 
     public StubCommand() {
     }
@@ -53,11 +53,11 @@ public class StubCommand extends GateCommand {
     }
 
     public static Object getTable(BaseCommand cmd) {
-        return cmd.getHeader(KEY_TABLE);
+        return cmd.getHeader(CTRL_TABLE);
     }
 
     public static void setTable(BaseCommand cmd, Object table) {
-        cmd.setHeader(KEY_TABLE, table);
+        cmd.setHeader(CTRL_TABLE, table);
     }
 
     public Object getTable() {
@@ -69,15 +69,15 @@ public class StubCommand extends GateCommand {
     }
 
     public static Object getCondition(BaseCommand cmd) {
-        return cmd.getHeader(KEY_CONDITION);
+        return cmd.getHeader(CTRL_CONDITION);
     }
 
     public static void setCondition(BaseCommand cmd, Condition condition) {
-        cmd.setHeader(KEY_CONDITION, condition);
+        cmd.setHeader(CTRL_CONDITION, condition);
     }
 
     public static void setCondition(BaseCommand cmd, Object... condition) {
-        cmd.setHeader(KEY_CONDITION, condition);
+        cmd.setHeader(CTRL_CONDITION, condition);
     }
 
     public Object getCondition() {

@@ -12,6 +12,8 @@ import net.isger.brick.core.GateCommand;
  */
 public class AuthCommand extends GateCommand {
 
+    public static final String CTRL_TOKEN = "auth-token";
+
     public static final String OPERATE_LOGIN = "login";
 
     public static final String OPERATE_AUTH = "auth";
@@ -19,8 +21,6 @@ public class AuthCommand extends GateCommand {
     public static final String OPERATE_CHECK = "check";
 
     public static final String OPERATE_LOGOUT = "logout";
-
-    public static final String KEY_TOKEN = "auth-token";
 
     volatile transient boolean checked;
 
@@ -57,11 +57,11 @@ public class AuthCommand extends GateCommand {
     }
 
     public Object getToken() {
-        return getHeader(KEY_TOKEN);
+        return getHeader(CTRL_TOKEN);
     }
 
     public void setToken(Object token) {
-        setHeader(KEY_TOKEN, token);
+        setHeader(CTRL_TOKEN, token);
     }
 
 }

@@ -5,6 +5,7 @@ import net.isger.brick.core.Handler;
 
 public interface IdentityHandler extends Handler {
 
-    public Object handle(AuthIdentity identity, Object message);
+    public Object handle(Endpoint endpoint, AuthIdentity identity,
+            Object message);
 
 }

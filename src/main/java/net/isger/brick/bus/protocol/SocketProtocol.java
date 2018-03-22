@@ -1,6 +1,5 @@
 package net.isger.brick.bus.protocol;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 public interface SocketProtocol extends Protocol {
@@ -17,22 +16,20 @@ public interface SocketProtocol extends Protocol {
 
     public interface Decoder {
 
-        public Object decode(byte[] data);
-
         public Object decode(InputStream is);
 
     }
 
-    public class DecoderAdapter implements Decoder {
-
-        public final Object decode(byte[] data) {
-            return decode(new ByteArrayInputStream(data));
-        }
-
-        public Object decode(InputStream is) {
-            return null;
-        }
-
-    }
+    // public class DecoderAdapter implements Decoder {
+    //
+    // public final Object decode(byte[] data) {
+    // return decode(new ByteArrayInputStream(data));
+    // }
+    //
+    // public Object decode(InputStream is) {
+    // return null;
+    // }
+    //
+    // }
 
 }

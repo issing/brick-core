@@ -15,20 +15,22 @@ public class BusDesigner extends AbstractDesigner {
 
     @SuppressWarnings("unchecked")
     public void design(Map<String, Object> config) {
-        Object protocols = config.get(PARAM_PROTOCOLS);
-        if (protocols == null) {
-            protocols = Protocol.class.getPackage().getName();
-        } else {
-            List<Object> values = new ArrayList<Object>();
-            values.add(Protocol.class.getPackage().getName());
-            if (protocols instanceof Collection) {
-                values.addAll((Collection<Object>) protocols);
+        if (config != null) {
+            Object protocols = config.get(PARAM_PROTOCOLS);
+            if (protocols == null) {
+                protocols = Protocol.class.getPackage().getName();
             } else {
-                values.add(protocols);
+                List<Object> values = new ArrayList<Object>();
+                values.add(Protocol.class.getPackage().getName());
+                if (protocols instanceof Collection) {
+                    values.addAll((Collection<Object>) protocols);
+                } else {
+                    values.add(protocols);
+                }
+                protocols = values;
             }
-            protocols = values;
+            config.put(PARAM_PROTOCOLS, protocols);
         }
-        config.put(PARAM_PROTOCOLS, protocols);
         super.design(config);
     }
 

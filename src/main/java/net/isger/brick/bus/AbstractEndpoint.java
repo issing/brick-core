@@ -71,7 +71,8 @@ public abstract class AbstractEndpoint implements Endpoint {
     }
 
     @SuppressWarnings("unchecked")
-    private Protocol findProtocol(String name, Class<?> clazz, String namespace) {
+    private Protocol findProtocol(String name, Class<?> clazz,
+            String namespace) {
         Protocol protocol;
         if (Strings.isEmpty(namespace)) {
             protocol = bus.getProtocol(name);
@@ -108,11 +109,11 @@ public abstract class AbstractEndpoint implements Endpoint {
         return handler;
     }
 
-    protected final Object getParameter(String name) {
+    public final Object getParameter(String name) {
         return parameters.get(name);
     }
 
-    protected final Map<String, Object> getParameters() {
+    public final Map<String, Object> getParameters() {
         return Collections.unmodifiableMap(parameters);
     }
 

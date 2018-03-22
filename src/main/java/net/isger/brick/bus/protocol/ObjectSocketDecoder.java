@@ -3,9 +3,9 @@ package net.isger.brick.bus.protocol;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 
-import net.isger.brick.bus.protocol.SocketProtocol.DecoderAdapter;
+import net.isger.brick.bus.protocol.SocketProtocol.Decoder;
 
-public class ObjectSocketDecoder extends DecoderAdapter {
+public class ObjectSocketDecoder implements Decoder {
 
     public Object decode(InputStream is) {
         try {

@@ -64,7 +64,7 @@ public class AuthIdentity {
         }
     }
 
-    public void active() {
+    public void active(boolean create) {
         this.time = System.currentTimeMillis();
     }
 

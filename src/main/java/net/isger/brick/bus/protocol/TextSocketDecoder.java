@@ -5,15 +5,11 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import net.isger.brick.Constants;
-import net.isger.brick.bus.protocol.SocketProtocol.DecoderAdapter;
+import net.isger.brick.bus.protocol.SocketProtocol.Decoder;
 import net.isger.util.Asserts;
 import net.isger.util.Strings;
 
-public class TextSocketDecoder extends DecoderAdapter {
-
-    private static final int MIN_CACHE = 64;
-
-    public static final int MAX_LIMIT = Integer.MAX_VALUE - MIN_CACHE;
+public class TextSocketDecoder implements Decoder {
 
     private String sourceCharset;
 

@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.isger.brick.Constants;
 import net.isger.brick.auth.AuthCommand;
 import net.isger.brick.auth.AuthModule;
@@ -31,15 +34,13 @@ import net.isger.util.Asserts;
 import net.isger.util.Dependency;
 import net.isger.util.Helpers;
 import net.isger.util.Manageable;
+import net.isger.util.Reflects;
 import net.isger.util.Strings;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 import net.isger.util.load.BaseLoader;
 import net.isger.util.load.Loader;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 基础控制台
@@ -179,8 +180,8 @@ public class Console implements Constants, Manageable {
     @SuppressWarnings("unchecked")
     private void loadKernel(String name) {
         /* 加载参数配置 */
-        Object config = loadResource(Depository.getArtifact(name + "-config",
-                prober));
+        Object config = loadResource(
+                Depository.getArtifact(name + "-config", prober));
         if (config instanceof Collection) {
             loadConstants((Collection<?>) config);
         } else if (config instanceof Map) {
@@ -239,6 +240,12 @@ public class Console implements Constants, Manageable {
                 key = Map.class;
             } else if (List.class.isAssignableFrom(key)) {
                 key = List.class;
+            } else if (CharSequence.class.isAssignableFrom(key)) {
+                Class<?> clazz = Reflects.getClass(value);
+                if (clazz != null) {
+                    ConstantStrategy.set(container, Class.class, entry.getKey(),
+                            clazz);
+                }
             }
             ConstantStrategy.set(container, key, entry.getKey(), value);
         }
@@ -307,8 +314,8 @@ public class Console implements Constants, Manageable {
         Object config;
         for (Entry<String, Module> entry : getModules().entrySet()) {
             /* 多配置文件 */
-            for (Artifact artifact : Depository.getArtifacts(
-                    name + "-" + entry.getKey(), prober)) {
+            for (Artifact artifact : Depository
+                    .getArtifacts(name + "-" + entry.getKey(), prober)) {
                 config = loadResource(artifact);
                 if (config != null) {
                     entry.getValue().load(config);
@@ -462,8 +469,8 @@ public class Console implements Constants, Manageable {
                 || Command.class.equals(commandType)) {
             return null;
         }
-        String name = container.getInstance(String.class, commandType.getName()
-                + SUFFIX_MODULE);
+        String name = container.getInstance(String.class,
+                commandType.getName() + SUFFIX_MODULE);
         if (name == null) {
             return getModule(commandType.getSuperclass());
         }
@@ -499,11 +506,12 @@ public class Console implements Constants, Manageable {
      * @return
      */
     public final String getModuleName(Class<?> type) {
-        if (!Command.class.isAssignableFrom(type) || Command.class.equals(type)) {
+        if (!Command.class.isAssignableFrom(type)
+                || Command.class.equals(type)) {
             return null;
         }
-        String name = container.getInstance(String.class, type.getName()
-                + SUFFIX_MODULE);
+        String name = container.getInstance(String.class,
+                type.getName() + SUFFIX_MODULE);
         if (name == null) {
             return getModuleName(type.getSuperclass());
         }
@@ -569,8 +577,8 @@ public class Console implements Constants, Manageable {
         if (LOG.isDebugEnabled()) {
             LOG.info("Binding [{}] command [{}]", name, typeName);
         }
-        String oldName = ConstantStrategy.set(container, String.class, typeName
-                + SUFFIX_MODULE, name);
+        String oldName = ConstantStrategy.set(container, String.class,
+                typeName + SUFFIX_MODULE, name);
         if (name.equals(oldName)) {
             LOG.warn("(!) Discard [{}] command [{}]", oldName, typeName);
         }

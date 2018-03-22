@@ -4,9 +4,9 @@ import net.isger.util.Strings;
 
 public class GateCommand extends BaseCommand {
 
-    public static final String KEY_DOMAIN = "gate-domain";
+    public static final String CTRL_DOMAIN = "gate-domain";
 
-    public static final String KEY_TRANSIENT = "gate-transient";
+    public static final String CTRL_TRANSIENT = "gate-transient";
 
     public static final String OPERATE_INITIAL = "initial";
 
@@ -58,20 +58,20 @@ public class GateCommand extends BaseCommand {
     }
 
     public String getDomain() {
-        return getHeader(KEY_DOMAIN);
+        return getHeader(CTRL_DOMAIN);
     }
 
     public void setDomain(String domain) {
-        setHeader(KEY_DOMAIN, domain);
+        setHeader(CTRL_DOMAIN, domain);
     }
 
     public boolean getTransient() {
-        Boolean transiented = getHeader(KEY_TRANSIENT);
+        Boolean transiented = getHeader(CTRL_TRANSIENT);
         return transiented != null && transiented;
     }
 
     public void setTransient(boolean transiented) {
-        setHeader(KEY_TRANSIENT, transiented);
+        setHeader(CTRL_TRANSIENT, transiented);
     }
 
 }
