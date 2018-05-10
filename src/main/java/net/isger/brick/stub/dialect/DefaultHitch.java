@@ -1,6 +1,5 @@
 package net.isger.brick.stub.dialect;
 
-
 public class DefaultHitch {
 
     public static void hitch(Object source) {
@@ -8,6 +7,7 @@ public class DefaultHitch {
             return;
         }
         Dialects.addDialect(new MysqlDialect());
+        Dialects.addDialect(new PostgresDialect());
         Dialects.addDialect(new OracleDialect());
         Dialects.addDialect(new H2Dialect());
     }

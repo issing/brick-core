@@ -193,7 +193,7 @@ public final class Meta implements Cloneable {
     }
 
     public int getScale() {
-        return scale == null ? 0 : scale.intValue();
+        return scale == null ? -1 : scale.intValue();
     }
 
     public void setScale(int scale) {
@@ -238,6 +238,10 @@ public final class Meta implements Cloneable {
     }
 
     public void setValue(Object value) {
+        Class<?> type = Dialect.TYPES.get(getType());
+        if (type != null) {
+            value = Converter.convert(type, value);
+        }
         this.value = value;
     }
 

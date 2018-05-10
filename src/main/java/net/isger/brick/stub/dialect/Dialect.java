@@ -1,5 +1,10 @@
 package net.isger.brick.stub.dialect;
 
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 import net.isger.util.Named;
 import net.isger.util.sql.SqlEntry;
 
@@ -17,11 +22,32 @@ public interface Dialect extends Named {
 
     public static final String NUMBER = "number";
 
-    // public static final String INTEGER = "integer";
+    public static final String DOUBLE = "double";
+
+    public static final String INTEGER = "integer";
 
     // public static final String BOOLEAN = "boolean";
 
     public static final String DATE = "date";
+
+    public static final String DATETIME = "datetime";
+
+    public static final String TIME = "time";
+
+    public static final String TIMESTAMP = "timestamp";
+
+    public static final Map<String, Class<?>> TYPES = Collections
+            .unmodifiableMap(new HashMap<String, Class<?>>() {
+                private static final long serialVersionUID = -4085097546326838809L;
+                {
+                    put(REFERENCE, Object.class);
+                    put(STRING, String.class);
+                    put(NUMBER, Number.class);
+                    put(DOUBLE, Double.class);
+                    put(INTEGER, Integer.class);
+                    put(DATE, Date.class);
+                }
+            });
 
     public static final int OPTION_DEFAULT = 0;
 
@@ -41,7 +67,9 @@ public interface Dialect extends Named {
 
     public static final int SCALE_TIME = 1;
 
-    public static final int SCALE_TIMESTAMP = 2;
+    public static final int SCALE_DATETIME = 2;
+
+    public static final int SCALE_TIMESTAMP = 3;
 
     public boolean isSupport(String name);
 
@@ -70,7 +98,7 @@ public interface Dialect extends Named {
     public SqlEntry getSearchEntry(String sql, Object[] values);
 
     public SqlEntry getExistsEntry(Object table);
-    
+
     public SqlEntry getExistsEntry(String tableName);
 
     public SqlEntry getRemoveEntry(Object table);

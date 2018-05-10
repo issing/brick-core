@@ -28,103 +28,20 @@ import net.isger.util.sql.SqlEntry;
  */
 public class SqlDialect implements Dialect {
 
-    private static final Describer STRING_DESCRIBER;
+    private final Describer PRIMARY_DESCRIBER;
 
-    private static final Describer NUMBER_DESCRIBER;
+    private final Describer NOTNULL_DESCRIBER;
 
-    private static final Describer DATE_DESCRIBER;
+    private final Describer UNIQUE_DESCRIBER;
 
-    private static final Describer PRIMARY_DESCRIBER;
-
-    private static final Describer NOTNULL_DESCRIBER;
-
-    private static final Describer UNIQUE_DESCRIBER;
-
-    private static final Describer DEFAULT_DESCRIBER;
+    private final Describer DEFAULT_DESCRIBER;
 
     /** 方言名称 */
     private String name;
 
     private Map<Object, Describer> describers;
 
-    static {
-        STRING_DESCRIBER = new DescriberAdapter() {
-            public String describe(Meta field) {
-                int length = field.getLength();
-                return length > 0 ? "VARCHAR(" + length + ")" : "TEXT";
-            }
-
-            public String describe(Option option, Object... extents) {
-                String value = null;
-                switch (option.getType().intValue()) {
-                case OPTION_DEFAULT:
-                    Object optionValue = option.getValue();
-                    if (optionValue != null) {
-                        value = "'"
-                                + optionValue.toString().replaceAll("[']", "''")
-                                + "'";
-                    }
-                    break;
-                }
-                return value;
-            }
-        };
-        NUMBER_DESCRIBER = new DescriberAdapter() {
-            public String describe(Meta field) {
-                StringBuffer describe = new StringBuffer("NUMBER");
-                int length = field.getLength();
-                if (length > 0) {
-                    describe.append("(").append(length);
-                    if ((length = field.getScale()) > 0) {
-                        describe.append(", ").append(length);
-                    }
-                    describe.append(")");
-                }
-                return describe.toString();
-            }
-
-            public String describe(Option option, Object... extents) {
-                String value = null;
-                switch (option.getType().intValue()) {
-                case OPTION_DEFAULT:
-                    Object optionValue = option.getValue();
-                    if (optionValue == null) {
-                        value = "0";
-                    }
-                    break;
-                }
-                return value;
-            }
-        };
-        DATE_DESCRIBER = new DescriberAdapter() {
-            public String describe(Meta field) {
-                StringBuffer describe = new StringBuffer(64);
-                switch (field.getScale()) {
-                case SCALE_TIME:
-                    describe.append("TIME");
-                    break;
-                case SCALE_TIMESTAMP:
-                    describe.append("TIMESTAMP");
-                    break;
-                default:
-                    describe.append("DATE");
-                }
-                return describe.toString();
-            }
-
-            public String describe(Option option, Object... extents) {
-                String value;
-                switch (option.getType().intValue()) {
-                case OPTION_DEFAULT:
-                    value = ((SqlDialect) extents[1])
-                            .getDateDescribe(option.getValue());
-                    break;
-                default:
-                    value = null;
-                }
-                return value;
-            }
-        };
+    {
         DEFAULT_DESCRIBER = new DescriberAdapter() {
             public String describe(Option option, Object... extents) {
                 Object value = option.getValue();
@@ -143,7 +60,8 @@ public class SqlDialect implements Dialect {
             public String describe(Option option, Object... extents) {
                 String value = option.getValue();
                 return Strings.isEmpty(value) || Boolean.parseBoolean(value)
-                        ? "NOT NULL" : "NULL";
+                        ? "NOT NULL"
+                        : "NULL";
             }
         };
         UNIQUE_DESCRIBER = new DescriberAdapter() {
@@ -155,10 +73,14 @@ public class SqlDialect implements Dialect {
 
     public SqlDialect() {
         describers = new HashMap<Object, Describer>();
-        addDescriber(REFERENCE, new DescriberAdapter());
-        addDescriber(STRING, STRING_DESCRIBER);
-        addDescriber(NUMBER, NUMBER_DESCRIBER);
-        addDescriber(DATE, DATE_DESCRIBER);
+        addDescriber(REFERENCE, new DescriberAdapter(REFERENCE));
+        addDescriber(STRING, new StringDescriber());
+        addDescriber(NUMBER, new NumberDescriber(NUMBER));
+        addDescriber(DOUBLE, new NumberDescriber(DOUBLE));
+        addDescriber(DATE, new DateDescriber(DATE));
+        addDescriber(TIME, new DateDescriber(TIME));
+        addDescriber(DATETIME, new DateDescriber(DATETIME));
+        addDescriber(TIMESTAMP, new DateDescriber(TIMESTAMP));
         addDescriber(OPTION_DEFAULT, DEFAULT_DESCRIBER);
         addDescriber(OPTION_PRIMARY, PRIMARY_DESCRIBER);
         addDescriber(OPTION_NOTNULL, NOTNULL_DESCRIBER);
@@ -174,6 +96,10 @@ public class SqlDialect implements Dialect {
 
     public boolean isSupport(String name) {
         return name().equalsIgnoreCase(name);
+    }
+
+    protected String type(String name) {
+        return name.toUpperCase();
     }
 
     /**
@@ -192,7 +118,8 @@ public class SqlDialect implements Dialect {
         int count;
         for (String[] describe : describes) {
             count = describe.length;
-            for (int i = 0; i < count; i++) {
+            sql.append("\"").append(describe[0]).append("\" ");
+            for (int i = 1; i < count; i++) {
                 sql.append(describe[i]).append(" ");
             }
             sql.setLength(sql.length() - 1);
@@ -220,7 +147,7 @@ public class SqlDialect implements Dialect {
         Object[] columns = (Object[]) gridData[0];
         int count = columns.length;
         for (int i = 0; i < count; i++) {
-            sql.append(columns[i]).append(", ");
+            sql.append("\"").append(columns[i]).append("\", ");
             params.append("?, ");
         }
         sql.setLength(sql.length() - 2);
@@ -251,7 +178,8 @@ public class SqlDialect implements Dialect {
                     "Unsupported feature in the current version");
         } else {
             for (int i = 0; i < count; i++) {
-                sql.append(" AND ").append(columns[i]).append(" = ?");
+                sql.append(" AND ").append("\"").append(columns[i])
+                        .append("\" = ?");
             }
         }
         return new SqlEntry(sql.toString(), (Object[]) gridData[1]);
@@ -276,7 +204,7 @@ public class SqlDialect implements Dialect {
         Object[] columns = (Object[]) newGridData[0];
         int count = columns.length;
         for (int i = 0; i < count; i++) {
-            sql.append(columns[i]).append(" = ?, ");
+            sql.append("\"").append(columns[i]).append("\" = ?, ");
         }
         sql.setLength(sql.length() - 2);
         sql.append(" WHERE 1 = 1");
@@ -288,7 +216,8 @@ public class SqlDialect implements Dialect {
                     "Unsupported feature in the current version");
         } else {
             for (int i = 0; i < count; i++) {
-                sql.append(" AND ").append(columns[i]).append(" = ?");
+                sql.append(" AND ").append("\"").append(columns[i])
+                        .append("\" = ?");
             }
         }
         return new SqlEntry(sql.toString(),
@@ -313,7 +242,7 @@ public class SqlDialect implements Dialect {
         sql.append("SELECT ");
         int count = columns.length;
         for (int i = 0; i < count; i++) {
-            sql.append(columns[i]).append(", ");
+            sql.append("\"").append(columns[i]).append("\"").append(", ");
         }
         sql.setLength(sql.length() - 2);
         sql.append(" FROM ").append(tableName).append(" WHERE 1 = 1");
@@ -409,9 +338,15 @@ public class SqlDialect implements Dialect {
             meta.setDescription(description);
             meta.options().set(options);
         }
-        Describer describer = describers
-                .get(describe = meta.getType().toUpperCase());
-        if (describer != null) {
+        describe = meta.getType().toUpperCase();
+        Describer describer = describers.get(describe);
+        describe: {
+            if (describer == null) {
+                describer = describers.get(describe = type(describe));
+                if (describer == null) {
+                    break describe;
+                }
+            }
             describe = describer.describe(meta);
             /* 跳过非从属列描述 */
             if (Strings.isEmpty(describe)) {
@@ -523,6 +458,103 @@ public class SqlDialect implements Dialect {
             type = ((String) type).toUpperCase();
         }
         describers.put(type, describer);
+    }
+
+    protected class NumberDescriber extends DescriberAdapter {
+
+        public NumberDescriber(String name) {
+            super(name);
+        }
+
+        public String describe(Meta field) {
+            StringBuffer describe = new StringBuffer(type(this.getName()));
+            int length = field.getLength();
+            if (length > 0) {
+                describe.append("(").append(length);
+                if ((length = field.getScale()) > 0) {
+                    describe.append(", ").append(length);
+                }
+                describe.append(")");
+            }
+            return describe.toString();
+        }
+
+        public String describe(Option option, Object... extents) {
+            String value = null;
+            switch (option.getType().intValue()) {
+            case OPTION_DEFAULT:
+                Object optionValue = option.getValue();
+                if (optionValue == null) {
+                    value = "0";
+                }
+                break;
+            }
+            return value;
+        }
+    }
+
+    protected class StringDescriber extends DescriberAdapter {
+
+        public String describe(Meta field) {
+            int length = field.getLength();
+            return length > 0 ? type("VARCHAR") + "(" + length + ")"
+                    : type("TEXT");
+        }
+
+        public String describe(Option option, Object... extents) {
+            String value = null;
+            switch (option.getType().intValue()) {
+            case OPTION_DEFAULT:
+                Object optionValue = option.getValue();
+                if (optionValue != null) {
+                    value = "'" + optionValue.toString().replaceAll("[']", "''")
+                            + "'";
+                }
+                break;
+            }
+            return value;
+        }
+    }
+
+    protected class DateDescriber extends DescriberAdapter {
+
+        public DateDescriber(String name) {
+            super(name);
+        }
+
+        public String describe(Meta field) {
+            StringBuffer describe = new StringBuffer(64);
+            switch (field.getScale()) {
+            case -1:
+                describe.append(type(this.getName()));
+                break;
+            case SCALE_TIME:
+                describe.append(type(TIME));
+                break;
+            case SCALE_DATETIME:
+                describe.append(type(DATETIME));
+                break;
+            case SCALE_TIMESTAMP:
+                describe.append(type(TIMESTAMP));
+                break;
+            default:
+                describe.append(type(DATE));
+            }
+            return describe.toString();
+        }
+
+        public String describe(Option option, Object... extents) {
+            String value;
+            switch (option.getType().intValue()) {
+            case OPTION_DEFAULT:
+                value = ((SqlDialect) extents[1])
+                        .getDateDescribe(option.getValue());
+                break;
+            default:
+                value = null;
+            }
+            return value;
+        }
     }
 
 }

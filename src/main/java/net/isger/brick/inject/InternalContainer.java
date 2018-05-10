@@ -4,6 +4,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,10 +13,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.isger.brick.Constants;
 import net.isger.brick.util.anno.Collect;
+import net.isger.brick.util.anno.Digest;
 import net.isger.util.Callable;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
 import net.isger.util.reflect.BoundField;
+import net.isger.util.reflect.BoundMethod;
 
 /**
  * 内部容器
@@ -194,10 +198,11 @@ class InternalContainer implements Container {
      */
     private void inject(Object instance, InternalContext context) {
         if (context.hasInject(instance)) {
+            Class<?> instanceClass = instance.getClass();
             Class<?> fieldType;
             Object infect;
             for (List<BoundField> fields : Reflects
-                    .getBoundFields(instance.getClass()).values()) {
+                    .getBoundFields(instanceClass).values()) {
                 for (BoundField field : fields) {
                     // 根据字段类型及其绑定名称获取容器注册实例
                     fieldType = field.getField().getType();
@@ -211,6 +216,17 @@ class InternalContainer implements Container {
                         inject(infect, context);
                     }
                 }
+            }
+            List<BoundMethod> methods = Reflects.getBoundMethods(instanceClass,
+                    Digest.class);
+            Collections.sort(methods, new Comparator<BoundMethod>() {
+                public int compare(BoundMethod prev, BoundMethod next) {
+                    return prev.getAnnotation(Digest.class).value()
+                            - next.getAnnotation(Digest.class).value();
+                }
+            });
+            for (BoundMethod method : methods) {
+                method.invoke(instance);
             }
         }
     }

@@ -224,8 +224,9 @@ public class Model implements Cloneable {
             return new Model((String) instance);
         }
         return new Model(
-                Sqls.getTableName(instance instanceof Class
-                        ? (Class<?>) instance : instance.getClass()),
+                Sqls.getTableName(
+                        instance instanceof Class ? (Class<?>) instance
+                                : instance.getClass()),
                 Metas.getMetas(instance));
     }
 
