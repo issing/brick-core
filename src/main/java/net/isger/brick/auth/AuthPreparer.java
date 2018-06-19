@@ -13,7 +13,7 @@ import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 
 /**
- * 认证预处理
+ * 认证制备器
  * 
  * @author issing
  *
@@ -64,8 +64,8 @@ public class AuthPreparer extends Preparer {
             cmd.setResult(result);
         } else {
             String domain;
-            if (((AuthModule) module).getGate(domain = console
-                    .getModuleName(command)) != null) {
+            if (((AuthModule) module)
+                    .getGate(domain = console.getModuleName(command)) != null) {
                 /* 检测干涉 */
                 AuthCommand cmd = AuthHelper.toCommand(command.getIdentity(),
                         domain, command);

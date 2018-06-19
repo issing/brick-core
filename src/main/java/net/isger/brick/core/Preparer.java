@@ -6,7 +6,7 @@ import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 
 /**
- * 预处理器
+ * 制备器
  * 
  * @author issing
  * 
@@ -19,7 +19,7 @@ public class Preparer {
     private Console console;
 
     /**
-     * 处理
+     * 配备
      * 
      * @param command
      */
