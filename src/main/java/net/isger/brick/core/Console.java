@@ -88,8 +88,9 @@ public class Console implements Constants, Manageable {
     }
 
     public Console() {
-        dependency = new Dependency();
-        operator = new CommandOperator(this);
+        this.dependency = new Dependency();
+        this.operator = new CommandOperator(this);
+        this.preparer = new Preparer();
     }
 
     /**
@@ -128,48 +129,52 @@ public class Console implements Constants, Manageable {
 
     /**
      * 加载内核
+     * 
      */
     protected void loadKernel() {
         /* 默认内核 */
-        // 缓存模块
-        Module module = getModule(MOD_CACHE);
-        if (module == null) {
-            addModule(MOD_CACHE, new CacheModule());
-        }
-        addCommand(MOD_CACHE, CacheCommand.class);
-        // 认证模块
-        module = getModule(MOD_AUTH);
-        if (module == null) {
-            addModule(MOD_AUTH, new AuthModule());
-        }
-        addDependencies(MOD_AUTH, MOD_CACHE);
-        addCommand(MOD_AUTH, AuthCommand.class);
-        // 任务模块
-        module = getModule(MOD_TASK);
-        if (module == null) {
-            addModule(MOD_TASK, new TaskModule());
-        }
-        addDependencies(MOD_TASK, MOD_AUTH);
-        addCommand(MOD_TASK, TaskCommand.class);
-        // 总线模块
-        module = getModule(MOD_BUS);
-        if (module == null) {
-            addModule(MOD_BUS, new BusModule());
-        }
-        addDependencies(MOD_BUS, MOD_TASK);
-        addCommand(MOD_BUS, BusCommand.class);
-        // 存根模块
-        module = getModule(MOD_STUB);
-        if (module == null) {
-            addModule(MOD_STUB, new StubModule());
-        }
-        addDependencies(MOD_STUB, MOD_AUTH);
-        addCommand(MOD_STUB, StubCommand.class);
+        this.setupModule(MOD_CACHE, new CacheModule(), CacheCommand.class); // 缓存模块
+        this.setupModule(MOD_AUTH, new AuthModule(), AuthCommand.class,
+                MOD_CACHE); // 认证模块
+        this.setupModule(MOD_TASK, new TaskModule(), TaskCommand.class,
+                MOD_AUTH); // 任务模块
+        this.setupModule(MOD_BUS, new BusModule(), BusCommand.class, MOD_TASK); // 总线模块
+        this.setupModule(MOD_STUB, new StubModule(), StubCommand.class,
+                MOD_AUTH); // 存根模块
         /* 加载内核 */
         if (!Strings.matchsIgnoreCase(name, BRICK)) {
-            loadKernel(BRICK);
+            this.loadKernel(BRICK); // 加载默认内核配置
         }
-        loadKernel(name);
+        this.loadKernel(name);
+    }
+
+    /**
+     * 安装模块
+     *
+     * @param name
+     * @param module
+     */
+    protected void setupModule(String name, Module module) {
+        this.setupModule(name, module, null);
+    }
+
+    /**
+     * 安装模块
+     *
+     * @param name
+     * @param module
+     * @param commandClass
+     * @param dependencies
+     */
+    protected void setupModule(String name, Module module,
+            Class<? extends Command> commandClass, Object... dependencies) {
+        if (this.getModule(name) == null) {
+            this.addModule(name, module);
+        }
+        this.addDependencies(name, dependencies);
+        if (commandClass != null) {
+            this.addCommand(name, commandClass);
+        }
     }
 
     /**
@@ -615,17 +620,17 @@ public class Console implements Constants, Manageable {
         if (!initialized) {
             return;
         }
-        Map<String, Module> modules = getModules();
-        List<Object> nodes = new LinkedList<Object>(dependency.getNodes());
+        Map<String, Module> modules = this.getModules();
+        List<Object> nodes = new LinkedList<Object>(this.dependency.getNodes());
         Collections.reverse(nodes);
         for (Object node : nodes) {
             modules.get(node).destroy();
         }
-        container.destroy();
-        if (hook != null) {
-            Runtime.getRuntime().removeShutdownHook(hook);
+        this.container.destroy();
+        if (this.hook != null) {
+            Runtime.getRuntime().removeShutdownHook(this.hook);
         }
-        initialized = false;
+        this.initialized = false;
     }
 
 }

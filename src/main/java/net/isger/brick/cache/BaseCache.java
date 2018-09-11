@@ -1,9 +1,9 @@
 package net.isger.brick.cache;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.isger.brick.core.BaseGate;
 
@@ -12,7 +12,7 @@ public class BaseCache extends BaseGate implements Cache {
     private Map<String, Object> values;
 
     public BaseCache() {
-        values = new HashMap<String, Object>();
+        values = new ConcurrentHashMap<String, Object>();
     }
 
     public Object get(String key) {
@@ -23,6 +23,10 @@ public class BaseCache extends BaseGate implements Cache {
         values.put(key, value);
     }
 
+    public Object remove(String key) {
+        return values.remove(key);
+    }
+
     public Set<String> keySet() {
         return values.keySet();
     }
@@ -31,8 +35,12 @@ public class BaseCache extends BaseGate implements Cache {
         return values.values();
     }
 
-    public void destroy() {
+    public void clear() {
         values.clear();
+    }
+
+    public void destroy() {
+        this.clear();
         super.destroy();
     }
 

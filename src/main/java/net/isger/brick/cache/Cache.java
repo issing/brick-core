@@ -11,8 +11,12 @@ public interface Cache extends Gate {
 
     public void set(String key, Object value);
 
+    public Object remove(String key);
+
     public Set<String> keySet();
 
     public Collection<Object> values();
+
+    public void clear();
 
 }
