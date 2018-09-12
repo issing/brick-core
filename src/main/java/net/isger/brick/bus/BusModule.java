@@ -57,7 +57,7 @@ public class BusModule extends AbstractModule {
      * @return
      */
     @SuppressWarnings("unchecked")
-    protected Bus getBus() {
+    protected final Bus getBus() {
         return container.getInstance((Class<Bus>) getTargetClass(),
                 Constants.SYSTEM);
     }
@@ -67,7 +67,7 @@ public class BusModule extends AbstractModule {
      * 
      * @param bus
      */
-    protected void setBus(Bus bus) {
+    protected final void setBus(Bus bus) {
         Asserts.isNotNull(bus, "The bus cannot be null");
         if (LOG.isDebugEnabled()) {
             LOG.info("Achieve bus [{}]", bus);

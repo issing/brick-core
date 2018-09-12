@@ -63,7 +63,24 @@ class InternalContainer implements Container {
     }
 
     public boolean contains(Class<?> type, String name) {
-        return contains(Key.newInstance(type, name));
+        boolean hasContains = contains(Key.newInstance(type, name));
+        find: if (!hasContains) {
+            Class<?> superclass = type.getSuperclass();
+            while (superclass != null) {
+                if (hasContains = contains(Key.newInstance(superclass, name))) {
+                    break find;
+                }
+                superclass = superclass.getSuperclass();
+            }
+            Class<?>[] interfaces = Reflects.getInterfaces(type);
+            for (Class<?> interfaceClass : interfaces) {
+                if (hasContains = contains(
+                        Key.newInstance(interfaceClass, name))) {
+                    break find;
+                }
+            }
+        }
+        return hasContains;
     }
 
     private boolean contains(Key<?> key) {
@@ -97,9 +114,32 @@ class InternalContainer implements Container {
 
     public <T> T getInstance(final Class<T> type, final String name) {
         return call(new Callable<T>() {
+            @SuppressWarnings("unchecked")
             public T call(Object... args) {
-                return getInstance(Key.newInstance(type, name),
+                Object instance = getInstance(Key.newInstance(type, name),
                         (InternalContext) args[0]);
+                find: if (instance == null) {
+                    Class<?> superclass = type.getSuperclass();
+                    while (superclass != null) {
+                        instance = getInstance(
+                                Key.newInstance(superclass, name),
+                                (InternalContext) args[0]);
+                        if (instance != null && type.isInstance(instance)) {
+                            break find;
+                        }
+                        superclass = superclass.getSuperclass();
+                    }
+                    Class<?>[] interfaces = Reflects.getInterfaces(type);
+                    for (Class<?> interfaceClass : interfaces) {
+                        instance = getInstance(
+                                Key.newInstance(interfaceClass, name),
+                                (InternalContext) args[0]);
+                        if (instance != null && type.isInstance(instance)) {
+                            break find;
+                        }
+                    }
+                }
+                return (T) instance;
             }
         });
     }

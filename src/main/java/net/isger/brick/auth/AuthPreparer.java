@@ -5,8 +5,8 @@ import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Command;
 import net.isger.brick.core.Console;
 import net.isger.brick.core.Context;
-import net.isger.brick.core.Module;
 import net.isger.brick.core.Preparer;
+import net.isger.util.Helpers;
 import net.isger.util.Strings;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
@@ -28,7 +28,7 @@ public class AuthPreparer extends Preparer {
     /** 认证模块 */
     @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.MOD_AUTH)
-    private Module module;
+    private AuthModule module;
 
     /**
      * 创建上下文（认证干涉）
@@ -64,13 +64,19 @@ public class AuthPreparer extends Preparer {
             cmd.setResult(result);
         } else {
             String domain;
-            if (((AuthModule) module)
+            if (module
                     .getGate(domain = console.getModuleName(command)) != null) {
                 /* 检测干涉 */
                 AuthCommand cmd = AuthHelper.toCommand(command.getIdentity(),
                         domain, command);
                 cmd.setOperate(AuthCommand.OPERATE_CHECK);
                 command = cmd;
+            } else if (command.getIdentity() == null) {
+                AuthCommand cmd = AuthHelper.toCommand(Constants.SYSTEM,
+                        new BaseToken(Helpers.makeUUID(), command));
+                cmd.setOperate(AuthCommand.OPERATE_LOGIN);
+                console.execute(cmd);
+                command.setIdentity(cmd.getIdentity());
             }
         }
         return command;
