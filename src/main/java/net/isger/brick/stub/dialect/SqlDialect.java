@@ -73,14 +73,14 @@ public class SqlDialect implements Dialect {
 
     public SqlDialect() {
         describers = new HashMap<Object, Describer>();
-        addDescriber(REFERENCE, new DescriberAdapter(REFERENCE));
-        addDescriber(STRING, new StringDescriber());
-        addDescriber(NUMBER, new NumberDescriber(NUMBER));
-        addDescriber(DOUBLE, new NumberDescriber(DOUBLE));
-        addDescriber(DATE, new DateDescriber(DATE));
-        addDescriber(TIME, new DateDescriber(TIME));
-        addDescriber(DATETIME, new DateDescriber(DATETIME));
-        addDescriber(TIMESTAMP, new DateDescriber(TIMESTAMP));
+        addDescriber(REFERENCE, getReferenceDescriber(REFERENCE));
+        addDescriber(STRING, getStringDescriber(STRING));
+        addDescriber(NUMBER, getNumberDescriber(NUMBER));
+        addDescriber(DOUBLE, getNumberDescriber(DOUBLE));
+        addDescriber(DATE, getDateDescriber(DATE));
+        addDescriber(TIME, getDateDescriber(TIME));
+        addDescriber(DATETIME, getDateDescriber(DATETIME));
+        addDescriber(TIMESTAMP, getDateDescriber(TIMESTAMP));
         addDescriber(OPTION_DEFAULT, DEFAULT_DESCRIBER);
         addDescriber(OPTION_PRIMARY, PRIMARY_DESCRIBER);
         addDescriber(OPTION_NOTNULL, NOTNULL_DESCRIBER);
@@ -379,15 +379,22 @@ public class SqlDialect implements Dialect {
     }
 
     protected String getDateDescribe(Object value) {
-        if (value == null) {
+        if (value instanceof String) {
+            try {
+                value = Double.parseDouble((String) value);
+            } catch (Exception e) {
+                value = Dates.toString(value, Dates.PATTERN_COMMON);
+            }
+        } else if (value == null) {
             return "CURRENT_TIMESTAMP";
-        } else if (value instanceof Number) {
-            Number number = (Number) value;
-            if (number.intValue() == 0) {
+        }
+        if (value instanceof Number) {
+            Number pending = (Number) value;
+            if (pending.intValue() == 0) {
                 return "CURRENT_TIMESTAMP";
             }
             value = Dates.toString(
-                    new Date(System.currentTimeMillis() + number.longValue()),
+                    new Date(System.currentTimeMillis() + pending.longValue()),
                     Dates.PATTERN_COMMON);
         }
         return "TO_DATE('" + value + "', 'YYYY-MM-DD HH:mm:ss')";
@@ -458,6 +465,22 @@ public class SqlDialect implements Dialect {
             type = ((String) type).toUpperCase();
         }
         describers.put(type, describer);
+    }
+
+    protected Describer getReferenceDescriber(String name) {
+        return new DescriberAdapter(name);
+    }
+
+    protected Describer getStringDescriber(String name) {
+        return new StringDescriber();
+    }
+
+    protected Describer getNumberDescriber(String name) {
+        return new NumberDescriber(name);
+    }
+
+    protected Describer getDateDescriber(String name) {
+        return new DateDescriber(name);
     }
 
     protected class NumberDescriber extends DescriberAdapter {

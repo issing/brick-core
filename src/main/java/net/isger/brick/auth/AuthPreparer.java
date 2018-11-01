@@ -56,9 +56,10 @@ public class AuthPreparer extends Preparer {
             boolean result;
             Object token = cmd.getToken();
             /* 绕过权限 */
-            if (result = Strings.isEmpty(cmd.getDomain())
+            if (result = (Strings.isEmpty(cmd.getDomain())
                     && Strings.isEmpty(cmd.getOperate())
-                    && token instanceof Command) {
+                    && token instanceof Command)
+                    || module.getGate(cmd.getDomain()) == null) {
                 command = BaseCommand.cast((Command) token);
             }
             cmd.setResult(result);

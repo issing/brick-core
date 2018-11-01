@@ -79,6 +79,7 @@ class InternalContainer implements Container {
                     break find;
                 }
             }
+            hasContains = getInstances(type).containsKey(name);
         }
         return hasContains;
     }
@@ -138,6 +139,7 @@ class InternalContainer implements Container {
                             break find;
                         }
                     }
+                    instance = getInstances(type).get(name);
                 }
                 return (T) instance;
             }
@@ -185,8 +187,13 @@ class InternalContainer implements Container {
         // 获取策略模式对象
         Strategy strategy;
         for (Key<?> key : stgs.keySet()) {
-            if (key.type == type && facs.get(key) == null
-                    && (strategy = stgs.get(key)) != null) {
+            // 跳过存在指定类型实例工厂配置
+            if (key.type == type && facs.get(key) != null) {
+                break;
+            }
+            // 允许实例向上赋值
+            if (type.isAssignableFrom(key.type)
+                    && ((strategy = stgs.get(key)) != null)) {
                 try {
                     instance = (T) strategy.find(key.type, key.name, null);
                     if (instance != null) {

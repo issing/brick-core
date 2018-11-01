@@ -321,13 +321,17 @@ public class BaseCommand extends Command implements Cloneable {
         Command source = this.getSource();
         if (source == this) {
             source = cmd;
+        } else if (source instanceof BaseCommand) {
+            source = ((BaseCommand) source).clone();
         }
         cmd.makeShell(source, this.shell);
         return cmd;
     }
 
     private void makeShell(Command source, ShellCommand shell) {
-        this.shell = source == this ? new AutoCommand() : new ShellCommand();
+        this.shell = source == this ? new AutoCommand()
+                : (source instanceof BaseCommand ? new ProxyCommand()
+                        : new ShellCommand());
         this.shell.source = source;
         if (shell == null) {
             shell = this.shell;
@@ -344,56 +348,56 @@ public class BaseCommand extends Command implements Cloneable {
 
         private Map<ByteBuffer, Object> mappings;
 
-        public Command getSource() {
+        protected Command getSource() {
             return source;
         }
 
-        public Schema getSchema() {
+        protected Schema getSchema() {
             return source.getSchema();
         }
 
-        public Object get(String name) {
+        protected Object get(String name) {
             return source.get(name);
         }
 
-        public Object get(int index) {
+        protected Object get(int index) {
             return source.get(index);
         }
 
-        public void put(String name, Object value) {
+        protected void put(String name, Object value) {
             source.put(name, value);
         }
 
-        public void put(int index, Object value) {
+        protected void put(int index, Object value) {
             source.put(index, value);
         }
 
-        public Map<CharSequence, ByteBuffer> getHeaders() {
+        protected Map<CharSequence, ByteBuffer> getHeaders() {
             return source.getHeaders();
         }
 
-        public void setHeaders(Map<CharSequence, ByteBuffer> value) {
+        protected void setHeaders(Map<CharSequence, ByteBuffer> value) {
             source.setHeaders(value);
         }
 
-        public Map<CharSequence, ByteBuffer> getParameters() {
+        protected Map<CharSequence, ByteBuffer> getParameters() {
             return source.getParameters();
         }
 
-        public void setParameters(Map<CharSequence, ByteBuffer> value) {
+        protected void setParameters(Map<CharSequence, ByteBuffer> value) {
             source.setParameters(value);
         }
 
-        public Map<CharSequence, ByteBuffer> getFooters() {
+        protected Map<CharSequence, ByteBuffer> getFooters() {
             return source.getFooters();
         }
 
-        public void setFooters(Map<CharSequence, ByteBuffer> value) {
+        protected void setFooters(Map<CharSequence, ByteBuffer> value) {
             source.setFooters(value);
         }
 
         @SuppressWarnings("unchecked")
-        private Map<String, Object> gets(int index) {
+        protected Map<String, Object> gets(int index) {
             Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(
                     index);
             Map<String, Object> result = new HashMap<String, Object>(
@@ -408,7 +412,7 @@ public class BaseCommand extends Command implements Cloneable {
         }
 
         @SuppressWarnings("unchecked")
-        private void sets(int index, Map<String, Object> values) {
+        protected void sets(int index, Map<String, Object> values) {
             Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(
                     index);
             if (values == null) {
@@ -421,14 +425,14 @@ public class BaseCommand extends Command implements Cloneable {
         }
 
         @SuppressWarnings("unchecked")
-        public <T> T get(int index, CharSequence key) {
+        protected <T> T get(int index, CharSequence key) {
             Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(
                     index);
             return (T) this.mappings.get(indeces.get(key));
         }
 
         @SuppressWarnings("unchecked")
-        public void set(int index, CharSequence key, Object value) {
+        protected void set(int index, CharSequence key, Object value) {
             Map<CharSequence, ByteBuffer> buffers = (Map<CharSequence, ByteBuffer>) get(
                     index);
             set(buffers, key, value);
@@ -471,23 +475,23 @@ public class BaseCommand extends Command implements Cloneable {
             indeces.clear();
         }
 
-        public Map<String, Object> getHeader() {
+        public final Map<String, Object> getHeader() {
             return gets(HEADERS);
         }
 
-        public <T> T getHeader(CharSequence key) {
+        public final <T> T getHeader(CharSequence key) {
             return get(HEADERS, key);
         }
 
-        public void setHeader(Map<String, Object> headers) {
+        public final void setHeader(Map<String, Object> headers) {
             sets(HEADERS, headers);
         }
 
-        public void setHeader(CharSequence key, Object value) {
+        public final void setHeader(CharSequence key, Object value) {
             set(HEADERS, key, value);
         }
 
-        public Object getParameter(Model model, String namespace,
+        public final Object getParameter(Model model, String namespace,
                 boolean isBatch) {
             Map<String, Object> params = Helpers.getMap(getParameter(),
                     namespace);
@@ -521,7 +525,7 @@ public class BaseCommand extends Command implements Cloneable {
             return result;
         }
 
-        public Object getParameter(Class<?> type, String namespace,
+        public final Object getParameter(Class<?> type, String namespace,
                 boolean isBatch) {
             Map<String, Object> params = Helpers.getMap(getParameter(),
                     namespace);
@@ -557,7 +561,7 @@ public class BaseCommand extends Command implements Cloneable {
             return result;
         }
 
-        public Object getParameter(CharSequence key, String namespace,
+        public final Object getParameter(CharSequence key, String namespace,
                 boolean isBatch, String suffix) {
             Map<String, Object> params = Helpers.getMap(getParameter(),
                     namespace);
@@ -584,111 +588,135 @@ public class BaseCommand extends Command implements Cloneable {
             return Helpers.newArray(values);
         }
 
-        public Map<String, Object> getParameter() {
+        public final Map<String, Object> getParameter() {
             return gets(PARAMETERS);
         }
 
-        public void setParameter(Map<String, Object> parameters) {
+        public final void setParameter(Map<String, Object> parameters) {
             sets(PARAMETERS, parameters);
         }
 
-        public void setParameter(CharSequence key, Object value) {
+        public final void setParameter(CharSequence key, Object value) {
             set(PARAMETERS, key, value);
         }
 
-        public Map<String, Object> getFooter() {
+        public final Map<String, Object> getFooter() {
             return gets(FOOTERS);
         }
 
-        public <T> T getFooter(CharSequence key) {
+        public final <T> T getFooter(CharSequence key) {
             return get(FOOTERS, key);
         }
 
-        public void setFooter(Map<String, Object> footers) {
+        public final void setFooter(Map<String, Object> footers) {
             sets(FOOTERS, footers);
         }
 
-        public void setFooter(CharSequence key, Object value) {
+        public final void setFooter(CharSequence key, Object value) {
             set(FOOTERS, key, value);
         }
 
-        public AuthIdentity getIdentity() {
+        public final AuthIdentity getIdentity() {
             return getHeader(CTRL_IDENTITY);
         }
 
-        public void setIdentity(AuthIdentity identity) {
+        public final void setIdentity(AuthIdentity identity) {
             setHeader(CTRL_IDENTITY, identity);
         }
 
-        public String getModule() {
+        public final String getModule() {
             return getHeader(CTRL_MODULE);
         }
 
-        public void setModule(String module) {
+        public final void setModule(String module) {
             setHeader(CTRL_MODULE, module);
         }
 
-        public String getOperate() {
+        public final String getOperate() {
             return getHeader(CTRL_OPERATE);
         }
 
-        public void setOperate(String operate) {
+        public final void setOperate(String operate) {
             setHeader(CTRL_OPERATE, operate);
         }
 
-        public Object getResult() {
+        public final Object getResult() {
             return getFooter(DRCT_RESULT);
         }
 
-        public void setResult(Object result) {
+        public final void setResult(Object result) {
             setFooter(DRCT_RESULT, result);
+        }
+
+    }
+
+    private class ProxyCommand extends ShellCommand {
+
+        protected BaseCommand getSource() {
+            return (BaseCommand) super.getSource();
+        }
+
+        protected Map<String, Object> gets(int index) {
+            return getSource().shell.gets(index);
+        }
+
+        protected void sets(int index, Map<String, Object> values) {
+            getSource().shell.sets(index, values);
+        }
+
+        protected <T> T get(int index, CharSequence key) {
+            return getSource().shell.get(index, key);
+        }
+
+        protected void set(int index, CharSequence key, Object value) {
+            getSource().shell.set(index, key, value);
         }
 
     }
 
     private class AutoCommand extends ShellCommand {
 
-        public Schema getSchema() {
+        protected Schema getSchema() {
             return BaseCommand.super.getSchema();
         }
 
-        public Object get(String name) {
+        protected Object get(String name) {
             return BaseCommand.super.get(name);
         }
 
-        public Object get(int index) {
+        protected Object get(int index) {
             return BaseCommand.super.get(index);
         }
 
-        public void put(String name, Object value) {
+        protected void put(String name, Object value) {
             BaseCommand.super.put(name, value);
         }
 
-        public void put(int index, Object value) {
+        protected void put(int index, Object value) {
             BaseCommand.super.put(index, value);
         }
 
-        public Map<CharSequence, ByteBuffer> getHeaders() {
+        protected Map<CharSequence, ByteBuffer> getHeaders() {
             return BaseCommand.super.getHeaders();
         }
 
-        public void setHeaders(Map<CharSequence, ByteBuffer> value) {
+        protected void setHeaders(Map<CharSequence, ByteBuffer> value) {
             BaseCommand.super.setHeaders(value);
         }
 
-        public Map<CharSequence, ByteBuffer> getParameters() {
+        protected Map<CharSequence, ByteBuffer> getParameters() {
             return BaseCommand.super.getParameters();
         }
 
-        public void setParameters(Map<CharSequence, ByteBuffer> value) {
+        protected void setParameters(Map<CharSequence, ByteBuffer> value) {
             BaseCommand.super.setParameters(value);
         }
 
-        public Map<CharSequence, ByteBuffer> getFooters() {
+        protected Map<CharSequence, ByteBuffer> getFooters() {
             return BaseCommand.super.getFooters();
         }
 
-        public void setFooters(Map<CharSequence, ByteBuffer> value) {
+        protected void setFooters(Map<CharSequence, ByteBuffer> value) {
             BaseCommand.super.setFooters(value);
         }
 
