@@ -20,16 +20,4 @@ public interface SocketProtocol extends Protocol {
 
     }
 
-    // public class DecoderAdapter implements Decoder {
-    //
-    // public final Object decode(byte[] data) {
-    // return decode(new ByteArrayInputStream(data));
-    // }
-    //
-    // public Object decode(InputStream is) {
-    // return null;
-    // }
-    //
-    // }
-
 }

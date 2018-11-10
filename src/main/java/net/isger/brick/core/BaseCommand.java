@@ -11,6 +11,7 @@ import org.apache.avro.Schema;
 
 import net.isger.brick.auth.AuthIdentity;
 import net.isger.brick.stub.model.Model;
+import net.isger.util.Callable;
 import net.isger.util.Helpers;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
@@ -205,10 +206,25 @@ public class BaseCommand extends Command implements Cloneable {
         return getParameter(type, null, isBatch);
     }
 
-    @SuppressWarnings("unchecked")
     public <T> T getParameter(Class<?> type, String namespace,
             boolean isBatch) {
-        return (T) shell.getParameter(type, namespace, isBatch);
+        return getParameter(type, namespace, isBatch, null);
+    }
+
+    public <T> T getParameter(Class<T> type, Callable<?> assembler) {
+        return getParameter(type, null, false, assembler);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getParameter(Class<?> type, boolean isBatch,
+            Callable<?> assembler) {
+        return (T) shell.getParameter(type, null, isBatch, assembler);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T getParameter(Class<?> type, String namespace, boolean isBatch,
+            Callable<?> assembler) {
+        return (T) shell.getParameter(type, namespace, isBatch, assembler);
     }
 
     public Map<String, Object> getParameter() {
@@ -526,13 +542,13 @@ public class BaseCommand extends Command implements Cloneable {
         }
 
         public final Object getParameter(Class<?> type, String namespace,
-                boolean isBatch) {
+                boolean isBatch, Callable<?> assembler) {
             Map<String, Object> params = Helpers.getMap(getParameter(),
                     namespace);
             if (Map.class.isAssignableFrom(type)) {
                 return params;
             } else if (!isBatch) {
-                return Reflects.newInstance(type, params);
+                return Reflects.newInstance(type, params, assembler);
             }
             List<Object> result = new ArrayList<Object>();
             List<String> names = new ArrayList<String>();
@@ -543,22 +559,30 @@ public class BaseCommand extends Command implements Cloneable {
                     .getBoundFields(type);
             for (Entry<String, List<BoundField>> entry : fields.entrySet()) {
                 name = entry.getKey();
-                value = params.get(name + "[]");
+                value = getValue(params, name);
                 if (value == null) {
-                    value = params.get(name);
+                    value = getValue(params,
+                            name = entry.getValue().get(0).getAlias());
                 }
-                if (value == null) {
-                    continue;
+                if (value != null) {
+                    names.add(name);
+                    values.add(value);
                 }
-                names.add(name);
-                values.add(value);
             }
             Object[] columns = names.toArray();
             for (Object[] row : Helpers.newGrid(true, values.toArray())) {
                 result.add(Reflects.newInstance(type,
-                        Reflects.toMap(columns, row)));
+                        Reflects.toMap(columns, row), assembler));
             }
             return result;
+        }
+
+        private Object getValue(Map<String, Object> params, String name) {
+            Object value = params.get(name + "[]");
+            if (value == null) {
+                value = params.get(name);
+            }
+            return value;
         }
 
         public final Object getParameter(CharSequence key, String namespace,
