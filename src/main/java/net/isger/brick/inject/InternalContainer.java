@@ -120,6 +120,7 @@ class InternalContainer implements Container {
                 Object instance = getInstance(Key.newInstance(type, name),
                         (InternalContext) args[0]);
                 find: if (instance == null) {
+                    // 检索父类
                     Class<?> superclass = type.getSuperclass();
                     while (superclass != null) {
                         instance = getInstance(
@@ -130,6 +131,7 @@ class InternalContainer implements Container {
                         }
                         superclass = superclass.getSuperclass();
                     }
+                    // 检索接口
                     Class<?>[] interfaces = Reflects.getInterfaces(type);
                     for (Class<?> interfaceClass : interfaces) {
                         instance = getInstance(
@@ -139,6 +141,7 @@ class InternalContainer implements Container {
                             break find;
                         }
                     }
+                    // 检索子类
                     instance = getInstances(type).get(name);
                 }
                 return (T) instance;

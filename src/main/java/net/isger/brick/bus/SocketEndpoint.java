@@ -21,6 +21,8 @@ import net.isger.util.anno.Ignore.Mode;
 @Ignore
 public abstract class SocketEndpoint extends AbstractEndpoint {
 
+    public static final String ATTR_CLIENT_IP = "brick.bus.client.ip";
+
     public static final int MIN_RETRIES = 3;
 
     public static final String CHANNEL_UDP = "udp";

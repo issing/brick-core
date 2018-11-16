@@ -1,10 +1,10 @@
 package net.isger.brick.auth;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 import net.isger.util.Helpers;
+import net.isger.util.Strings;
 
 /**
  * 认证身份
@@ -22,13 +22,21 @@ public class AuthIdentity {
     private Map<String, Object> attributes;
 
     public AuthIdentity() {
-        this.id = Helpers.makeUUID();
-        this.time = System.currentTimeMillis();
-        this.attributes = new HashMap<String, Object>();
+        this(null, null);
     }
 
     public AuthIdentity(AuthToken<?> token) {
-        this();
+        this(null, token);
+    }
+
+    public AuthIdentity(String id) {
+        this(id, null);
+    }
+
+    public AuthIdentity(String id, AuthToken<?> token) {
+        this.id = Strings.empty(id, Helpers.makeUUID());
+        this.time = System.currentTimeMillis();
+        this.attributes = new HashMap<String, Object>();
         this.token = token;
     }
 
@@ -36,8 +44,8 @@ public class AuthIdentity {
         return id;
     }
 
-    public Date getTime() {
-        return new Date(time);
+    public long getTime() {
+        return time;
     }
 
     public boolean isLogin() {

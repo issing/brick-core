@@ -41,11 +41,19 @@ public class BusCommand extends BaseCommand {
     }
 
     public Object getPayload() {
-        return getHeader(CTRL_PAYLOAD);
+        return getPayload(this);
     }
 
     public void setPayload(Object payload) {
-        setHeader(CTRL_PAYLOAD, payload);
+        setPayload(this, payload);
+    }
+
+    public static Object getPayload(BaseCommand cmd) {
+        return cmd.getHeader(CTRL_PAYLOAD);
+    }
+
+    public static void setPayload(BaseCommand cmd, Object payload) {
+        cmd.setHeader(CTRL_PAYLOAD, payload);
     }
 
 }
