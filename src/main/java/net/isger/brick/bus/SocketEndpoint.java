@@ -23,14 +23,9 @@ public abstract class SocketEndpoint extends AbstractEndpoint {
 
     public static final String ATTR_CLIENT_IP = "brick.bus.client.ip";
 
-    public static final int MIN_RETRIES = 3;
-
     public static final String CHANNEL_UDP = "udp";
 
     public static final String CHANNEL_TCP = "tcp";
-
-    @Ignore(mode = Mode.INCLUDE)
-    private int retries;
 
     @Ignore(mode = Mode.INCLUDE)
     private String network;
@@ -82,9 +77,6 @@ public abstract class SocketEndpoint extends AbstractEndpoint {
 
     protected void open() {
         address = newAddress(host, port);
-        if (retries < MIN_RETRIES) {
-            retries = MIN_RETRIES;
-        }
         try {
             if (Strings.isEmpty(network)) {
                 networkInterface = NetworkInterface
