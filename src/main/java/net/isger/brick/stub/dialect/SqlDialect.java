@@ -102,6 +102,10 @@ public class SqlDialect implements Dialect {
         return name.toUpperCase();
     }
 
+    protected String seal() {
+        return "\"";
+    }
+
     /**
      * 获取创建实例
      * 
@@ -113,12 +117,13 @@ public class SqlDialect implements Dialect {
     }
 
     public SqlEntry getCreateEntry(String table, String[][] describes) {
+        String seal = seal();
         StringBuffer sql = new StringBuffer(512);
         sql.append("CREATE TABLE ").append(table).append(" (");
         int count;
         for (String[] describe : describes) {
             count = describe.length;
-            sql.append("`").append(describe[0]).append("` ");
+            sql.append(seal).append(describe[0]).append(seal).append(" ");
             for (int i = 1; i < count; i++) {
                 sql.append(describe[i]).append(" ");
             }
@@ -141,13 +146,14 @@ public class SqlDialect implements Dialect {
     }
 
     public SqlEntry getInsertEntry(String tableName, Object[] gridData) {
+        String seal = seal();
         StringBuffer sql = new StringBuffer(512);
         StringBuffer params = new StringBuffer(128);
         sql.append("INSERT INTO ").append(tableName).append("(");
         Object[] columns = (Object[]) gridData[0];
         int count = columns.length;
         for (int i = 0; i < count; i++) {
-            sql.append("`").append(columns[i]).append("`, ");
+            sql.append(seal).append(columns[i]).append(seal).append(", ");
             params.append("?, ");
         }
         sql.setLength(sql.length() - 2);
@@ -169,6 +175,7 @@ public class SqlDialect implements Dialect {
     }
 
     public SqlEntry getDeleteEntry(String tableName, Object[] gridData) {
+        String seal = seal();
         StringBuffer sql = new StringBuffer(512);
         sql.append("DELETE FROM ").append(tableName).append(" WHERE 1 = 1");
         Object[] columns = (Object[]) gridData[0];
@@ -178,8 +185,8 @@ public class SqlDialect implements Dialect {
                     "Unsupported feature in the current version");
         } else {
             for (int i = 0; i < count; i++) {
-                sql.append(" AND ").append("`").append(columns[i])
-                        .append("` = ?");
+                sql.append(" AND ").append(seal).append(columns[i]).append(seal)
+                        .append(" = ?");
             }
         }
         return new SqlEntry(sql.toString(), (Object[]) gridData[1]);
@@ -199,12 +206,13 @@ public class SqlDialect implements Dialect {
 
     public SqlEntry getUpdateEntry(String tableName, Object[] newGridData,
             Object[] oldGridData) {
+        String seal = seal();
         StringBuffer sql = new StringBuffer(512);
         sql.append("UPDATE ").append(tableName).append(" SET ");
         Object[] columns = (Object[]) newGridData[0];
         int count = columns.length;
         for (int i = 0; i < count; i++) {
-            sql.append("`").append(columns[i]).append("` = ?, ");
+            sql.append(seal).append(columns[i]).append(seal).append(" = ?, ");
         }
         sql.setLength(sql.length() - 2);
         sql.append(" WHERE 1 = 1");
@@ -216,8 +224,8 @@ public class SqlDialect implements Dialect {
                     "Unsupported feature in the current version");
         } else {
             for (int i = 0; i < count; i++) {
-                sql.append(" AND ").append("`").append(columns[i])
-                        .append("` = ?");
+                sql.append(" AND ").append(seal).append(columns[i]).append(seal)
+                        .append(" = ?");
             }
         }
         return new SqlEntry(sql.toString(),
@@ -237,12 +245,13 @@ public class SqlDialect implements Dialect {
 
     public SqlEntry getSearchEntry(String tableName, Object[] columns,
             Object[] gridData) {
+        String seal = seal();
         StringBuffer sql = new StringBuffer(512);
         StringBuffer restrict = new StringBuffer(128);
         sql.append("SELECT ");
         int count = columns.length;
         for (int i = 0; i < count; i++) {
-            sql.append("`").append(columns[i]).append("`").append(", ");
+            sql.append(seal).append(columns[i]).append(seal).append(", ");
         }
         sql.setLength(sql.length() - 2);
         sql.append(" FROM ").append(tableName).append(" WHERE 1 = 1");
@@ -253,7 +262,8 @@ public class SqlDialect implements Dialect {
                     "Unsupported feature in the current version");
         } else {
             for (int i = 0; i < count; i++) {
-                restrict.append(" AND `").append(columns[i]).append("` = ?");
+                restrict.append(" AND ").append(seal).append(columns[i])
+                        .append(seal).append(" = ?");
             }
             sql.append(restrict);
         }

@@ -1,5 +1,10 @@
 package net.isger.brick.stub.dialect;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import net.isger.util.Strings;
+
 /**
  * MySQL
  * 
@@ -12,15 +17,27 @@ public class MysqlDialect extends SqlDialect {
 
     public static final String NUMERIC = "numeric";
 
+    private static final Map<String, String> TYPES;
+
+    static {
+        TYPES = new HashMap<String, String>();
+        TYPES.put(NUMBER.toUpperCase(), NUMERIC.toUpperCase());
+    }
+
     public boolean isSupport(String name) {
         return super.isSupport(name) || DRIVER_NAME.equals(name);
     }
 
-    protected Describer getNumberDescriber(String name) {
-        if (NUMBER.equalsIgnoreCase(name)) {
-            name = NUMERIC;
+    protected String type(String name) {
+        String type = TYPES.get(name.toUpperCase());
+        if (Strings.isEmpty(type)) {
+            type = super.type(name);
         }
-        return new NumberDescriber(name);
+        return type;
+    }
+
+    protected String seal() {
+        return "`";
     }
 
 }

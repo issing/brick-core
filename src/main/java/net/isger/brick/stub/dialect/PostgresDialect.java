@@ -19,12 +19,17 @@ public class PostgresDialect extends SqlDialect {
 
     private static final String NUMERIC = "numeric";
 
+    private static final String LONG = "long";
+
+    private static final String BIGINT = "bigint";
+
     private static final Map<String, String> TYPES;
 
     static {
         TYPES = new HashMap<String, String>();
         TYPES.put(NUMBER.toUpperCase(), NUMERIC.toUpperCase());
         TYPES.put(DOUBLE.toUpperCase(), NUMERIC.toUpperCase());
+        TYPES.put(LONG.toUpperCase(), BIGINT.toUpperCase());
         TYPES.put(DATETIME.toUpperCase(), TIMESTAMP.toUpperCase());
     }
 
