@@ -76,6 +76,10 @@ public class AuthIdentity {
         this.time = System.currentTimeMillis();
     }
 
+    public void setTimeout(int timeout) {
+
+    }
+
     public void clear() {
         attributes.clear();
     }
