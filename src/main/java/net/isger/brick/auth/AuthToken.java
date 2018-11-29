@@ -10,13 +10,13 @@ public abstract class AuthToken<T> {
 
     protected final T source;
 
-    @SuppressWarnings("unchecked")
     public AuthToken() {
-        this.source = (T) this;
+        this(null);
     }
 
-    public AuthToken(T source) {
-        this.source = source;
+    @SuppressWarnings("unchecked")
+    protected AuthToken(T source) {
+        this.source = source == null ? (T) this : source;
     }
 
     public T getSource() {
