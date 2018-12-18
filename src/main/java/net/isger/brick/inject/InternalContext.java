@@ -15,7 +15,7 @@ class InternalContext {
 
     final InternalContainer container;
 
-    private List<Object> instances;
+    final List<Object> instances;
 
     InternalContext(InternalContainer container) {
         this.container = container;

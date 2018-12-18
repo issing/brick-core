@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.isger.brick.Constants;
 import net.isger.brick.util.anno.Collect;
 import net.isger.brick.util.anno.Digest;
+import net.isger.brick.util.anno.Digest.Stage;
 import net.isger.util.Callable;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
@@ -276,7 +277,10 @@ class InternalContainer implements Container {
                 }
             });
             for (BoundMethod method : methods) {
-                method.invoke(instance);
+                Digest digest = method.getAnnotation(Digest.class);
+                if (digest.stage() == Stage.INITIAL) {
+                    method.invoke(instance);
+                }
             }
         }
     }
@@ -352,6 +356,25 @@ class InternalContainer implements Container {
     }
 
     public void destroy() {
+        InternalContext[] reference = context.get();
+        if (reference[0] != null) {
+            for (Object instance : reference[0].instances) {
+                List<BoundMethod> methods = Reflects
+                        .getBoundMethods(instance.getClass(), Digest.class);
+                Collections.sort(methods, new Comparator<BoundMethod>() {
+                    public int compare(BoundMethod prev, BoundMethod next) {
+                        return prev.getAnnotation(Digest.class).value()
+                                - next.getAnnotation(Digest.class).value();
+                    }
+                });
+                for (BoundMethod method : methods) {
+                    Digest digest = method.getAnnotation(Digest.class);
+                    if (digest.stage() == Stage.DESTROY) {
+                        method.invoke(instance);
+                    }
+                }
+            }
+        }
         stgs.clear();
         facs.clear();
         context.remove();
