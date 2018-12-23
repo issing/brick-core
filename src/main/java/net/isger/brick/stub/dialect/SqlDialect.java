@@ -13,6 +13,7 @@ import net.isger.brick.stub.model.Option;
 import net.isger.brick.stub.model.Options;
 import net.isger.util.Dates;
 import net.isger.util.Helpers;
+import net.isger.util.Numbers;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
 import net.isger.util.reflect.BoundField;
@@ -28,6 +29,8 @@ import net.isger.util.sql.SqlEntry;
  */
 public class SqlDialect implements Dialect {
 
+    private final static Map<String, String> TYPES;
+
     private final Describer PRIMARY_DESCRIBER;
 
     private final Describer NOTNULL_DESCRIBER;
@@ -39,7 +42,17 @@ public class SqlDialect implements Dialect {
     /** 方言名称 */
     private String name;
 
-    private Map<Object, Describer> describers;
+    protected final Map<Object, Describer> describers;
+
+    static {
+        TYPES = new HashMap<String, String>();
+        TYPES.put(DOUBLE.toUpperCase(), NUMBER.toUpperCase());
+        TYPES.put(FLOAT.toUpperCase(), NUMBER.toUpperCase());
+        TYPES.put(LONG.toUpperCase(), NUMBER.toUpperCase());
+        TYPES.put(INTEGER.toUpperCase(), INT.toUpperCase());
+        TYPES.put(SHORT.toUpperCase(), INT.toUpperCase());
+        TYPES.put(BOOLEAN.toUpperCase(), INT.toUpperCase());
+    }
 
     {
         DEFAULT_DESCRIBER = new DescriberAdapter() {
@@ -76,7 +89,7 @@ public class SqlDialect implements Dialect {
         addDescriber(REFERENCE, getReferenceDescriber(REFERENCE));
         addDescriber(STRING, getStringDescriber(STRING));
         addDescriber(NUMBER, getNumberDescriber(NUMBER));
-        addDescriber(DOUBLE, getNumberDescriber(DOUBLE));
+        addDescriber(INT, getNumberDescriber(INT));
         addDescriber(DATE, getDateDescriber(DATE));
         addDescriber(TIME, getDateDescriber(TIME));
         addDescriber(DATETIME, getDateDescriber(DATETIME));
@@ -98,8 +111,9 @@ public class SqlDialect implements Dialect {
         return name().equalsIgnoreCase(name);
     }
 
-    protected String type(String name) {
-        return name.toUpperCase();
+    protected String type(Meta meta, String name) {
+        String key = name.toUpperCase();
+        return Strings.empty(TYPES.get(key), key);
     }
 
     protected String seal() {
@@ -349,10 +363,11 @@ public class SqlDialect implements Dialect {
             meta.options().set(options);
         }
         describe = meta.getType().toUpperCase();
-        Describer describer = describers.get(describe);
+        String typeName = type(meta, describe);
+        Describer describer = describers.get(typeName);
         describe: {
-            if (describer == null) {
-                describer = describers.get(describe = type(describe));
+            if (describer == null && !describe.equalsIgnoreCase(typeName)) {
+                describer = describers.get(describe);
                 if (describer == null) {
                     break describe;
                 }
@@ -486,7 +501,11 @@ public class SqlDialect implements Dialect {
     }
 
     protected Describer getNumberDescriber(String name) {
-        return new NumberDescriber(name);
+        return getNumberDescriber(name, true);
+    }
+
+    protected Describer getNumberDescriber(String name, boolean hasScale) {
+        return new NumberDescriber(name, hasScale);
     }
 
     protected Describer getDateDescriber(String name) {
@@ -495,14 +514,18 @@ public class SqlDialect implements Dialect {
 
     protected class NumberDescriber extends DescriberAdapter {
 
-        public NumberDescriber(String name) {
+        private boolean hasScale;
+
+        public NumberDescriber(String name, boolean hasScale) {
             super(name);
+            this.hasScale = hasScale;
         }
 
         public String describe(Meta field) {
-            StringBuffer describe = new StringBuffer(type(this.getName()));
+            StringBuffer describe = new StringBuffer(
+                    type(field, this.getName()));
             int length = field.getLength();
-            if (length > 0) {
+            if (length > 0 && hasScale) {
                 describe.append("(").append(length);
                 if ((length = field.getScale()) > 0) {
                     describe.append(", ").append(length);
@@ -519,6 +542,8 @@ public class SqlDialect implements Dialect {
                 Object optionValue = option.getValue();
                 if (optionValue == null) {
                     value = "0";
+                } else {
+                    value = String.valueOf(Numbers.parseInt(optionValue));
                 }
                 break;
             }
@@ -530,8 +555,8 @@ public class SqlDialect implements Dialect {
 
         public String describe(Meta field) {
             int length = field.getLength();
-            return length > 0 ? type("VARCHAR") + "(" + length + ")"
-                    : type("TEXT");
+            return length > 0 ? type(field, "VARCHAR") + "(" + length + ")"
+                    : type(field, "TEXT");
         }
 
         public String describe(Option option, Object... extents) {
@@ -559,19 +584,19 @@ public class SqlDialect implements Dialect {
             StringBuffer describe = new StringBuffer(64);
             switch (field.getScale()) {
             case -1:
-                describe.append(type(this.getName()));
+                describe.append(type(field, this.getName()));
                 break;
             case SCALE_TIME:
-                describe.append(type(TIME));
+                describe.append(type(field, TIME));
                 break;
             case SCALE_DATETIME:
-                describe.append(type(DATETIME));
+                describe.append(type(field, DATETIME));
                 break;
             case SCALE_TIMESTAMP:
-                describe.append(type(TIMESTAMP));
+                describe.append(type(field, TIMESTAMP));
                 break;
             default:
-                describe.append(type(DATE));
+                describe.append(type(field, DATE));
             }
             return describe.toString();
         }

@@ -3,6 +3,7 @@ package net.isger.brick.stub.dialect;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.isger.brick.stub.model.Meta;
 import net.isger.util.Strings;
 
 /**
@@ -28,10 +29,10 @@ public class MysqlDialect extends SqlDialect {
         return super.isSupport(name) || DRIVER_NAME.equals(name);
     }
 
-    protected String type(String name) {
+    protected String type(Meta meta, String name) {
         String type = TYPES.get(name.toUpperCase());
         if (Strings.isEmpty(type)) {
-            type = super.type(name);
+            type = super.type(meta, name);
         }
         return type;
     }
