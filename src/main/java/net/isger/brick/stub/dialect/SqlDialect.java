@@ -366,11 +366,14 @@ public class SqlDialect implements Dialect {
         String typeName = type(meta, describe);
         Describer describer = describers.get(typeName);
         describe: {
-            if (describer == null && !describe.equalsIgnoreCase(typeName)) {
-                describer = describers.get(describe);
-                if (describer == null) {
-                    break describe;
+            describer: if (describer == null) {
+                if (!describe.equalsIgnoreCase(typeName)) {
+                    describer = describers.get(describe);
+                    if (describer != null) {
+                        break describer;
+                    }
                 }
+                break describe;
             }
             describe = describer.describe(meta);
             /* 跳过非从属列描述 */
