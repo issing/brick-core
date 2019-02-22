@@ -9,8 +9,8 @@ import net.isger.brick.stub.dialect.SqlDialect;
 import net.isger.raw.Artifact;
 import net.isger.raw.Depository;
 import net.isger.raw.StringRaw;
+import net.isger.util.Helpers;
 import net.isger.util.Reflects;
-import net.isger.util.Sqls;
 import net.isger.util.Strings;
 import net.isger.util.anno.Affix;
 import net.isger.util.anno.Alias;
@@ -328,7 +328,7 @@ public final class Meta implements Cloneable {
         if (Strings.isEmpty(meta.name)) {
             meta.name = field.getAlias();
             if (Strings.isEmpty(meta.name)) {
-                meta.name = Sqls.toColumnName(field.getName());
+                meta.name = Helpers.toColumnName(field.getName());
             }
         }
         if (Strings.isEmpty(meta.type)) {

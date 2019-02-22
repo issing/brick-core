@@ -5,6 +5,7 @@ import java.util.Map;
 import net.isger.raw.Artifact;
 import net.isger.raw.Depository;
 import net.isger.raw.StringRaw;
+import net.isger.util.Helpers;
 import net.isger.util.Sqls;
 import net.isger.util.Strings;
 import net.isger.util.anno.Affix;
@@ -185,8 +186,8 @@ public class Model implements Cloneable {
 
     public void metaValue(Map<?, ?> values) {
         for (String name : this.metas().names()) {
-            this.metaValue(name, values.get(
-                    values.containsKey(name) ? name : Sqls.toFieldName(name)));
+            this.metaValue(name, values.get(values.containsKey(name) ? name
+                    : Helpers.toFieldName(name)));
         }
     }
 
