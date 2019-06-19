@@ -16,6 +16,7 @@ import net.isger.brick.stub.model.Meta;
 import net.isger.brick.stub.model.Metas;
 import net.isger.brick.stub.model.Model;
 import net.isger.brick.stub.model.Option;
+import net.isger.util.Asserts;
 import net.isger.util.Callable;
 import net.isger.util.Helpers;
 import net.isger.util.Sqls;
@@ -339,10 +340,28 @@ public class SqlStub extends AbstractStub {
                 result = Sqls.query(sqlEntry, conn);
             } else if (table instanceof Class) {
                 canonicalize(cmd.getOperate(), condition);
-                String sql = Sqls.getSQL((Class<?>) table, dialect.name(),
-                        (String) condition[0], (Object[]) condition[2]);
-                sqlEntry = transformer.transform(
-                        dialect.getSearchEntry(sql, (Object[]) condition[1]));
+                String id = (String) condition[0];
+                Object[] args = (Object[]) condition[1];
+                String sql = Sqls.getSQL((Class<?>) table, dialect.name(), id,
+                        (Object[]) condition[2]);
+                boolean isSpecify = id.indexOf(":") > 0;
+                if (Strings.isEmpty(sql)) {
+                    if (isSpecify) {
+                        String[] opcodes = id.split("[:]");
+                        sql = Sqls.getSQL((Class<?>) table, dialect.name(),
+                                opcodes[0], (Object[]) condition[2]);
+                    }
+                    Asserts.throwState(Strings.isNotEmpty(sql),
+                            "Not found the sql [%s] in the configuration file",
+                            id);
+                    args = (Object[]) args[1];
+                } else if (isSpecify) {
+                    args = (Object[]) args[0];
+                } else if (args[0] == null && args[1] instanceof Object[]) {
+                    args = (Object[]) args[1];
+                }
+                sqlEntry = transformer
+                        .transform(dialect.getSearchEntry(sql, args));
                 result = Sqls.query(sqlEntry, conn);
             } else {
                 result = (Object[]) Helpers.each(table, new Callable<Object>() {
@@ -389,11 +408,23 @@ public class SqlStub extends AbstractStub {
                 result = Sqls.query(sqlEntry, conn);
             } else if (table instanceof Class) {
                 canonicalize(cmd.getOperate(), condition);
-                String sql = Sqls.getSQL((Class<?>) table, dialect.name(),
-                        Strings.empty(condition[0], "exists"),
+                String id = Strings.empty(condition[0], "exists");
+                String sql = Sqls.getSQL((Class<?>) table, dialect.name(), id,
                         (Object[]) condition[2]);
-                sqlEntry = transformer.transform(
-                        dialect.getSearchEntry(sql, (Object[]) condition[1]));
+                Object[] args = (Object[]) condition[1];
+                if (Strings.isEmpty(sql) && id.indexOf(":") >= 0) {
+                    String[] opcodes = id.split("[:]");
+                    sql = Sqls.getSQL((Class<?>) table, dialect.name(),
+                            opcodes[0], (Object[]) condition[2]);
+                    Asserts.throwState(Strings.isNotEmpty(sql),
+                            "Not found the sql [%s] in the configuration file",
+                            id);
+                    args = (Object[]) args[1];
+                } else {
+                    args = (Object[]) args[0];
+                }
+                sqlEntry = transformer
+                        .transform(dialect.getSearchEntry(sql, args));
                 result = Sqls.query(sqlEntry, conn);
             } else {
                 result = (Object[]) Helpers.each(table, new Callable<Object>() {
@@ -458,12 +489,27 @@ public class SqlStub extends AbstractStub {
     protected Object modify(String operate, Class<?> table, Object[] condition,
             Connection conn) {
         canonicalize(operate, condition);
-        SqlEntry entry = transformer
-                .transform(
-                        Sqls.getSQL(table, dialect.name(),
-                                (String) condition[0], (Object[]) condition[2]),
-                        (Object[]) condition[1]);
-        String sql = entry.getSql();
+        String id = (String) condition[0];
+        String sql = Sqls.getSQL((Class<?>) table, dialect.name(), id,
+                (Object[]) condition[2]);
+        Object[] args = (Object[]) condition[1];
+        boolean isSpecify = id.indexOf(":") > 0;
+        if (Strings.isEmpty(sql)) {
+            if (isSpecify) {
+                String[] opcodes = id.split("[:]");
+                sql = Sqls.getSQL((Class<?>) table, dialect.name(), opcodes[0],
+                        (Object[]) condition[2]);
+            }
+            Asserts.throwState(Strings.isNotEmpty(sql),
+                    "Not found the sql [%s] in the configuration file", id);
+            args = (Object[]) args[1];
+        } else if (isSpecify) {
+            args = (Object[]) args[0];
+        } else if (args[0] == null && args[1] instanceof Object[]) {
+            args = (Object[]) args[1];
+        }
+        SqlEntry entry = transformer.transform(sql, args);
+        sql = entry.getSql();
         Object value = entry.getValues();
         return value instanceof Object[][]
                 ? Sqls.modify(sql, (Object[][]) value, conn)
