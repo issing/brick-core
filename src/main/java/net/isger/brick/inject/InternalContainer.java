@@ -15,7 +15,9 @@ import net.isger.brick.Constants;
 import net.isger.brick.util.anno.Collect;
 import net.isger.brick.util.anno.Digest;
 import net.isger.brick.util.anno.Digest.Stage;
+import net.isger.util.Asserts;
 import net.isger.util.Callable;
+import net.isger.util.Helpers;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
 import net.isger.util.reflect.BoundField;
@@ -29,20 +31,26 @@ import net.isger.util.reflect.BoundMethod;
  */
 class InternalContainer implements Container {
 
+    /** 容器名称 */
+    final String name;
+
+    /** 注入实例后备器 */
+    transient InjectReserver reserver;
+
     /** 实例工厂集合 */
-    final Map<Key<?>, InternalFactory<?>> facs;
+    final Map<Key<?>, InternalFactory<?>> factories;
 
     /** 实例策略集合 */
-    final Map<Key<?>, Strategy> stgs;
+    final Map<Key<?>, Strategy> strategies;
 
     /** 容器构建上下文 */
-    private ThreadLocal<InternalContext[]> context;
+    private volatile ThreadLocal<InternalContext[]> context;
 
-    InternalContainer(Map<Key<?>, InternalFactory<?>> factories) {
-        this.facs = new ConcurrentHashMap<Key<?>, InternalFactory<?>>(
-                factories);
-        this.stgs = new ConcurrentHashMap<Key<?>, Strategy>();
-        this.context = new ThreadLocal<InternalContext[]>() {
+    InternalContainer(String name, Map<Key<?>, InternalFactory<?>> factories) {
+        this.name = name;
+        this.factories = new ConcurrentHashMap<Key<?>, InternalFactory<?>>(factories);
+        strategies = new ConcurrentHashMap<Key<?>, Strategy>();
+        context = new ThreadLocal<InternalContext[]>() {
             protected InternalContext[] initialValue() {
                 return new InternalContext[1];
             }
@@ -51,12 +59,15 @@ class InternalContainer implements Container {
 
     public void initial() {
         /* 托管容器自身 */
-        this.facs.put(Key.newInstance(Container.class, Constants.SYSTEM),
-                new InternalFactory<Container>() {
-                    public Container create(InternalContext context) {
-                        return InternalContainer.this;
-                    }
-                });
+        factories.put(Key.newInstance(Container.class, Constants.SYSTEM), new InternalFactory<Container>() {
+            public Container create(InternalContext context) {
+                return InternalContainer.this;
+            }
+        });
+        /* 添加注入监听器 */
+        for (InjectReserver listener : Helpers.sort(new ArrayList<InjectReserver>(getInstances(InjectReserver.class).values()))) {
+            this.reserver = InjectMulticaster.addInternal(this.reserver, listener);
+        }
     }
 
     public boolean contains(Class<?> type) {
@@ -75,8 +86,7 @@ class InternalContainer implements Container {
             }
             Class<?>[] interfaces = Reflects.getInterfaces(type);
             for (Class<?> interfaceClass : interfaces) {
-                if (hasContains = contains(
-                        Key.newInstance(interfaceClass, name))) {
+                if (hasContains = contains(Key.newInstance(interfaceClass, name))) {
                     break find;
                 }
             }
@@ -86,7 +96,7 @@ class InternalContainer implements Container {
     }
 
     private boolean contains(Key<?> key) {
-        return facs.get(key) != null || stgs.containsKey(key);
+        return factories.containsKey(key) || strategies.containsKey(key) || (reserver != null && reserver.contains(key));
     }
 
     public Strategy getStrategy(Class<?> type) {
@@ -94,7 +104,7 @@ class InternalContainer implements Container {
     }
 
     public Strategy getStrategy(Class<?> type, String name) {
-        return stgs.get(Key.newInstance(type, name));
+        return strategies.get(Key.newInstance(type, name));
     }
 
     public Strategy setStrategy(Class<?> type, Strategy strategy) {
@@ -105,28 +115,29 @@ class InternalContainer implements Container {
         Key<?> key = Key.newInstance(type, name);
         /** 移除策略 */
         if (strategy == null) {
-            return stgs.remove(key);
+            return strategies.remove(key);
         }
-        return stgs.put(key, strategy);
+        return strategies.put(key, strategy);
     }
 
     public <T> T getInstance(Class<T> type) {
-        return getInstance(type, Constants.DEFAULT);
+        return getInstance(type, Constants.DEFAULT, null);
     }
 
-    public <T> T getInstance(final Class<T> type, final String name) {
+    public <T> T getInstance(Class<T> type, String name) {
+        return getInstance(type, name, null);
+    }
+
+    public <T> T getInstance(final Class<T> type, final String name, InjectConductor conductor) {
         return call(new Callable<T>() {
             @SuppressWarnings("unchecked")
             public T call(Object... args) {
-                Object instance = getInstance(Key.newInstance(type, name),
-                        (InternalContext) args[0]);
+                Object instance = getInstance(Key.newInstance(type, name), (InternalContext) args[0]);
                 find: if (instance == null) {
                     // 检索父类
                     Class<?> superclass = type.getSuperclass();
                     while (superclass != null) {
-                        instance = getInstance(
-                                Key.newInstance(superclass, name),
-                                (InternalContext) args[0]);
+                        instance = getInstance(Key.newInstance(superclass, name), (InternalContext) args[0]);
                         if (instance != null && type.isInstance(instance)) {
                             break find;
                         }
@@ -135,9 +146,7 @@ class InternalContainer implements Container {
                     // 检索接口
                     Class<?>[] interfaces = Reflects.getInterfaces(type);
                     for (Class<?> interfaceClass : interfaces) {
-                        instance = getInstance(
-                                Key.newInstance(interfaceClass, name),
-                                (InternalContext) args[0]);
+                        instance = getInstance(Key.newInstance(interfaceClass, name), (InternalContext) args[0]);
                         if (instance != null && type.isInstance(instance)) {
                             break find;
                         }
@@ -147,83 +156,86 @@ class InternalContainer implements Container {
                 }
                 return (T) instance;
             }
-        });
+        }, conductor);
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T getInstance(Key<T> key, InternalContext context) {
-        InternalFactory<T> factory = (InternalFactory<T>) facs.get(key);
-        T result;
+    private <T> T getInstance(Key<T> key, final InternalContext context) {
+        InternalFactory<T> factory = (InternalFactory<T>) factories.get(key);
+        T result = null;
         if (factory == null) {
             /* 策略模式查找对象 */
-            if (stgs.containsKey(key)) {
+            if (strategies.containsKey(key)) {
                 try {
-                    result = stgs.get(key).find(key.getType(), key.getName(),
-                            null);
+                    result = strategies.get(key).find(key.getType(), key.getName(), null);
                 } catch (Exception e) {
-                    throw new IllegalStateException(e.getMessage(),
-                            e.getCause());
+                    throw Asserts.state(e.getMessage(), e.getCause());
                 }
-            } else {
-                return null;
             }
         } else {
             result = factory.create(context);
         }
+        /* 监听替补 */
+        if (result == null && reserver != null) {
+            result = reserver.alternate(key, new InjectConductor() {
+                public boolean hasInject(Object instance) {
+                    return context.hasInject(instance);
+                }
+            });
+        }
         /* 注入对象 */
-        inject(result, context);
+        inject(key, result, context);
         return result;
     }
 
-    public <T> Map<String, T> getInstances(final Class<T> type) {
+    public <T> Map<String, T> getInstances(Class<T> type) {
+        return getInstances(type, (InjectConductor) null);
+    }
+
+    public <T> Map<String, T> getInstances(final Class<T> type, InjectConductor conductor) {
         return call(new Callable<Map<String, T>>() {
             public Map<String, T> call(Object... args) {
                 return getInstances(type, (InternalContext) args[0]);
             }
-        });
+        }, conductor);
     }
 
     @SuppressWarnings("unchecked")
-    private <T> Map<String, T> getInstances(Class<T> type,
-            InternalContext context) {
+    private <T> Map<String, T> getInstances(Class<T> type, InternalContext context) {
         Map<String, T> instances = new HashMap<String, T>();
         T instance;
         // 获取策略模式对象
         Strategy strategy;
-        for (Key<?> key : stgs.keySet()) {
+        for (Key<?> key : strategies.keySet()) {
             // 跳过存在指定类型实例工厂配置
-            if (key.type == type && facs.get(key) != null) {
+            if (key.type == type && factories.get(key) != null) {
                 break;
             }
             // 允许实例向上赋值
-            if (type.isAssignableFrom(key.type)
-                    && ((strategy = stgs.get(key)) != null)) {
+            if (type.isAssignableFrom(key.type) && ((strategy = strategies.get(key)) != null)) {
                 try {
                     instance = (T) strategy.find(key.type, key.name, null);
                     if (instance != null) {
-                        inject(instance, context);
+                        inject(key, instance, context);
                         instances.put(key.getName(), instance);
                     }
                 } catch (Exception e) {
-                    throw new IllegalStateException(e.getMessage(),
-                            e.getCause());
+                    throw Asserts.state(e.getMessage(), e.getCause());
                 }
             }
         }
         // 获取工厂注册对象
         InternalFactory<T> factory;
-        for (Key<?> key : facs.keySet()) {
-            if (key.type == type
-                    && (factory = (InternalFactory<T>) facs.get(key)) != null) {
+        for (Key<?> key : factories.keySet()) {
+            if (key.type == type && (factory = (InternalFactory<T>) factories.get(key)) != null) {
                 try {
                     instance = factory.create(context);
                     if (instances != null) {
-                        inject(instance, context);
+                        inject(key, instance, context);
                         instances.put(key.getName(), instance);
                     }
                 } catch (Exception e) {
-                    throw new IllegalStateException(e.getMessage(),
-                            e.getCause());
+                    throw Asserts.state(e.getMessage(), e.getCause());
                 }
             }
         }
@@ -233,54 +245,53 @@ class InternalContainer implements Container {
     public <T> T inject(final T instance) {
         return call(new Callable<T>() {
             public T call(Object... args) {
-                inject(instance, (InternalContext) args[0]);
+                inject(Key.newInstance(instance.getClass(), Constants.DEFAULT), instance, (InternalContext) args[0]);
                 return instance;
             }
-        });
+        }, null);
     }
 
     /**
      * 依赖注入
      * 
+     * @param key
      * @param instance
      *            注入实例
      * @param context
      *            上下文
      */
-    private void inject(Object instance, InternalContext context) {
+    private void inject(Key<?> key, Object instance, InternalContext context) {
         if (context.hasInject(instance)) {
-            Class<?> instanceClass = instance.getClass();
-            Class<?> fieldType;
-            Object infect;
-            for (List<BoundField> fields : Reflects
-                    .getBoundFields(instanceClass).values()) {
-                for (BoundField field : fields) {
-                    // 根据字段类型及其绑定名称获取容器注册实例
-                    fieldType = field.getField().getType();
-                    if (!setInstance(instance, field, fieldType, Strings
-                            .empty(field.getAlias(), Constants.DEFAULT))) {
-                        setInstance(instance, field, fieldType,
-                                field.getName());
-                    }
-                    if (field.isInject()
-                            && (infect = field.getValue(instance)) != null) {
-                        inject(infect, context);
-                    }
+            return;
+        }
+        context.instances.add(instance);
+        Class<?> instanceClass = instance.getClass();
+        Class<?> fieldType;
+        String fieldName;
+        Object infect;
+        for (List<BoundField> fields : Reflects.getBoundFields(instanceClass).values()) {
+            for (BoundField field : fields) {
+                // 根据字段类型及其绑定名称获取容器注册实例
+                fieldType = field.getField().getType();
+                fieldName = Strings.empty(field.getAlias(), Constants.DEFAULT);
+                if (!setInstance(instance, field, fieldType, fieldName)) {
+                    setInstance(instance, field, fieldType, fieldName = field.getName());
+                }
+                if (field.isInject() && (infect = field.getValue(instance)) != null) {
+                    inject(Key.newInstance(fieldType, fieldName), infect, context);
                 }
             }
-            List<BoundMethod> methods = Reflects.getBoundMethods(instanceClass,
-                    Digest.class);
-            Collections.sort(methods, new Comparator<BoundMethod>() {
-                public int compare(BoundMethod prev, BoundMethod next) {
-                    return prev.getAnnotation(Digest.class).value()
-                            - next.getAnnotation(Digest.class).value();
-                }
-            });
-            for (BoundMethod method : methods) {
-                Digest digest = method.getAnnotation(Digest.class);
-                if (digest.stage() == Stage.INITIAL) {
-                    method.invoke(instance);
-                }
+        }
+        List<BoundMethod> methods = Reflects.getBoundMethods(instanceClass, Digest.class);
+        Collections.sort(methods, new Comparator<BoundMethod>() {
+            public int compare(BoundMethod prev, BoundMethod next) {
+                return prev.getAnnotation(Digest.class).value() - next.getAnnotation(Digest.class).value();
+            }
+        });
+        for (BoundMethod method : methods) {
+            Digest digest = method.getAnnotation(Digest.class);
+            if (digest.stage() == Stage.INITIAL) {
+                method.invoke(instance);
             }
         }
     }
@@ -295,8 +306,7 @@ class InternalContainer implements Container {
      * @param isDefault
      * @return
      */
-    private boolean setInstance(Object instance, BoundField field,
-            Class<?> fieldType, String fieldName) {
+    private boolean setInstance(Object instance, BoundField field, Class<?> fieldType, String fieldName) {
         if (field.getField().getAnnotation(Collect.class) != null) {
             Type genericType = field.getField().getGenericType();
             values: if (fieldType.isArray()) {
@@ -305,8 +315,7 @@ class InternalContainer implements Container {
                 int size = instances.size();
                 if (size > 0) {
                     Object value = Array.newInstance(componentType, size);
-                    System.arraycopy(instances.values().toArray(), 0, value, 0,
-                            size);
+                    System.arraycopy(instances.values().toArray(), 0, value, 0, size);
                     field.setValue(instance, value);
                     return true;
                 }
@@ -315,8 +324,7 @@ class InternalContainer implements Container {
                 Type[] actualTypes = paramType.getActualTypeArguments();
                 Object value;
                 if (fieldType.isAssignableFrom(ArrayList.class)) {
-                    Map<String, ?> instances = getInstances(
-                            (Class<?>) actualTypes[0]);
+                    Map<String, ?> instances = getInstances((Class<?>) actualTypes[0]);
                     value = new ArrayList<Object>(instances.values());
                 } else if (fieldType.isAssignableFrom(HashMap.class)) {
                     value = getInstances((Class<?>) actualTypes[1]);
@@ -340,10 +348,10 @@ class InternalContainer implements Container {
      * @param callable
      * @return
      */
-    private <T> T call(Callable<T> callable) {
+    private <T> T call(Callable<T> callable, InjectConductor conductor) {
         InternalContext[] reference = context.get();
         if (reference[0] == null) {
-            reference[0] = new InternalContext(this);
+            reference[0] = new InternalContext(this, conductor);
             try {
                 return callable.call(reference[0]);
             } finally {
@@ -359,12 +367,10 @@ class InternalContainer implements Container {
         InternalContext[] reference = context.get();
         if (reference[0] != null) {
             for (Object instance : reference[0].instances) {
-                List<BoundMethod> methods = Reflects
-                        .getBoundMethods(instance.getClass(), Digest.class);
+                List<BoundMethod> methods = Reflects.getBoundMethods(instance.getClass(), Digest.class);
                 Collections.sort(methods, new Comparator<BoundMethod>() {
                     public int compare(BoundMethod prev, BoundMethod next) {
-                        return prev.getAnnotation(Digest.class).value()
-                                - next.getAnnotation(Digest.class).value();
+                        return prev.getAnnotation(Digest.class).value() - next.getAnnotation(Digest.class).value();
                     }
                 });
                 for (BoundMethod method : methods) {
@@ -375,9 +381,13 @@ class InternalContainer implements Container {
                 }
             }
         }
-        stgs.clear();
-        facs.clear();
+        strategies.clear();
+        factories.clear();
         context.remove();
+    }
+
+    public String toString() {
+        return name;
     }
 
 }

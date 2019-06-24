@@ -1,7 +1,10 @@
 package net.isger.brick.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -15,9 +18,15 @@ import net.isger.brick.inject.Container;
 import net.isger.brick.inject.ContainerBuilder;
 import net.isger.brick.inject.ContainerProvider;
 import net.isger.brick.inject.ContainerProviderFactory;
+import net.isger.brick.inject.InjectConductor;
+import net.isger.brick.inject.InjectReserver;
+import net.isger.brick.inject.Key;
 import net.isger.raw.Prober;
 import net.isger.raw.SuffixProber;
+import net.isger.util.Asserts;
 import net.isger.util.Callable;
+import net.isger.util.Helpers;
+import net.isger.util.Reflects;
 import net.isger.util.Strings;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
@@ -39,16 +48,19 @@ public class ConsoleManager {
     /** 控制台名称 */
     private final String name;
 
-    /** 加载状态 */
-    @Ignore(mode = Mode.INCLUDE)
-    @Alias(Constants.BRICK_RELOAD)
-    private boolean isReload;
+    /** 供应容器集合 */
+    private final List<ContainerProvider> providers;
 
     /** 变更状态 */
     private volatile transient boolean isChanged;
 
-    /** 供应容器集合 */
-    private List<ContainerProvider> providers;
+    /** 引导容器 */
+    private volatile transient Container bootstrap;
+
+    /** 加载状态 */
+    @Ignore(mode = Mode.INCLUDE)
+    @Alias(Constants.BRICK_RELOAD)
+    private boolean isReload;
 
     /** 控制台 */
     @Ignore(mode = Mode.INCLUDE)
@@ -64,11 +76,23 @@ public class ConsoleManager {
     }
 
     public ConsoleManager(String name) {
-        this.lock = new ReentrantLock();
+        lock = new ReentrantLock();
         this.name = Strings.empty(name, Constants.BRICK);
-        this.isChanged = true;
-        this.providers = new ArrayList<ContainerProvider>();
-        this.providers.add(ContainerProviderFactory.getProvider());
+        providers = new ArrayList<ContainerProvider>();
+        loadContainerProviders();
+    }
+
+    /**
+     * 加载供应容器
+     */
+    private void loadContainerProviders() {
+        clearContainerProviders();
+        /* 服务形式加载（/META-INF/net.isger.brick.inject.ContainerProvider） */
+        ServiceLoader<ContainerProvider> loader = ServiceLoader.load(ContainerProvider.class, Reflects.getClassLoader(this));
+        Iterator<ContainerProvider> iterator = loader.iterator();
+        while (iterator.hasNext()) {
+            addContainerProvider(iterator.next());
+        }
     }
 
     /**
@@ -77,7 +101,7 @@ public class ConsoleManager {
      * @return
      */
     public final List<ContainerProvider> getContainerProviders() {
-        return new ArrayList<ContainerProvider>(providers);
+        return Collections.unmodifiableList(providers);
     }
 
     /**
@@ -86,9 +110,8 @@ public class ConsoleManager {
      * @param providers
      */
     public final void setContainerProviders(List<ContainerProvider> providers) {
-        if (providers == null) {
-            clearContainerProviders();
-        } else {
+        loadContainerProviders();
+        if (providers != null) {
             for (ContainerProvider provider : providers) {
                 addContainerProvider(provider);
             }
@@ -180,40 +203,19 @@ public class ConsoleManager {
      * @param providers
      */
     private void load(List<ContainerProvider> providers) {
-        // 创建容器并初始化
-        Container container = createContainer(providers);
-        container.initial();
-        // 为控制台管理器注入实例
-        container.inject(this);
-        if (console == null) {
-            throw new IllegalStateException(
-                    "The container does not provide effective supply for console");
-        }
-        console.initial();
-    }
-
-    /**
-     * 创建容器
-     * 
-     * @param providers
-     * @return
-     */
-    private Container createContainer(List<ContainerProvider> providers) {
         // 创建引导容器并初始化
-        Container bootstrap = createBootstrap();
-        bootstrap.initial();
-        try {
-            ContainerBuilder builder = createBuilder();
-            // 注入引导实例至供应容器，然后向容器构建器注册供应资源
-            for (ContainerProvider provider : providers) {
-                bootstrap.inject(provider);
-                provider.register(builder);
-            }
-            builder.constant(Constants.BRICK_NAME, name);
-            return builder.create();
-        } finally {
+        if (bootstrap != null) {
             bootstrap.destroy();
         }
+        bootstrap = createBootstrap();
+        bootstrap.initial();
+        // 创建应用容器并初始化
+        Container container = createContainer(Helpers.sort(new ArrayList<ContainerProvider>(providers)));
+        container.initial();
+        // 控制台管理器注入实例
+        container.inject(this);
+        Asserts.throwState(console != null, "The container does not provide effective supply for console");
+        console.initial();
     }
 
     /**
@@ -223,8 +225,36 @@ public class ConsoleManager {
      */
     protected Container createBootstrap() {
         ContainerBuilder builder = new ContainerBuilder();
+        builder.constant(Constants.BRICK_NAME, name);
         builder.constant(Constants.BRICK_RELOAD, Boolean.FALSE);
-        return builder.create();
+        ContainerProviderFactory.getProvider().register(builder);
+        return builder.create(Constants.BOOTSTRAP);
+    }
+
+    /**
+     * 创建容器
+     * 
+     * @param providers
+     * @return
+     */
+    private Container createContainer(List<ContainerProvider> providers) {
+        ContainerBuilder builder = createBuilder();
+        // 注入引导实例至供应容器，然后向应用容器构建器注册供应资源
+        for (ContainerProvider provider : providers) {
+            bootstrap.inject(provider);
+            provider.register(builder);
+        }
+        // 注入引导后备器
+        builder.constant(InjectReserver.class, Constants.BOOTSTRAP, new InjectReserver() {
+            public boolean contains(Key<?> key) {
+                return bootstrap.contains(key.getType(), key.getName());
+            }
+
+            public <T> T alternate(Key<T> key, InjectConductor conductor) {
+                return bootstrap.getInstance(key.getType(), key.getName(), conductor);
+            }
+        });
+        return builder.create(Constants.SYSTEM);
     }
 
     /**
@@ -236,8 +266,7 @@ public class ConsoleManager {
         ContainerBuilder builder = new ContainerBuilder();
         builder.factory(Prober.class, new Callable<Prober>() {
             public Prober call(Object... args) {
-                return SuffixProber.create(((Container) args[0])
-                        .getInstance(String.class, Constants.BRICK_RAW));
+                return SuffixProber.create(((Container) args[0]).getInstance(String.class, Constants.BRICK_RAW));
             }
         });
         builder.factory(Preparer.class, AuthPreparer.class);

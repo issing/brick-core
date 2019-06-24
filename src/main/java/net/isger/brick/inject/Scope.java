@@ -14,16 +14,14 @@ public enum Scope {
 
     /** 默认 */
     DEFAULT {
-        protected <T> InternalFactory<? extends T> factory(Class<T> type,
-                String name, InternalFactory<? extends T> factory) {
+        protected <T> InternalFactory<? extends T> factory(Class<T> type, String name, InternalFactory<? extends T> factory) {
             return factory;
         }
     },
 
     /** 单例 */
     SINGLETON {
-        protected <T> InternalFactory<? extends T> factory(Class<T> type,
-                String name, final InternalFactory<? extends T> factory) {
+        protected <T> InternalFactory<? extends T> factory(Class<T> type, String name, final InternalFactory<? extends T> factory) {
             return new InternalFactory<T>() {
                 T instance;
 
@@ -41,8 +39,7 @@ public enum Scope {
 
     /** 线程 */
     THREAD {
-        protected <T> InternalFactory<? extends T> factory(Class<T> type,
-                String name, final InternalFactory<? extends T> factory) {
+        protected <T> InternalFactory<? extends T> factory(Class<T> type, String name, final InternalFactory<? extends T> factory) {
             return new InternalFactory<T>() {
                 private final ThreadLocal<T> threadLocal = new ThreadLocal<T>();
 
@@ -60,14 +57,12 @@ public enum Scope {
 
     /** 策略 */
     STRATEGY {
-        protected <T> InternalFactory<? extends T> factory(final Class<T> type,
-                final String name, final InternalFactory<? extends T> factory) {
+        protected <T> InternalFactory<? extends T> factory(final Class<T> type, final String name, final InternalFactory<? extends T> factory) {
             return new InternalFactory<T>() {
                 public T create(InternalContext context) {
                     Strategy strategy = context.getStrategy(type, name);
                     try {
-                        return strategy.find(type, name,
-                                toCallable(context, factory));
+                        return strategy.find(type, name, toCallable(context, factory));
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -83,9 +78,7 @@ public enum Scope {
      * @param factory
      * @return
      */
-    protected <T> Callable<? extends T> toCallable(
-            final InternalContext context,
-            final InternalFactory<? extends T> factory) {
+    protected <T> Callable<? extends T> toCallable(final InternalContext context, final InternalFactory<? extends T> factory) {
         return new Callable<T>() {
             public T call() throws Exception {
                 return factory.create(context);
@@ -101,8 +94,7 @@ public enum Scope {
      * @param factory
      * @return
      */
-    protected abstract <T> InternalFactory<? extends T> factory(Class<T> type,
-            String name, InternalFactory<? extends T> factory);
+    protected abstract <T> InternalFactory<? extends T> factory(Class<T> type, String name, InternalFactory<? extends T> factory);
 
     /**
      * 获取作用域

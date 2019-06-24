@@ -101,9 +101,33 @@ public interface Container extends Manageable {
      * 
      * @param type
      *            实例类型
+     * @param name
+     *            托管名称
+     * @param conductor
+     *            注入传导
+     * @return 托管实例
+     */
+    public <T> T getInstance(Class<T> type, String name, InjectConductor conductor);
+
+    /**
+     * 获取托管实例
+     * 
+     * @param type
+     *            实例类型
      * @return 指定类型的实例集合（键：托管名称；值：托管实例）
      */
     public <T> Map<String, T> getInstances(Class<T> type);
+
+    /**
+     * 获取托管实例
+     * 
+     * @param type
+     *            实例类型
+     * @param conductor
+     *            注入传导
+     * @return 指定类型的实例集合（键：托管名称；值：托管实例）
+     */
+    public <T> Map<String, T> getInstances(Class<T> type, InjectConductor conductor);
 
     /**
      * 依赖注入（根据实例属性设置和容器管控类型完成注入）

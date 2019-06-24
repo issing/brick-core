@@ -8,6 +8,8 @@ package net.isger.brick;
  */
 public interface Constants {
 
+    public static final String BOOTSTRAP = "bootstrap";
+
     public static final String SYSTEM = "system";
 
     public static final String BRICK = "brick";

@@ -1,9 +1,10 @@
 package net.isger.brick.inject;
 
-import net.isger.brick.bind.BrickCoreBinder;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.isger.brick.bind.BrickCoreBinder;
+import net.isger.util.Asserts;
 
 /**
  * 供应容器工厂
@@ -53,8 +54,7 @@ public class ContainerProviderFactory {
             return;
         } catch (NoClassDefFoundError e) {
             String msg = e.getMessage();
-            if (msg == null || msg.indexOf(BINDER) == -1
-                    && msg.indexOf(BINDER.replaceAll("[.]", "/")) == -1) {
+            if (msg == null || msg.indexOf(BINDER) == -1 && msg.indexOf(BINDER.replaceAll("[.]", "/")) == -1) {
                 initialized = FAILURE;
                 throw e;
             }
@@ -65,8 +65,7 @@ public class ContainerProviderFactory {
             initialized = UNKNOWN;
         } catch (Exception e) {
             initialized = FAILURE;
-            throw new IllegalStateException("Unexpected bind failure",
-                    e.getCause());
+            throw Asserts.state("Unexpected bind failure", e.getCause());
         }
     }
 
@@ -81,8 +80,7 @@ public class ContainerProviderFactory {
         case SUCCESS:
             provider = BrickCoreBinder.getBinder().getProvider();
             if (provider == null) {
-                throw new IllegalStateException(
-                        "The bound provider cannot be null");
+                throw Asserts.state("The bound provider cannot be null");
             }
             break;
         default:
