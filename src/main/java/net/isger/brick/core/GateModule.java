@@ -44,8 +44,7 @@ public class GateModule extends AbstractModule {
      */
     @SuppressWarnings("unchecked")
     public Class<? extends Gate> getImplementClass() {
-        Class<? extends Gate> implClass = (Class<? extends Gate>) getImplementClass(
-                GATE, null);
+        Class<? extends Gate> implClass = (Class<? extends Gate>) getImplementClass(GATE, null);
         if (implClass == null) {
             implClass = (Class<? extends Gate>) super.getImplementClass();
         }
@@ -101,8 +100,7 @@ public class GateModule extends AbstractModule {
             }
             // 跳过键值对以外配置方式
             if (!(config instanceof Map)) {
-                LOG.warn("(!) Skipped the unexpected gate configuration [{}]",
-                        config);
+                LOG.warn("(!) Skipped the unexpected gate configuration [{}]", config);
                 continue;
             }
             result.put(name, createGate((Map<String, Object>) config));
@@ -115,8 +113,7 @@ public class GateModule extends AbstractModule {
         return createGate((Class<? extends Gate>) getImplementClass(res), res);
     }
 
-    protected Gate createGate(Class<? extends Gate> clazz,
-            Map<String, Object> config) {
+    protected Gate createGate(Class<? extends Gate> clazz, Map<String, Object> config) {
         return (Gate) super.create(clazz, config);
     }
 
@@ -140,11 +137,9 @@ public class GateModule extends AbstractModule {
     }
 
     protected Gate setGate(String name, Gate gate) {
-        Asserts.throwArgument(Strings.isNotEmpty(name) && gate != null,
-                "The gate cannot be null or empty");
+        Asserts.throwArgument(Strings.isNotEmpty(name) && gate != null, "The gate cannot be null or empty");
         if (LOG.isDebugEnabled()) {
-            LOG.info("Binding [{}] gate [{}] for the module {}", name, gate,
-                    this);
+            LOG.info("Binding [{}] gate [{}] for the module {}", name, gate, this);
         }
         return set(name, gate.getClass(), gate);
     }
@@ -156,8 +151,7 @@ public class GateModule extends AbstractModule {
         }
         gate = ConstantStrategy.set(container, type, name, gate);
         if (gate != null) {
-            LOG.warn("(!) Discard [{}] gate [{}] in the module {}", name, gate,
-                    this);
+            LOG.warn("(!) Discard [{}] gate [{}] in the module {}", name, gate, this);
         }
         return gate;
     }
@@ -173,8 +167,7 @@ public class GateModule extends AbstractModule {
     }
 
     public final Gate getGate() {
-        return (Gate) ((InternalContext) Context.getAction())
-                .getInternal(Gate.KEY_GATE);
+        return (Gate) ((InternalContext) Context.getAction()).getInternal(Gate.KEY_GATE);
     }
 
     @SuppressWarnings("unchecked")
@@ -220,8 +213,7 @@ public class GateModule extends AbstractModule {
      * 执行门命令
      */
     public final void execute(BaseCommand cmd) {
-        GateCommand gcmd = cmd instanceof GateCommand ? (GateCommand) cmd
-                : GateCommand.cast(cmd);
+        GateCommand gcmd = cmd instanceof GateCommand ? (GateCommand) cmd : GateCommand.cast(cmd);
         String domain = gcmd.getDomain(); // 获取域
         if (domain == null) {
             /* 模块操作 */
@@ -229,9 +221,7 @@ public class GateModule extends AbstractModule {
         } else {
             /* 关卡操作 */
             Gate gate = getGate(domain);
-            Asserts.isNotNull(gate,
-                    "Unfound the specified domain [%s] in the module [%s], Check whether it is configured in the brick configuration file",
-                    domain, this.getClass().getName());
+            Asserts.isNotNull(gate, "Unfound the specified domain [%s] in the module [%s], Check whether it is configured in the brick configuration file", domain, this.getClass().getName());
             setInternal(Gate.KEY_GATE, gate);
             gate.operate(gcmd);
         }

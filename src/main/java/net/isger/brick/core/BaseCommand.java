@@ -206,8 +206,7 @@ public class BaseCommand extends Command implements Cloneable {
         return getParameter(type, null, isBatch);
     }
 
-    public <T> T getParameter(Class<?> type, String namespace,
-            boolean isBatch) {
+    public <T> T getParameter(Class<?> type, String namespace, boolean isBatch) {
         return getParameter(type, namespace, isBatch, null);
     }
 
@@ -216,14 +215,12 @@ public class BaseCommand extends Command implements Cloneable {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getParameter(Class<?> type, boolean isBatch,
-            Callable<?> assembler) {
+    public <T> T getParameter(Class<?> type, boolean isBatch, Callable<?> assembler) {
         return (T) shell.getParameter(type, null, isBatch, assembler);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getParameter(Class<?> type, String namespace, boolean isBatch,
-            Callable<?> assembler) {
+    public <T> T getParameter(Class<?> type, String namespace, boolean isBatch, Callable<?> assembler) {
         return (T) shell.getParameter(type, namespace, isBatch, assembler);
     }
 
@@ -243,19 +240,16 @@ public class BaseCommand extends Command implements Cloneable {
         return getParameter(key, null, isBatch, null);
     }
 
-    public <T> T getParameter(CharSequence key, boolean isBatch,
-            String suffix) {
+    public <T> T getParameter(CharSequence key, boolean isBatch, String suffix) {
         return getParameter(key, null, isBatch, suffix);
     }
 
-    public <T> T getParameter(CharSequence key, String namespace,
-            boolean isBatch) {
+    public <T> T getParameter(CharSequence key, String namespace, boolean isBatch) {
         return getParameter(key, namespace, isBatch, null);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getParameter(CharSequence key, String namespace,
-            boolean isBatch, String suffix) {
+    public <T> T getParameter(CharSequence key, String namespace, boolean isBatch, String suffix) {
         return (T) shell.getParameter(key, namespace, isBatch, suffix);
     }
 
@@ -345,9 +339,7 @@ public class BaseCommand extends Command implements Cloneable {
     }
 
     private void makeShell(Command source, ShellCommand shell) {
-        this.shell = source == this ? new AutoCommand()
-                : (source instanceof BaseCommand ? new ProxyCommand()
-                        : new ShellCommand());
+        this.shell = source == this ? new AutoCommand() : (source instanceof BaseCommand ? new ProxyCommand() : new ShellCommand());
         this.shell.source = source;
         if (shell == null) {
             shell = this.shell;
@@ -414,10 +406,8 @@ public class BaseCommand extends Command implements Cloneable {
 
         @SuppressWarnings("unchecked")
         protected Map<String, Object> gets(int index) {
-            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(
-                    index);
-            Map<String, Object> result = new HashMap<String, Object>(
-                    indeces.size());
+            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(index);
+            Map<String, Object> result = new HashMap<String, Object>(indeces.size());
             ByteBuffer buffer;
             for (Entry<CharSequence, ByteBuffer> entry : indeces.entrySet()) {
                 if (mappings.containsKey(buffer = entry.getValue())) {
@@ -429,8 +419,7 @@ public class BaseCommand extends Command implements Cloneable {
 
         @SuppressWarnings("unchecked")
         protected void sets(int index, Map<String, Object> values) {
-            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(
-                    index);
+            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(index);
             if (values == null) {
                 clear(indeces);
             } else {
@@ -442,20 +431,17 @@ public class BaseCommand extends Command implements Cloneable {
 
         @SuppressWarnings("unchecked")
         protected <T> T get(int index, CharSequence key) {
-            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(
-                    index);
+            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(index);
             return (T) this.mappings.get(indeces.get(key));
         }
 
         @SuppressWarnings("unchecked")
         protected void set(int index, CharSequence key, Object value) {
-            Map<CharSequence, ByteBuffer> buffers = (Map<CharSequence, ByteBuffer>) get(
-                    index);
+            Map<CharSequence, ByteBuffer> buffers = (Map<CharSequence, ByteBuffer>) get(index);
             set(buffers, key, value);
         }
 
-        private void set(Map<CharSequence, ByteBuffer> indeces,
-                CharSequence key, Object value) {
+        private void set(Map<CharSequence, ByteBuffer> indeces, CharSequence key, Object value) {
             ByteBuffer index = indeces.get(key);
             if (value == null) {
                 if (index != null) {
@@ -507,10 +493,8 @@ public class BaseCommand extends Command implements Cloneable {
             set(HEADERS, key, value);
         }
 
-        public final Object getParameter(Model model, String namespace,
-                boolean isBatch) {
-            Map<String, Object> params = Helpers.getMap(getParameter(),
-                    namespace);
+        public final Object getParameter(Model model, String namespace, boolean isBatch) {
+            Map<String, Object> params = Helpers.getMap(getParameter(), namespace);
             Model instance;
             if (!isBatch) {
                 instance = model.clone();
@@ -541,10 +525,8 @@ public class BaseCommand extends Command implements Cloneable {
             return result;
         }
 
-        public final Object getParameter(Class<?> type, String namespace,
-                boolean isBatch, Callable<?> assembler) {
-            Map<String, Object> params = Helpers.getMap(getParameter(),
-                    namespace);
+        public final Object getParameter(Class<?> type, String namespace, boolean isBatch, Callable<?> assembler) {
+            Map<String, Object> params = Helpers.getMap(getParameter(), namespace);
             if (Map.class.isAssignableFrom(type)) {
                 return params;
             } else if (!isBatch) {
@@ -555,14 +537,12 @@ public class BaseCommand extends Command implements Cloneable {
             List<Object> values = new ArrayList<Object>();
             String name;
             Object value;
-            Map<String, List<BoundField>> fields = Reflects
-                    .getBoundFields(type);
+            Map<String, List<BoundField>> fields = Reflects.getBoundFields(type);
             for (Entry<String, List<BoundField>> entry : fields.entrySet()) {
                 name = entry.getKey();
                 value = getValue(params, name);
                 if (value == null) {
-                    value = getValue(params,
-                            name = entry.getValue().get(0).getAlias());
+                    value = getValue(params, name = entry.getValue().get(0).getAlias());
                 }
                 if (value != null) {
                     names.add(name);
@@ -571,8 +551,7 @@ public class BaseCommand extends Command implements Cloneable {
             }
             Object[] columns = names.toArray();
             for (Object[] row : Helpers.newGrid(true, values.toArray())) {
-                result.add(Reflects.newInstance(type,
-                        Reflects.toMap(columns, row), assembler));
+                result.add(Reflects.newInstance(type, Reflects.toMap(columns, row), assembler));
             }
             return result;
         }
@@ -585,10 +564,8 @@ public class BaseCommand extends Command implements Cloneable {
             return value;
         }
 
-        public final Object getParameter(CharSequence key, String namespace,
-                boolean isBatch, String suffix) {
-            Map<String, Object> params = Helpers.getMap(getParameter(),
-                    namespace);
+        public final Object getParameter(CharSequence key, String namespace, boolean isBatch, String suffix) {
+            Map<String, Object> params = Helpers.getMap(getParameter(), namespace);
             if (!isBatch) {
                 return params.get(key);
             }
@@ -598,13 +575,11 @@ public class BaseCommand extends Command implements Cloneable {
                 Object pending;
                 int amount = 0;
                 List<Object> container = new ArrayList<Object>();
-                while ((pending = params
-                        .get(key + "[" + (amount++) + "]" + suffix)) != null) {
+                while ((pending = params.get(key + "[" + (amount++) + "]" + suffix)) != null) {
                     container.add(pending);
                 }
                 if (container.size() > 0) {
-                    return Helpers.newArray(container.get(0).getClass(),
-                            container.toArray(), container.size());
+                    return Helpers.newArray(container.get(0).getClass(), container.toArray(), container.size());
                 } else {
                     values = params.get(key);
                 }

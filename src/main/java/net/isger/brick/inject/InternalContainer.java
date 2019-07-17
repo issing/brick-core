@@ -64,9 +64,9 @@ class InternalContainer implements Container {
                 return InternalContainer.this;
             }
         });
-        /* 添加注入监听器 */
-        for (InjectReserver listener : Helpers.sort(new ArrayList<InjectReserver>(getInstances(InjectReserver.class).values()))) {
-            this.reserver = InjectMulticaster.addInternal(this.reserver, listener);
+        /* 添加注入后备器 */
+        for (InjectReserver reserver : Helpers.sort(new ArrayList<InjectReserver>(getInstances(InjectReserver.class).values()))) {
+            this.reserver = InjectMulticaster.addInternal(this.reserver, reserver);
         }
     }
 
@@ -175,7 +175,7 @@ class InternalContainer implements Container {
         } else {
             result = factory.create(context);
         }
-        /* 监听替补 */
+        /* 注入替补 */
         if (result == null && reserver != null) {
             result = reserver.alternate(key, new InjectConductor() {
                 public boolean hasInject(Object instance) {

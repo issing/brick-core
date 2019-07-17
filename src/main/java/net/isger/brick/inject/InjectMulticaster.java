@@ -1,6 +1,6 @@
 package net.isger.brick.inject;
 
-class InjectMulticaster implements InjectReserver {
+public class InjectMulticaster implements InjectReserver {
 
     protected final InjectReserver a, b;
 

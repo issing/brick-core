@@ -3,6 +3,7 @@ package net.isger.brick.core;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,10 @@ public class Console implements Constants, Manageable {
     private Container container;
 
     @Ignore(mode = Mode.INCLUDE)
+    @Alias(SYSTEM)
+    private PlaceholderConfigurer configurer;
+
+    @Ignore(mode = Mode.INCLUDE)
     @Alias(BRICK_NAME)
     private String name;
 
@@ -78,7 +83,7 @@ public class Console implements Constants, Manageable {
     private Preparer preparer;
 
     /** 模块依赖 */
-    private transient Dependency dependency;
+    private transient Dependency moduleDependency;
 
     /** 注销钩子 */
     private transient Thread hook;
@@ -88,9 +93,9 @@ public class Console implements Constants, Manageable {
     }
 
     public Console() {
-        dependency = new Dependency();
         operator = new CommandOperator(this);
         preparer = new Preparer();
+        moduleDependency = new Dependency();
     }
 
     /**
@@ -116,7 +121,7 @@ public class Console implements Constants, Manageable {
         // 初始模块
         try {
             Map<String, Module> modules = getModules();
-            for (Object node : dependency.getNodes()) {
+            for (Object node : moduleDependency.getNodes()) {
                 modules.get(node).initial();
             }
         } catch (Throwable e) {
@@ -178,12 +183,15 @@ public class Console implements Constants, Manageable {
      */
     @SuppressWarnings("unchecked")
     private void loadKernel(String name) {
+        Object config;
         /* 加载参数配置 */
-        Object config = loadResource(Depository.getArtifact(name + "-config", prober));
-        if (config instanceof Collection) {
-            loadConstants((Collection<?>) config);
-        } else if (config instanceof Map) {
-            loadConstants((Map<String, Object>) config);
+        for (Artifact artifact : Depository.getArtifacts(name + "-config", prober)) {
+            config = loadResource(artifact);
+            if (config instanceof Collection) {
+                loadConstants((Collection<?>) config);
+            } else if (config instanceof Map) {
+                loadConstants((Map<String, Object>) config);
+            }
         }
         /* 加载内核配置 */
         for (Artifact artifact : Depository.getArtifacts(name + "-kernel", prober)) {
@@ -264,7 +272,7 @@ public class Console implements Constants, Manageable {
                     LOG.warn("(!) Skipped invalid module config {}", config);
                     continue;
                 }
-                params = (Map<String, Object>) config;
+                params = new HashMap<String, Object>((Map<String, Object>) config);
                 if (!params.containsKey(CONF_NAME)) {
                     params.put(CONF_NAME, name);
                 }
@@ -383,10 +391,14 @@ public class Console implements Constants, Manageable {
      * @return
      */
     private Object loadResource(Artifact artifact) {
+        Object resource = null;
         if (artifact != null) {
-            return artifact.transform(Object.class);
+            resource = artifact.transform(Object.class);
+            if (configurer != null) {
+                resource = configurer.displace(resource);
+            }
         }
-        return artifact;
+        return resource;
     }
 
     /**
@@ -461,7 +473,7 @@ public class Console implements Constants, Manageable {
             return null;
         }
         String name = container.getInstance(String.class, commandType.getName() + SUFFIX_MODULE);
-        if (name == null) {
+        if (Strings.isEmpty(name)) {
             return getModule(commandType.getSuperclass());
         }
         return getModule(name);
@@ -520,7 +532,7 @@ public class Console implements Constants, Manageable {
     }
 
     public final void addDependencies(String name, List<Object> dependencies) {
-        this.dependency.addNode(name, dependencies);
+        moduleDependency.addNode(name, dependencies);
     }
 
     /**
@@ -601,7 +613,7 @@ public class Console implements Constants, Manageable {
             return;
         }
         Map<String, Module> modules = this.getModules();
-        List<Object> nodes = new LinkedList<Object>(this.dependency.getNodes());
+        List<Object> nodes = new LinkedList<Object>(this.moduleDependency.getNodes());
         Collections.reverse(nodes);
         for (Object node : nodes) {
             modules.get(node).destroy();

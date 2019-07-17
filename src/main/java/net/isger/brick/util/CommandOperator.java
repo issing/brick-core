@@ -52,8 +52,7 @@ public class CommandOperator extends DynamicOperator {
         /* 尝试带命令操作方法 */
         Class<?> paramType = cmd.getClass();
         do {
-            if ((boundMethod = getMethod(BoundMethod.makeMethodDesc(operate,
-                    Void.TYPE, paramType))) == null) {
+            if ((boundMethod = getMethod(BoundMethod.makeMethodDesc(operate, Void.TYPE, paramType))) == null) {
                 paramType = paramType.getSuperclass();
                 continue;
             }
@@ -71,8 +70,7 @@ public class CommandOperator extends DynamicOperator {
             String paramName;
             Object paramValue;
             for (int i = 0; i < size; i++) {
-                if (paramTypes[i].isInstance(cmd)
-                        && Command.class.isAssignableFrom(paramTypes[i])) {
+                if (paramTypes[i].isInstance(cmd) && Command.class.isAssignableFrom(paramTypes[i])) {
                     paramValue = cmd;
                 } else {
                     paramName = Helpers.getAliasName(annos[i]);
@@ -94,8 +92,7 @@ public class CommandOperator extends DynamicOperator {
         try {
             super.operate();
         } catch (Throwable cause) {
-            throw Asserts.state("Failure to invoke [%s] in %s", operate,
-                    getSource(), cause);
+            throw Asserts.state("Failure to invoke [%s] in %s", operate, getSource(), cause);
         }
     }
 

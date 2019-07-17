@@ -20,8 +20,7 @@ public class StubModule extends GateModule {
 
     @SuppressWarnings("unchecked")
     public Class<? extends Gate> getImplementClass() {
-        Class<? extends Gate> implClass = (Class<? extends Gate>) getImplementClass(
-                STUB, null);
+        Class<? extends Gate> implClass = (Class<? extends Gate>) getImplementClass(STUB, null);
         if (implClass == null) {
             implClass = super.getImplementClass();
         }
