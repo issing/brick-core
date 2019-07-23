@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.isger.brick.Constants;
@@ -34,14 +35,14 @@ class InternalContainer implements Container {
     /** 容器名称 */
     final String name;
 
-    /** 注入实例后备器 */
-    transient InjectReserver reserver;
-
     /** 实例工厂集合 */
     final Map<Key<?>, InternalFactory<?>> factories;
 
     /** 实例策略集合 */
     final Map<Key<?>, Strategy> strategies;
+
+    /** 注入实例后备 */
+    transient InjectReserver reserver;
 
     /** 容器构建上下文 */
     private volatile ThreadLocal<InternalContext[]> context;
@@ -50,6 +51,15 @@ class InternalContainer implements Container {
         this.name = name;
         this.factories = new ConcurrentHashMap<Key<?>, InternalFactory<?>>(factories);
         strategies = new ConcurrentHashMap<Key<?>, Strategy>();
+        reserver = new InjectReserver() {
+            public boolean contains(Key<?> key) {
+                return false;
+            }
+
+            public <T> T alternate(Key<T> key, InjectConductor conductor) {
+                return null;
+            }
+        };
         context = new ThreadLocal<InternalContext[]>() {
             protected InternalContext[] initialValue() {
                 return new InternalContext[1];
@@ -59,7 +69,7 @@ class InternalContainer implements Container {
 
     public void initial() {
         /* 托管容器自身 */
-        factories.put(Key.newInstance(Container.class, Constants.SYSTEM), new InternalFactory<Container>() {
+        factories.put(Key.newInstance(Container.class, name), new InternalFactory<Container>() {
             public Container create(InternalContext context) {
                 return InternalContainer.this;
             }
@@ -75,28 +85,33 @@ class InternalContainer implements Container {
     }
 
     public boolean contains(Class<?> type, String name) {
-        boolean hasContains = contains(Key.newInstance(type, name));
-        find: if (!hasContains) {
-            Class<?> superclass = type.getSuperclass();
-            while (superclass != null) {
-                if (hasContains = contains(Key.newInstance(superclass, name))) {
-                    break find;
+        boolean result;
+        contains: if (!(result = contains(Key.newInstance(type, name)))) {
+            // 检索父类
+            Class<?> superClass = type.getSuperclass();
+            while (superClass != null && superClass != Object.class) {
+                if (contains(Key.newInstance(superClass, name))) {
+                    result = true;
+                    break contains;
                 }
-                superclass = superclass.getSuperclass();
+                superClass = superClass.getSuperclass();
             }
-            Class<?>[] interfaces = Reflects.getInterfaces(type);
-            for (Class<?> interfaceClass : interfaces) {
-                if (hasContains = contains(Key.newInstance(interfaceClass, name))) {
-                    break find;
+            // 检索接口
+            Class<?>[] interfaceClasses = Reflects.getInterfaces(type);
+            for (Class<?> interfaceClass : interfaceClasses) {
+                if (contains(Key.newInstance(interfaceClass, name))) {
+                    result = true;
+                    break contains;
                 }
             }
-            hasContains = getInstances(type).containsKey(name);
+            // 检索子类
+            result = getInstances(type).containsKey(name);
         }
-        return hasContains;
+        return result;
     }
 
     private boolean contains(Key<?> key) {
-        return factories.containsKey(key) || strategies.containsKey(key) || (reserver != null && reserver.contains(key));
+        return factories.containsKey(key) || strategies.containsKey(key) || reserver.contains(key);
     }
 
     public Strategy getStrategy(Class<?> type) {
@@ -121,7 +136,7 @@ class InternalContainer implements Container {
     }
 
     public <T> T getInstance(Class<T> type) {
-        return getInstance(type, Constants.DEFAULT, null);
+        return getInstance(type, Constants.DEFAULT);
     }
 
     public <T> T getInstance(Class<T> type, String name) {
@@ -161,8 +176,8 @@ class InternalContainer implements Container {
 
     @SuppressWarnings("unchecked")
     private <T> T getInstance(Key<T> key, final InternalContext context) {
-        InternalFactory<T> factory = (InternalFactory<T>) factories.get(key);
         T result = null;
+        InternalFactory<T> factory = (InternalFactory<T>) factories.get(key);
         if (factory == null) {
             /* 策略模式查找对象 */
             if (strategies.containsKey(key)) {
@@ -176,7 +191,7 @@ class InternalContainer implements Container {
             result = factory.create(context);
         }
         /* 注入替补 */
-        if (result == null && reserver != null) {
+        if (result == null) {
             result = reserver.alternate(key, new InjectConductor() {
                 public boolean hasInject(Object instance) {
                     return context.hasInject(instance);
@@ -206,13 +221,11 @@ class InternalContainer implements Container {
         T instance;
         // 获取策略模式对象
         Strategy strategy;
-        for (Key<?> key : strategies.keySet()) {
-            // 跳过存在指定类型实例工厂配置
-            if (key.type == type && factories.get(key) != null) {
-                break;
-            }
+        Key<?> key;
+        for (Entry<Key<?>, Strategy> entry : strategies.entrySet()) {
             // 允许实例向上赋值
-            if (type.isAssignableFrom(key.type) && ((strategy = strategies.get(key)) != null)) {
+            key = entry.getKey();
+            if (type.isAssignableFrom(key.type) && ((strategy = entry.getValue()) != null)) {
                 try {
                     instance = (T) strategy.find(key.type, key.name, null);
                     if (instance != null) {
@@ -225,12 +238,14 @@ class InternalContainer implements Container {
             }
         }
         // 获取工厂注册对象
-        InternalFactory<T> factory;
-        for (Key<?> key : factories.keySet()) {
-            if (key.type == type && (factory = (InternalFactory<T>) factories.get(key)) != null) {
+        InternalFactory<?> factory;
+        for (Entry<Key<?>, InternalFactory<?>> entry : factories.entrySet()) {
+            // 允许实例向上赋值
+            key = entry.getKey();
+            if (type.isAssignableFrom(key.type) && (factory = entry.getValue()) != null) {
                 try {
-                    instance = factory.create(context);
-                    if (instances != null) {
+                    instance = (T) factory.create(context);
+                    if (instance != null) {
                         inject(key, instance, context);
                         instances.put(key.getName(), instance);
                     }

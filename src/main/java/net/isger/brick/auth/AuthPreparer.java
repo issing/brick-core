@@ -56,25 +56,19 @@ public class AuthPreparer extends Preparer {
             boolean result;
             Object token = cmd.getToken();
             /* 绕过权限 */
-            if (result = (Strings.isEmpty(cmd.getDomain())
-                    && Strings.isEmpty(cmd.getOperate())
-                    && token instanceof Command)
-                    || module.getGate(cmd.getDomain()) == null) {
+            if (result = (Strings.isEmpty(cmd.getDomain()) && Strings.isEmpty(cmd.getOperate()) && token instanceof Command) || module.getGate(cmd.getDomain()) == null) {
                 command = BaseCommand.cast((Command) token);
             }
             cmd.setResult(result);
         } else {
             String domain;
-            if (module
-                    .getGate(domain = console.getModuleName(command)) != null) {
+            if (module.getGate(domain = console.getModuleName(command)) != null) {
                 /* 检测干涉 */
-                AuthCommand cmd = AuthHelper.toCommand(command.getIdentity(),
-                        domain, command);
+                AuthCommand cmd = AuthHelper.toCommand(command.getIdentity(), domain, command);
                 cmd.setOperate(AuthCommand.OPERATE_CHECK);
                 command = cmd;
             } else if (command.getIdentity() == null) {
-                AuthCommand cmd = AuthHelper.toCommand(Constants.SYSTEM,
-                        new BaseToken(Helpers.makeUUID(), command));
+                AuthCommand cmd = AuthHelper.toCommand(Constants.SYSTEM, new BaseToken(Helpers.makeUUID(), command));
                 cmd.setOperate(AuthCommand.OPERATE_LOGIN);
                 console.execute(cmd);
                 command.setIdentity(cmd.getIdentity());

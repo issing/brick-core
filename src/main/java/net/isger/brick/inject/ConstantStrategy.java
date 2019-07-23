@@ -13,8 +13,7 @@ public class ConstantStrategy implements Strategy {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T find(Class<T> type, String name, Callable<? extends T> callable)
-            throws Exception {
+    public <T> T find(Class<T> type, String name, Callable<? extends T> callable) throws Exception {
         return (T) getInstance();
     }
 
@@ -27,8 +26,7 @@ public class ConstantStrategy implements Strategy {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T set(Container container, Class<? extends T> type,
-            String name, T instance) {
+    public static <T> T set(Container container, Class<? extends T> type, String name, T instance) {
         T oldInstance = null;
         Strategy strategy = container.getStrategy(type, name);
         set: {

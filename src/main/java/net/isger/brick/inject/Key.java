@@ -19,12 +19,10 @@ public class Key<T> {
 
     private Key(Class<T> type, String name) {
         Asserts.isNotNull(type, "The key type not be null");
-        Asserts.isNotEmpty(name, "The key name not be null or empty for [%s]",
-                type);
+        Asserts.isNotEmpty(name, "The key name not be null or empty for [%s]", type);
         this.type = type;
         this.name = name;
-        this.hashCode = Reflects.getWrapClass(type).hashCode() << 8
-                + name.hashCode() & 0xFF;
+        this.hashCode = Reflects.getWrapClass(type).hashCode() << 8 + name.hashCode() & 0xFF;
     }
 
     public static <T> Key<T> newInstance(Class<T> type, String name) {
@@ -50,8 +48,7 @@ public class Key<T> {
             return true;
         }
         Key<?> key = (Key<?>) o;
-        return name.equals(key.name) && Reflects.getWrapClass(type)
-                .equals(Reflects.getWrapClass(key.type));
+        return name.equals(key.name) && Reflects.getWrapClass(type).equals(Reflects.getWrapClass(key.type));
     }
 
     public String toString() {

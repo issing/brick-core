@@ -1,7 +1,6 @@
 package net.isger.brick.core;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -101,7 +100,7 @@ public class ConsoleManager {
      * @return
      */
     public final List<ContainerProvider> getContainerProviders() {
-        return Collections.unmodifiableList(providers);
+        return new ArrayList<ContainerProvider>(providers);
     }
 
     /**
@@ -188,7 +187,7 @@ public class ConsoleManager {
         for (ContainerProvider provider : providers) {
             if (provider.isReload()) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.info("Detected module provider needs to be reloaded");
+                    LOG.info("Detected module provider [%s] needs to be reloaded", provider);
                 }
                 isReload = true;
                 break;
@@ -206,6 +205,7 @@ public class ConsoleManager {
         // 创建引导容器并初始化
         if (bootstrap != null) {
             bootstrap.destroy();
+            bootstrap = null;
         }
         bootstrap = createBootstrap();
         bootstrap.initial();

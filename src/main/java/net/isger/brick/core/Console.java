@@ -112,7 +112,7 @@ public class Console implements Constants, Manageable {
                 destroy();
             }
         }));
-        /* 实例化内核模块加载器 */
+        /* 初始内核 */
         Class<?> describeClass = container.getInstance(Class.class, BRICK_DESCRIBE);
         Asserts.isAssignable(ModuleDescribe.class, describeClass, "Invalid module describe [%s] in container", describeClass);
         loader = new BaseLoader(describeClass);
@@ -155,7 +155,7 @@ public class Console implements Constants, Manageable {
      * @param module
      */
     protected void setupModule(String name, Module module) {
-        this.setupModule(name, module, null);
+        setupModule(name, module, null);
     }
 
     /**
@@ -167,12 +167,12 @@ public class Console implements Constants, Manageable {
      * @param dependencies
      */
     protected void setupModule(String name, Module module, Class<? extends Command> commandClass, Object... dependencies) {
-        if (this.getModule(name) == null) {
-            this.addModule(name, module);
+        if (getModule(name) == null) {
+            addModule(name, module);
         }
-        this.addDependencies(name, dependencies);
+        addDependencies(name, dependencies);
         if (commandClass != null) {
-            this.addCommand(name, commandClass);
+            addCommand(name, commandClass);
         }
     }
 
@@ -612,17 +612,17 @@ public class Console implements Constants, Manageable {
         if (!initialized) {
             return;
         }
-        Map<String, Module> modules = this.getModules();
-        List<Object> nodes = new LinkedList<Object>(this.moduleDependency.getNodes());
+        Map<String, Module> modules = getModules();
+        List<Object> nodes = new LinkedList<Object>(moduleDependency.getNodes());
         Collections.reverse(nodes);
         for (Object node : nodes) {
             modules.get(node).destroy();
         }
-        this.container.destroy();
-        if (this.hook != null) {
-            Runtime.getRuntime().removeShutdownHook(this.hook);
+        container.destroy();
+        if (hook != null) {
+            Runtime.getRuntime().removeShutdownHook(hook);
         }
-        this.initialized = false;
+        initialized = false;
     }
 
 }
