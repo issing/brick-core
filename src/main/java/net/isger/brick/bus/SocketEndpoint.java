@@ -79,14 +79,12 @@ public abstract class SocketEndpoint extends AbstractEndpoint {
         address = newAddress(host, port);
         try {
             if (Strings.isEmpty(network)) {
-                networkInterface = NetworkInterface
-                        .getByInetAddress(address.getAddress());
+                networkInterface = NetworkInterface.getByInetAddress(address.getAddress());
             } else {
                 networkInterface = NetworkInterface.getByName(network);
             }
         } catch (SocketException e) {
-            throw Asserts.argument("Invalid network interface name [%s]",
-                    network, e);
+            throw Asserts.argument("Invalid network interface name [%s]", network, e);
         }
     }
 
