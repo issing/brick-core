@@ -72,9 +72,7 @@ public class SqlDialect implements Dialect {
         NOTNULL_DESCRIBER = new DescriberAdapter() {
             public String describe(Option option, Object... extents) {
                 String value = option.getValue();
-                return Strings.isEmpty(value) || Boolean.parseBoolean(value)
-                        ? "NOT NULL"
-                        : "NULL";
+                return Strings.isEmpty(value) || Boolean.parseBoolean(value) ? "NOT NULL" : "NULL";
             }
         };
         UNIQUE_DESCRIBER = new DescriberAdapter() {
@@ -195,12 +193,10 @@ public class SqlDialect implements Dialect {
         Object[] columns = (Object[]) gridData[0];
         int count = columns.length;
         if (gridData.length == 3 && Strings.isNotEmpty((String) gridData[2])) {
-            throw new IllegalStateException(
-                    "Unsupported feature in the current version");
+            throw new IllegalStateException("Unsupported feature in the current version");
         } else {
             for (int i = 0; i < count; i++) {
-                sql.append(" AND ").append(seal).append(columns[i]).append(seal)
-                        .append(" = ?");
+                sql.append(" AND ").append(seal).append(columns[i]).append(seal).append(" = ?");
             }
         }
         return new SqlEntry(sql.toString(), (Object[]) gridData[1]);
@@ -214,12 +210,10 @@ public class SqlDialect implements Dialect {
      * @return
      */
     public SqlEntry getUpdateEntry(Object newTable, Object oldTable) {
-        return getUpdateEntry(getTableName(newTable), getTableData(newTable),
-                getTableData(oldTable));
+        return getUpdateEntry(getTableName(newTable), getTableData(newTable), getTableData(oldTable));
     }
 
-    public SqlEntry getUpdateEntry(String tableName, Object[] newGridData,
-            Object[] oldGridData) {
+    public SqlEntry getUpdateEntry(String tableName, Object[] newGridData, Object[] oldGridData) {
         String seal = seal();
         StringBuffer sql = new StringBuffer(512);
         sql.append("UPDATE ").append(tableName).append(" SET ");
@@ -232,18 +226,14 @@ public class SqlDialect implements Dialect {
         sql.append(" WHERE 1 = 1");
         columns = (String[]) oldGridData[0];
         count = columns.length;
-        if (oldGridData.length == 3
-                && Strings.isNotEmpty((String) oldGridData[2])) {
-            throw new IllegalStateException(
-                    "Unsupported feature in the current version");
+        if (oldGridData.length == 3 && Strings.isNotEmpty((String) oldGridData[2])) {
+            throw new IllegalStateException("Unsupported feature in the current version");
         } else {
             for (int i = 0; i < count; i++) {
-                sql.append(" AND ").append(seal).append(columns[i]).append(seal)
-                        .append(" = ?");
+                sql.append(" AND ").append(seal).append(columns[i]).append(seal).append(" = ?");
             }
         }
-        return new SqlEntry(sql.toString(),
-                (Object[]) Helpers.newArray(newGridData[1], oldGridData[1]));
+        return new SqlEntry(sql.toString(), (Object[]) Helpers.newArray(newGridData[1], oldGridData[1]));
     }
 
     /**
@@ -253,12 +243,10 @@ public class SqlDialect implements Dialect {
      * @return
      */
     public SqlEntry getSearchEntry(Object table) {
-        return getSearchEntry(getTableName(table), getColumnNames(table),
-                getTableData(table));
+        return getSearchEntry(getTableName(table), getColumnNames(table), getTableData(table));
     }
 
-    public SqlEntry getSearchEntry(String tableName, Object[] columns,
-            Object[] gridData) {
+    public SqlEntry getSearchEntry(String tableName, Object[] columns, Object[] gridData) {
         String seal = seal();
         StringBuffer sql = new StringBuffer(512);
         StringBuffer restrict = new StringBuffer(128);
@@ -272,12 +260,10 @@ public class SqlDialect implements Dialect {
         columns = (String[]) gridData[0];
         count = columns.length;
         if (gridData.length == 3 && Strings.isNotEmpty((String) gridData[2])) {
-            throw new IllegalStateException(
-                    "Unsupported feature in the current version");
+            throw new IllegalStateException("Unsupported feature in the current version");
         } else {
             for (int i = 0; i < count; i++) {
-                restrict.append(" AND ").append(seal).append(columns[i])
-                        .append(seal).append(" = ?");
+                restrict.append(" AND ").append(seal).append(columns[i]).append(seal).append(" = ?");
             }
             sql.append(restrict);
         }
@@ -299,8 +285,7 @@ public class SqlDialect implements Dialect {
     }
 
     protected Page getPage(Object[] values) {
-        if (values != null && values.length > 0
-                && values[values.length - 1] instanceof Page) {
+        if (values != null && values.length > 0 && values[values.length - 1] instanceof Page) {
             return (Page) values[values.length - 1];
         }
         return null;
@@ -312,14 +297,12 @@ public class SqlDialect implements Dialect {
 
     public SqlEntry getExistsEntry(String tableName) {
         StringBuffer sql = new StringBuffer(128);
-        sql.append("SELECT count(1) FROM ").append(tableName)
-                .append(" WHERE 1 <> 1");
+        sql.append("SELECT count(1) FROM ").append(tableName).append(" WHERE 1 <> 1");
         return new SqlEntry(sql.toString());
     }
 
     public SqlEntry getRemoveEntry(Object table) {
-        return new SqlEntry(new StringBuffer("DROP TABLE ")
-                .append(getTableName(table)).toString());
+        return new SqlEntry(new StringBuffer("DROP TABLE ").append(getTableName(table)).toString());
     }
 
     protected String getTableName(Object table) {
@@ -395,11 +378,7 @@ public class SqlDialect implements Dialect {
                 continue;
             }
             optionDescriber = describers.get(type.intValue());
-            if (optionDescriber != null
-                    && ((describe = optionDescriber.describe(option,
-                            describer == null ? null
-                                    : describer.describe(option, meta,
-                                            this))) != null)) {
+            if (optionDescriber != null && ((describe = optionDescriber.describe(option, describer == null ? null : describer.describe(option, meta, this))) != null)) {
                 buffer.append(" ").append(describe);
             }
         }
@@ -421,9 +400,7 @@ public class SqlDialect implements Dialect {
             if (pending.intValue() == 0) {
                 return "CURRENT_TIMESTAMP";
             }
-            value = Dates.toString(
-                    new Date(System.currentTimeMillis() + pending.longValue()),
-                    Dates.PATTERN_COMMON);
+            value = Dates.toString(new Date(System.currentTimeMillis() + pending.longValue()), Dates.PATTERN_COMMON);
         }
         return "TO_DATE('" + value + "', 'YYYY-MM-DD HH:mm:ss')";
     }
@@ -447,8 +424,7 @@ public class SqlDialect implements Dialect {
                 }
             }
         }
-        return new Object[] { columns.toArray(new String[columns.size()]),
-                row.toArray() };
+        return new Object[] { columns.toArray(new String[columns.size()]), row.toArray() };
     }
 
     protected Object[] getTableData(Model model) {
@@ -467,13 +443,11 @@ public class SqlDialect implements Dialect {
                 row.add(getColumnValue(column, value));
             }
         }
-        return new Object[] { columns.toArray(new String[columns.size()]),
-                row.toArray() };
+        return new Object[] { columns.toArray(new String[columns.size()]), row.toArray() };
     }
 
     protected Object getColumnValue(String name, Object value) {
-        if (value instanceof Number || value instanceof Boolean
-                || value instanceof CharSequence) {
+        if (value instanceof Number || value instanceof Boolean || value instanceof CharSequence) {
             return value;
         }
         // TODO 根据名称规则获取对象属性（临时解决方案）
@@ -525,8 +499,7 @@ public class SqlDialect implements Dialect {
         }
 
         public String describe(Meta field) {
-            StringBuffer describe = new StringBuffer(
-                    type(field, this.getName()));
+            StringBuffer describe = new StringBuffer(type(field, this.getName()));
             int length = field.getLength();
             if (length > 0 && hasScale) {
                 describe.append("(").append(length);
@@ -558,8 +531,7 @@ public class SqlDialect implements Dialect {
 
         public String describe(Meta field) {
             int length = field.getLength();
-            return length > 0 ? type(field, "VARCHAR") + "(" + length + ")"
-                    : type(field, "TEXT");
+            return length > 0 ? type(field, "VARCHAR") + "(" + length + ")" : type(field, "TEXT");
         }
 
         public String describe(Option option, Object... extents) {
@@ -568,8 +540,7 @@ public class SqlDialect implements Dialect {
             case OPTION_DEFAULT:
                 Object optionValue = option.getValue();
                 if (optionValue != null) {
-                    value = "'" + optionValue.toString().replaceAll("[']", "''")
-                            + "'";
+                    value = "'" + optionValue.toString().replaceAll("[']", "''") + "'";
                 }
                 break;
             }
@@ -608,8 +579,7 @@ public class SqlDialect implements Dialect {
             String value;
             switch (option.getType().intValue()) {
             case OPTION_DEFAULT:
-                value = ((SqlDialect) extents[1])
-                        .getDateDescribe(option.getValue());
+                value = ((SqlDialect) extents[1]).getDateDescribe(option.getValue());
                 break;
             default:
                 value = null;
