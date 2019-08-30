@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.isger.brick.auth.AuthIdentity;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Command;
 import net.isger.util.Asserts;
@@ -44,43 +45,43 @@ public class CommandOperator extends DynamicOperator {
      * @param cmd
      */
     public void operate(BaseCommand cmd) {
-        BoundMethod boundMethod;
         String operate = cmd.getOperate();
         if (Strings.isEmpty(operate)) {
             return;
         }
-        /* 尝试带命令操作方法 */
-        Class<?> paramType = cmd.getClass();
-        do {
-            if ((boundMethod = getMethod(BoundMethod.makeMethodDesc(operate, Void.TYPE, paramType))) == null) {
-                paramType = paramType.getSuperclass();
-                continue;
+        /* 采用默认操作方法 */
+        BoundMethod boundMethod;
+        matchMethod: {
+            // 获取指定操作方法
+            if (BoundMethod.isMethodDesc(operate)) {
+                boundMethod = getMethod(operate);
+                if (boundMethod == null) {
+                    operate = BoundMethod.getName(operate);
+                } else {
+                    break matchMethod;
+                }
             }
-            boundMethod.invoke(getSource(), cmd);
-            return;
-        } while (paramType != Command.class);
-        /* 采用带参数操作方法 */
-        boundMethod = getMethod(operate);
+            // 尝试纯命令操作方法
+            Class<?> paramType = cmd.getClass();
+            do {
+                if ((boundMethod = getMethod(BoundMethod.makeMethodDesc(operate, Void.TYPE, paramType))) == null) {
+                    paramType = paramType.getSuperclass();
+                    continue;
+                }
+                boundMethod.invoke(getSource(), cmd);
+                return;
+            } while (paramType != Command.class);
+            boundMethod = getMethod(operate);
+        }
+        /* 采用指定操作方法 */
         if (boundMethod != null) {
             Method method = boundMethod.getMethod();
             Class<?>[] paramTypes = method.getParameterTypes();
             Annotation[][] annos = method.getParameterAnnotations();
             List<Object> params = new ArrayList<Object>();
             int size = paramTypes.length;
-            String paramName;
-            Object paramValue;
             for (int i = 0; i < size; i++) {
-                if (paramTypes[i].isInstance(cmd) && Command.class.isAssignableFrom(paramTypes[i])) {
-                    paramValue = cmd;
-                } else {
-                    paramName = Helpers.getAliasName(annos[i]);
-                    if (Strings.isEmpty(paramName)) {
-                        paramValue = cmd.getParameter(operate + i);
-                    } else {
-                        paramValue = cmd.getParameter(paramName);
-                    }
-                }
-                params.add(paramValue);
+                params.add(getParameter(paramTypes[i], cmd, Strings.empty(Helpers.getAliasName(annos[i]), operate + i)));
             }
             Object result = boundMethod.invoke(getSource(), params.toArray());
             if (!Void.TYPE.equals(method.getReturnType())) {
@@ -94,6 +95,27 @@ public class CommandOperator extends DynamicOperator {
         } catch (Throwable cause) {
             throw Asserts.state("Failure to invoke [%s] in %s", operate, getSource(), cause);
         }
+    }
+
+    /**
+     * 获取类型参数
+     *
+     * @param type
+     * @param cmd
+     * @param name
+     * @return
+     */
+    protected Object getParameter(Class<?> type, BaseCommand cmd, String name) {
+        Object value;
+        AuthIdentity identity = cmd.getIdentity();
+        if (Command.class.isAssignableFrom(type) && type.isInstance(cmd)) {
+            value = cmd;
+        } else if (AuthIdentity.class.isAssignableFrom(type) && type.isInstance(identity)) {
+            value = identity;
+        } else {
+            value = cmd.getParameter(name);
+        }
+        return value;
     }
 
 }
