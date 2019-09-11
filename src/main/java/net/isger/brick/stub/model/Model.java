@@ -5,7 +5,6 @@ import java.util.Map;
 import net.isger.raw.Artifact;
 import net.isger.raw.Depository;
 import net.isger.raw.StringRaw;
-import net.isger.util.Helpers;
 import net.isger.util.Sqls;
 import net.isger.util.Strings;
 import net.isger.util.anno.Affix;
@@ -41,14 +40,7 @@ public class Model implements Cloneable {
     private transient Object schema;
 
     /** 字段（桥接多对多引用） */
-    @Affix("{name : 't_brick_stub_item', type : 'reference', mode : 1, scale : 3, "
-            + "value : {"
-            + "source : {name : 'model_id', type : 'string', length : 20, options : 3, value : 't_brick_stub_model.id'}, "
-            + "target : {name : 'meta_id', type : 'string', length : 20, options : 3, value : 't_brick_stub_meta.id'}, "
-            + "metas : [{name : 'id', type : 'string', length : 20, options : [1, 3]}, "
-            + "{name : 'label', type : 'string', length : 50}, "
-            + "{name : 'name', type : 'string', length : 50}, "
-            + "{name : 'description', type : 'text'}]}}")
+    @Affix("{name : 't_brick_stub_item', type : 'reference', mode : 1, scale : 3, value : {source : {name : 'model_id', type : 'string', length : 20, options : 3, value : 't_brick_stub_model.id'}, target : {name : 'meta_id', type : 'string', length : 20, options : 3, value : 't_brick_stub_meta.id'}, metas : [{name : 'id', type : 'string', length : 20, options : [1, 3]}, {name : 'label', type : 'string', length : 50}, {name : 'name', type : 'string', length : 50}, {name : 'description', type : 'text'}]}}")
     private Metas metas;
 
     static {
@@ -78,8 +70,7 @@ public class Model implements Cloneable {
     }
 
     public boolean isModel() {
-        return Model.class != this.getClass() || !modelName()
-                .equalsIgnoreCase(Sqls.getTableName(Model.class));
+        return Model.class != this.getClass() || !modelName().equalsIgnoreCase(Sqls.getTableName(Model.class));
     }
 
     public String modelId() {
@@ -120,8 +111,7 @@ public class Model implements Cloneable {
 
     public void modelSchema(Object schema) {
         if (schema instanceof String) {
-            Artifact artifact = Depository
-                    .getArtifact(new StringRaw((String) schema));
+            Artifact artifact = Depository.getArtifact(new StringRaw((String) schema));
             if (artifact != null) {
                 schema = artifact.transform(Map.class);
             }
@@ -186,8 +176,7 @@ public class Model implements Cloneable {
 
     public void metaValue(Map<?, ?> values) {
         for (String name : this.metas().names()) {
-            this.metaValue(name, values.get(values.containsKey(name) ? name
-                    : Helpers.toFieldName(name)));
+            this.metaValue(name, values.get(values.containsKey(name) ? name : Strings.toFieldName(name)));
         }
     }
 
@@ -214,8 +203,7 @@ public class Model implements Cloneable {
         } else if (instance instanceof String) {
             return (String) instance;
         }
-        return Sqls.getTableName(instance instanceof Class ? (Class<?>) instance
-                : instance.getClass());
+        return Sqls.getTableName(instance instanceof Class ? (Class<?>) instance : instance.getClass());
     }
 
     public static Model create(Object instance) {
@@ -224,11 +212,7 @@ public class Model implements Cloneable {
         } else if (instance instanceof String) {
             return new Model((String) instance);
         }
-        return new Model(
-                Sqls.getTableName(
-                        instance instanceof Class ? (Class<?>) instance
-                                : instance.getClass()),
-                Metas.getMetas(instance));
+        return new Model(Sqls.getTableName(instance instanceof Class ? (Class<?>) instance : instance.getClass()), Metas.getMetas(instance));
     }
 
 }

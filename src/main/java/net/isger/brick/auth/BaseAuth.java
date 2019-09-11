@@ -91,9 +91,7 @@ public class BaseAuth extends BaseGate implements Auth {
     public final void check(AuthCommand cmd) {
         /* 认证初验 */
         AuthIdentity identity = cmd.getIdentity();
-        cmd.setResult(identity != null
-                && Helpers.toBoolean(check(identity, cmd.getToken()))
-                || checker.isIgnore(cmd.getToken()));
+        cmd.setResult(identity != null && Helpers.toBoolean(check(identity, cmd.getToken())) || checker.isIgnore(cmd.getToken()));
         /* 检验器终验 */
         checker.handle(cmd);
     }

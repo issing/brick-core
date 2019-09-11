@@ -7,8 +7,12 @@ public class BusHelper extends CoreHelper {
     protected BusHelper() {
     }
 
-    public static Bus getPlugin() {
-        return (Bus) CoreHelper.getGate();
+    public static Bus getBus() {
+        return ((BusModule) getModule()).getBus();
+    }
+
+    public static Endpoint getEndpoint() {
+        return ((BusModule) getModule()).getEndpoint();
     }
 
 }

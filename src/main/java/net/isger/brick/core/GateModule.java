@@ -167,7 +167,7 @@ public class GateModule extends AbstractModule {
     }
 
     public final Gate getGate() {
-        return (Gate) ((InternalContext) Context.getAction()).getInternal(Gate.KEY_GATE);
+        return (Gate) getInternal(Gate.KEY_GATE);
     }
 
     @SuppressWarnings("unchecked")

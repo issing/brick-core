@@ -253,7 +253,7 @@ public class BaseCommand extends Command implements Cloneable {
         return (T) shell.getParameter(key, namespace, isBatch, suffix);
     }
 
-    public void setParameter(Map<String, Object> parameters) {
+    public void setParameter(Map<String, ? extends Object> parameters) {
         shell.setParameter(parameters);
     }
 
@@ -418,12 +418,12 @@ public class BaseCommand extends Command implements Cloneable {
         }
 
         @SuppressWarnings("unchecked")
-        protected void sets(int index, Map<String, Object> values) {
+        protected void sets(int index, Map<String, ? extends Object> values) {
             Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(index);
             if (values == null) {
                 clear(indeces);
             } else {
-                for (Entry<String, Object> entry : values.entrySet()) {
+                for (Entry<String, ? extends Object> entry : values.entrySet()) {
                     set(indeces, entry.getKey(), entry.getValue());
                 }
             }
@@ -591,7 +591,7 @@ public class BaseCommand extends Command implements Cloneable {
             return gets(PARAMETERS);
         }
 
-        public final void setParameter(Map<String, Object> parameters) {
+        public final void setParameter(Map<String, ? extends Object> parameters) {
             sets(PARAMETERS, parameters);
         }
 
@@ -659,7 +659,7 @@ public class BaseCommand extends Command implements Cloneable {
             return getSource().shell.gets(index);
         }
 
-        protected void sets(int index, Map<String, Object> values) {
+        protected void sets(int index, Map<String, ? extends Object> values) {
             getSource().shell.sets(index, values);
         }
 

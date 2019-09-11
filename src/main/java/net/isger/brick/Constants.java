@@ -1,5 +1,7 @@
 package net.isger.brick;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * 常量信息
  * 
@@ -16,7 +18,7 @@ public interface Constants {
 
     public static final String DEFAULT = "default";
 
-    public static final String DEFAULT_ENCODING = "UTF-8";
+    public static final String DEFAULT_ENCODING = StandardCharsets.UTF_8.name();
 
     // -----------------------------------------------------------------
 

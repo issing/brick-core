@@ -9,6 +9,7 @@ import net.isger.brick.bus.protocol.Protocols;
 import net.isger.brick.core.Console;
 import net.isger.brick.inject.Container;
 import net.isger.brick.task.TaskCommand;
+import net.isger.util.Asserts;
 import net.isger.util.Callable;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
@@ -71,11 +72,7 @@ public class BaseBus implements Bus {
             } catch (Exception e) {
                 result = null;
             }
-            if (result != null) {
-                throw new IllegalStateException(
-                        "Failure to initialize the endpoint of bus ["
-                                + endpoint.getClass().getName() + "]", result);
-            }
+            Asserts.throwState(result == null, "Failure to initialize the endpoint of bus [%s]", endpoint.getClass().getName(), result);
         } while (endpoint.getStatus() == Status.INACTIVATE);
     }
 

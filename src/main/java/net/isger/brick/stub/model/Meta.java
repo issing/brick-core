@@ -9,7 +9,7 @@ import net.isger.brick.stub.dialect.SqlDialect;
 import net.isger.raw.Artifact;
 import net.isger.raw.Depository;
 import net.isger.raw.StringRaw;
-import net.isger.util.Helpers;
+import net.isger.util.Asserts;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
 import net.isger.util.anno.Affix;
@@ -72,7 +72,7 @@ public final class Meta implements Cloneable {
     @Affix("{length : 30, options : 3}")
     private String type;
 
-    /** 模式（值类型【0：数据值；1：字典值；2：数据元】 | 引用类型【0：嵌入；1：桥接；2：钩子】） */
+    /** 模式（值类型【0：数据值；1：字典值；2：数据元】 / 引用类型【0：嵌入；1：桥接；2：钩子】） */
     @Affix("{length : 2, options : 3}")
     private Number mode;
 
@@ -230,8 +230,7 @@ public final class Meta implements Cloneable {
     }
 
     public Object getValue(Object instance) {
-        if (field != null
-                && field.getField().getDeclaringClass().isInstance(instance)) {
+        if (field != null && field.getField().getDeclaringClass().isInstance(instance)) {
             return field.getValue(instance);
         }
         return getValue();
@@ -255,8 +254,7 @@ public final class Meta implements Cloneable {
                     model.modelLabel(label);
                     model.modelDescription(description);
                     Map<String, Object> params = (Map<String, Object>) value;
-                    List<Object> paramMetas = new ArrayList<Object>(
-                            (List<Object>) params.get("metas"));
+                    List<Object> paramMetas = new ArrayList<Object>((List<Object>) params.get("metas"));
                     Object source = params.get("source");
                     if (source != null) {
                         paramMetas.add(source);
@@ -265,8 +263,7 @@ public final class Meta implements Cloneable {
                     if (target != null) {
                         paramMetas.add(target);
                     }
-                    model.metas().set((Metas) MetasConversion.CONVERSION
-                            .convert(paramMetas));
+                    model.metas().set((Metas) MetasConversion.CONVERSION.convert(paramMetas));
                     return model;
                 }
                 break;
@@ -277,12 +274,9 @@ public final class Meta implements Cloneable {
                 Model model = new Model(code);
                 model.modelLabel(label);
                 model.modelDescription(description);
-                model.meta(true, MetaAssembler.createMeta(MetaAssembler.ID,
-                        Dialect.OPTION_NOTNULL, Dialect.OPTION_PRIMARY));
-                Meta meta = new Meta(label, VALUE, type, length, scale, code,
-                        Meta.MODE_VALUE_DATA, description);
-                meta.options().set(Dialect.OPTION_NOTNULL,
-                        Dialect.OPTION_UNIQUE);
+                model.meta(true, MetaAssembler.createMeta(MetaAssembler.ID, Dialect.OPTION_NOTNULL, Dialect.OPTION_PRIMARY));
+                Meta meta = new Meta(label, VALUE, type, length, scale, code, Meta.MODE_VALUE_DATA, description);
+                meta.options().set(Dialect.OPTION_NOTNULL, Dialect.OPTION_UNIQUE);
                 model.meta(true, meta);
                 return model;
             }
@@ -295,7 +289,7 @@ public final class Meta implements Cloneable {
         try {
             meta = (Meta) super.clone();
         } catch (CloneNotSupportedException e) {
-            throw new IllegalStateException("Failure to clone meta", e);
+            throw Asserts.state("Failure to clone meta", e);
         }
         meta.options = options().clone();
         return meta;
@@ -316,8 +310,7 @@ public final class Meta implements Cloneable {
         return createMeta(Meta.class, fieldName, args);
     }
 
-    public static Meta createMeta(Class<?> clazz, String fieldName,
-            Object... args) {
+    public static Meta createMeta(Class<?> clazz, String fieldName, Object... args) {
         Meta meta = createMeta(Reflects.getBoundField(clazz, fieldName));
         meta.set(args);
         return meta;
@@ -328,7 +321,7 @@ public final class Meta implements Cloneable {
         if (Strings.isEmpty(meta.name)) {
             meta.name = field.getAlias();
             if (Strings.isEmpty(meta.name)) {
-                meta.name = Helpers.toColumnName(field.getName());
+                meta.name = Strings.toColumnName(field.getName());
             }
         }
         if (Strings.isEmpty(meta.type)) {

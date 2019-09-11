@@ -52,8 +52,7 @@ public class MetaAssembler {
         return createMeta(MetaAssembler.class, name, options);
     }
 
-    public static final Meta createMeta(Class<?> clazz, String name,
-            Object... options) {
+    public static final Meta createMeta(Class<?> clazz, String name, Object... options) {
         MetaAssembler assembler = getAssembler(clazz);
         if (assembler == null) {
             if (!ASSEMBLERS.containsKey(clazz)) {

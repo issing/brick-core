@@ -58,8 +58,7 @@ public class BusModule extends AbstractModule {
      */
     @SuppressWarnings("unchecked")
     protected final Bus getBus() {
-        return container.getInstance((Class<Bus>) getTargetClass(),
-                Constants.SYSTEM);
+        return container.getInstance((Class<Bus>) getTargetClass(), Constants.SYSTEM);
     }
 
     /**
@@ -98,6 +97,10 @@ public class BusModule extends AbstractModule {
      */
     protected Bus create() {
         return (Bus) super.create();
+    }
+
+    public final Endpoint getEndpoint() {
+        return (Endpoint) getInternal(Endpoint.BRICK_ENDPOINT);
     }
 
     public void initial() {
