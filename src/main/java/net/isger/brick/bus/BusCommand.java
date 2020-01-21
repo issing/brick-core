@@ -7,8 +7,6 @@ public class BusCommand extends BaseCommand {
 
     public static final String CTRL_ENDPOINT = "bus-endpoint";
 
-    public static final String CTRL_PAYLOAD = "bus-payload";
-
     public static final String OPERATE_SEND = "send";
 
     public BusCommand() {
@@ -27,9 +25,7 @@ public class BusCommand extends BaseCommand {
     }
 
     public static BusCommand cast(BaseCommand cmd) {
-        return cmd == null || cmd.getClass() == BusCommand.class
-                ? (BusCommand) cmd
-                : cmd.infect(new BusCommand(false));
+        return cmd == null || cmd.getClass() == BusCommand.class ? (BusCommand) cmd : cmd.infect(new BusCommand(false));
     }
 
     public String getEndpoint() {
@@ -38,22 +34,6 @@ public class BusCommand extends BaseCommand {
 
     public void setEndpoint(String endpoint) {
         setHeader(CTRL_ENDPOINT, endpoint);
-    }
-
-    public Object getPayload() {
-        return getPayload(this);
-    }
-
-    public void setPayload(Object payload) {
-        setPayload(this, payload);
-    }
-
-    public static Object getPayload(BaseCommand cmd) {
-        return cmd.getHeader(CTRL_PAYLOAD);
-    }
-
-    public static void setPayload(BaseCommand cmd, Object payload) {
-        cmd.setHeader(CTRL_PAYLOAD, payload);
     }
 
 }

@@ -7,8 +7,7 @@ public interface IdentityHandler extends Handler {
 
     public void open(Endpoint endpoint, AuthIdentity identity);
 
-    public Object handle(Endpoint endpoint, AuthIdentity identity,
-            Object message);
+    public Object handle(Endpoint endpoint, AuthIdentity identity, Object message);
 
     public void close(Endpoint endpoint, AuthIdentity identity);
 

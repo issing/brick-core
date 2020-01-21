@@ -37,6 +37,8 @@ public class BaseCommand extends Command implements Cloneable {
 
     public static final String CTRL_OPERATE = "brick-operate";
 
+    public static final String CTRL_PAYLOAD = "brick-payload";
+
     public static final String DRCT_RESULT = "brick-result";
 
     private ShellCommand shell;
@@ -105,7 +107,7 @@ public class BaseCommand extends Command implements Cloneable {
     }
 
     public final BaseCommand cast() {
-        return this.infect(new BaseCommand(false));
+        return infect(new BaseCommand(false));
     }
 
     public final <T extends BaseCommand> T infect(T command) {
@@ -311,6 +313,14 @@ public class BaseCommand extends Command implements Cloneable {
 
     public void setOperate(String operate) {
         shell.setOperate(operate);
+    }
+
+    public Object getPayload() {
+        return shell.getPayload();
+    }
+
+    public void setPayload(Object payload) {
+        shell.setPayload(payload);
     }
 
     public Object getResult() {
@@ -637,6 +647,14 @@ public class BaseCommand extends Command implements Cloneable {
 
         public final void setOperate(String operate) {
             setHeader(CTRL_OPERATE, operate);
+        }
+
+        public final Object getPayload() {
+            return getHeader(CTRL_PAYLOAD);
+        }
+
+        public final void setPayload(Object payload) {
+            setHeader(CTRL_PAYLOAD, payload);
         }
 
         public final Object getResult() {

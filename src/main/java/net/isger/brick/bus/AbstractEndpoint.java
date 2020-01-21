@@ -61,8 +61,7 @@ public abstract class AbstractEndpoint implements Endpoint {
         if (Strings.isEmpty(this.protocol)) {
             this.protocol = name();
         }
-        this.endpointProtocol = findProtocol(this.protocol, this.getClass(),
-                null);
+        endpointProtocol = findProtocol(this.protocol, this.getClass(), null);
         if (handler != null) {
             container.inject(handler);
         }
@@ -71,8 +70,7 @@ public abstract class AbstractEndpoint implements Endpoint {
     }
 
     @SuppressWarnings("unchecked")
-    private Protocol findProtocol(String name, Class<?> clazz,
-            String namespace) {
+    private Protocol findProtocol(String name, Class<?> clazz, String namespace) {
         Protocol protocol;
         if (Strings.isEmpty(namespace)) {
             protocol = bus.getProtocol(name);
@@ -80,8 +78,7 @@ public abstract class AbstractEndpoint implements Endpoint {
             protocol = bus.getProtocol(name + "." + namespace);
         }
         if (protocol == null && clazz != AbstractEndpoint.class) {
-            protocol = findProtocol(name, clazz.getSuperclass(),
-                    Endpoints.getName((Class<Endpoint>) clazz));
+            protocol = findProtocol(name, clazz.getSuperclass(), Endpoints.getName((Class<Endpoint>) clazz));
         }
         return protocol;
     }

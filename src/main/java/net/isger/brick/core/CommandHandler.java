@@ -5,6 +5,11 @@ import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 
+/**
+ * 命令处理器
+ * 
+ * @author issing
+ */
 public class CommandHandler implements Handler {
 
     /** 控制台 */
