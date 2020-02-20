@@ -167,7 +167,9 @@ class InternalContainer implements Container {
                         }
                     }
                     // 检索子类
-                    instance = getInstances(type).get(name);
+                    if (!(type == Object.class && Constants.DEFAULT.equals(name))) {
+                        instance = getInstances(type).get(name);
+                    }
                 }
                 return (T) instance;
             }
