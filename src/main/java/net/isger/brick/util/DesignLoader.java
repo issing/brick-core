@@ -10,6 +10,7 @@ import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 import net.isger.util.config.Designer;
+import net.isger.util.reflect.ClassAssembler;
 
 /**
  * 设计加载器
@@ -36,39 +37,39 @@ public class DesignLoader extends ConsoleLoader {
         designers = new HashMap<String, Designer>();
     }
 
-    protected Object create(Class<?> clazz, Map<String, Object> res) {
+    protected Object create(Class<?> clazz, Map<String, Object> res, ClassAssembler assembler) {
         // 设计配置项
-        Designer designer = getDesigner(clazz);
+        Designer designer = getDesigner(clazz, assembler);
         if (designer != null) {
             designer.design(res);
         }
         // 创建实例
-        return super.create(clazz, res);
+        return super.create(clazz, res, assembler);
     }
 
     /**
      * 目标设计器
      * 
-     * @param clazz
+     * @param rawClass
      * @return
      */
-    protected Designer getDesigner(Class<?> clazz) {
-        String name = clazz.getName() + "Designer";
+    protected Designer getDesigner(Class<?> rawClass, ClassAssembler assembler) {
+        String name = rawClass.getName() + "Designer";
         Designer designer;
         synchronized (designers) {
             designer = designers.get(name);
             if (!designers.containsKey(name)) {
                 newDesigner: {
                     try {
-                        designer = (Designer) Reflects.newInstance(name);
+                        designer = (Designer) Reflects.newInstance(name, assembler);
                         if (designer != null) {
                             container.inject(designer);
                             break newDesigner;
                         }
                     } catch (Exception e) {
                     }
-                    if (clazz != getTargetClass()) {
-                        designer = getDesigner(getTargetClass());
+                    if (rawClass != getTargetClass()) {
+                        designer = getDesigner(getTargetClass(), assembler);
                     }
                 }
                 designers.put(name, designer);

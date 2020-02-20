@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import net.isger.brick.util.DesignLoader;
 import net.isger.util.Asserts;
 import net.isger.util.Reflects;
+import net.isger.util.reflect.ClassAssembler;
 import net.isger.util.reflect.conversion.Conversion;
 
 public class EndpointsConversion extends DesignLoader implements Conversion {
@@ -42,9 +43,9 @@ public class EndpointsConversion extends DesignLoader implements Conversion {
     }
 
     @SuppressWarnings("unchecked")
-    public Object convert(Type type, Object res) {
+    public Object convert(Type type, Object res, ClassAssembler assembler) {
         Map<String, Endpoint> result;
-        Object instance = load(res);
+        Object instance = load(res, assembler);
         if (instance instanceof List) {
             result = new HashMap<String, Endpoint>();
             for (Map<String, Endpoint> o : (List<Map<String, Endpoint>>) instance) {
@@ -57,7 +58,7 @@ public class EndpointsConversion extends DesignLoader implements Conversion {
     }
 
     @SuppressWarnings("unchecked")
-    protected final Object create(Class<?> clazz, Map<String, Object> res) {
+    protected final Object create(Class<?> clazz, Map<String, Object> res, ClassAssembler assembler) {
         Map<String, Endpoint> result = new HashMap<String, Endpoint>();
         String name;
         Object config;
@@ -79,9 +80,7 @@ public class EndpointsConversion extends DesignLoader implements Conversion {
             }
             res = (Map<String, Object>) config;
             res.put(KEY_NAME, name);
-            result.put(name, createEndpoint(
-                    (Class<? extends Endpoint>) super.getImplementClass(res),
-                    res));
+            result.put(name, createEndpoint((Class<? extends Endpoint>) super.getImplementClass(res), res, assembler));
         }
         return result;
     }
@@ -93,9 +92,8 @@ public class EndpointsConversion extends DesignLoader implements Conversion {
         throw Asserts.argument("Unexpected config " + res);
     }
 
-    protected Endpoint createEndpoint(Class<? extends Endpoint> clazz,
-            Map<String, Object> res) {
-        return (Endpoint) super.create(clazz, res);
+    protected Endpoint createEndpoint(Class<? extends Endpoint> clazz, Map<String, Object> res, ClassAssembler assembler) {
+        return (Endpoint) super.create(clazz, res, assembler);
     }
 
     public String toString() {

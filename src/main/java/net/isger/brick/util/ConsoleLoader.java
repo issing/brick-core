@@ -6,6 +6,7 @@ import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 import net.isger.util.load.BaseLoader;
+import net.isger.util.reflect.ClassAssembler;
 
 /**
  * 控制台过滤器
@@ -28,19 +29,19 @@ public class ConsoleLoader extends BaseLoader {
         super(targetClass);
     }
 
-    protected Object load(String res) {
+    protected Object load(String res, ClassAssembler assembler) {
         if (console != null) {
             Object result = console.loadResource(res);
             if (result != null) {
                 if (result instanceof String) {
-                    result = super.load(result);
+                    result = super.load(result, assembler);
                 } else {
-                    result = load(result);
+                    result = load(result, assembler);
                 }
                 return result;
             }
         }
-        return super.load(res);
+        return super.load(res, assembler);
     }
 
 }

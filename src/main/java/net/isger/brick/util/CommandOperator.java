@@ -14,6 +14,7 @@ import net.isger.util.Helpers;
 import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
 import net.isger.util.reflect.BoundMethod;
+import net.isger.util.reflect.Converter;
 
 /**
  * 命令操作器
@@ -113,7 +114,11 @@ public class CommandOperator extends DynamicOperator {
         } else if (AuthIdentity.class.isAssignableFrom(type) && type.isInstance(identity)) {
             value = identity;
         } else {
+            // TODO 不完善（参考BaseScreen适配）
             value = cmd.getParameter(name);
+            if (value != null && !type.isInstance(value)) {
+                value = Converter.convert(type, value);
+            }
         }
         return value;
     }

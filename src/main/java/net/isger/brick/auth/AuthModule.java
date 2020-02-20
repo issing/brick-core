@@ -18,8 +18,7 @@ public class AuthModule extends GateModule {
 
     @SuppressWarnings("unchecked")
     public Class<? extends Gate> getImplementClass() {
-        Class<? extends Gate> implClass = (Class<? extends Gate>) getImplementClass(
-                Constants.MOD_AUTH, null);
+        Class<? extends Gate> implClass = (Class<? extends Gate>) getImplementClass(Constants.MOD_AUTH, null);
         if (implClass == null) {
             implClass = super.getImplementClass();
         }

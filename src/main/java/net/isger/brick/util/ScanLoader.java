@@ -9,6 +9,7 @@ import java.util.Map;
 import net.isger.util.Reflects;
 import net.isger.util.Scans;
 import net.isger.util.Strings;
+import net.isger.util.reflect.ClassAssembler;
 import net.isger.util.scan.ScanFilter;
 
 /**
@@ -33,7 +34,7 @@ public class ScanLoader extends DesignLoader {
         this.filter = filter;
     }
 
-    protected Object create(Class<?> clazz, Map<String, Object> res) {
+    protected Object create(Class<?> clazz, Map<String, Object> res, ClassAssembler assembler) {
         Object result = null;
         if (hasScan(clazz, res)) {
             Map<String, Object> container = new HashMap<String, Object>();
@@ -41,13 +42,13 @@ public class ScanLoader extends DesignLoader {
             if (config != null) {
                 res.remove(PARAM_PATH);
                 if (config instanceof String) {
-                    container.putAll(scan((String) config, res));
+                    container.putAll(scan((String) config, res, assembler));
                 } else if (config instanceof Collection) {
                     for (Object path : (Collection<?>) config) {
                         if (!(path instanceof String)) {
                             throw new IllegalArgumentException("Invalid config");
                         }
-                        container.putAll(scan((String) path, res));
+                        container.putAll(scan((String) path, res, assembler));
                     }
                 } else {
                     throw new IllegalArgumentException("Invalid config");
@@ -55,33 +56,31 @@ public class ScanLoader extends DesignLoader {
             }
             result = container;
         } else {
-            result = make(clazz, res);
+            result = make(clazz, res, assembler);
         }
         return result;
     }
 
-    protected Object create(Object res) {
+    protected Object create(Object res, ClassAssembler assembler) {
         if (res instanceof String) {
-            return scan((String) res, null);
+            return scan((String) res, null, assembler);
         }
-        return super.create(res);
+        return super.create(res, assembler);
     }
 
     protected boolean hasScan(Class<?> clazz, Map<String, Object> res) {
-        return (clazz == getTargetClass() || !res.containsKey(PARAM_CLASS))
-                && res.containsKey(PARAM_PATH);
+        return (clazz == getTargetClass() || !res.containsKey(PARAM_CLASS)) && res.containsKey(PARAM_PATH);
     }
 
-    protected Map<String, Object> scan(String path, Map<String, Object> res) {
+    protected Map<String, Object> scan(String path, Map<String, Object> res, ClassAssembler assembler) {
         Map<String, Object> result = new HashMap<String, Object>();
         // 扫描实例
         Object instance;
         String className;
         for (String name : Scans.scan(path.replaceAll("[.\\\\]", "/"), filter)) {
-            name = Strings.replaceIgnoreCase(name, "[.]class$").replaceAll(
-                    "[\\\\/]", ".");
+            name = Strings.replaceIgnoreCase(name, "[.]class$").replaceAll("[\\\\/]", ".");
             className = path.replaceAll("[\\\\/]", ".") + name;
-            instance = make(Reflects.getClass(className), res);
+            instance = make(Reflects.getClass(className), res, assembler);
             if (instance != null) {
                 result.put(name.replaceFirst("^[.]", ""), instance);
             }
@@ -96,11 +95,11 @@ public class ScanLoader extends DesignLoader {
      * @param res
      * @return
      */
-    protected Object make(Class<?> clazz, Map<String, Object> res) {
+    protected Object make(Class<?> clazz, Map<String, Object> res, ClassAssembler assembler) {
         if (Reflects.isAbstract(clazz)) {
             return null; // 不支持抽象类或接口
         }
-        return super.create(clazz, res);
+        return super.create(clazz, res, assembler);
     }
 
     @SuppressWarnings("unchecked")

@@ -15,6 +15,7 @@ import net.isger.util.Asserts;
 import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
+import net.isger.util.reflect.ClassAssembler;
 
 /**
  * 关卡模块
@@ -63,8 +64,8 @@ public class GateModule extends AbstractModule {
     /**
      * 创建目标实例（键值对实例集合）
      */
-    protected List<Gate> create(Class<?> clazz, Map<String, Object> res) {
-        Map<String, Gate> gates = createGates(res);
+    protected List<Gate> create(Class<?> clazz, Map<String, Object> res, ClassAssembler assembler) {
+        Map<String, Gate> gates = createGates(res, assembler);
         setGates(gates);
         return new ArrayList<Gate>(gates.values());
     }
@@ -83,7 +84,7 @@ public class GateModule extends AbstractModule {
      * @return
      */
     @SuppressWarnings("unchecked")
-    protected Map<String, Gate> createGates(Map<String, Object> res) {
+    protected Map<String, Gate> createGates(Map<String, Object> res, ClassAssembler assembler) {
         Map<String, Gate> result = new HashMap<String, Gate>();
         String name;
         Object config;
@@ -103,18 +104,18 @@ public class GateModule extends AbstractModule {
                 LOG.warn("(!) Skipped the unexpected gate configuration [{}]", config);
                 continue;
             }
-            result.put(name, createGate((Map<String, Object>) config));
+            result.put(name, createGate((Map<String, Object>) config, assembler));
         }
         return result;
     }
 
     @SuppressWarnings("unchecked")
-    protected Gate createGate(Map<String, Object> res) {
-        return createGate((Class<? extends Gate>) getImplementClass(res), res);
+    protected Gate createGate(Map<String, Object> res, ClassAssembler assembler) {
+        return createGate((Class<? extends Gate>) getImplementClass(res), res, assembler);
     }
 
-    protected Gate createGate(Class<? extends Gate> clazz, Map<String, Object> config) {
-        return (Gate) super.create(clazz, config);
+    protected Gate createGate(Class<? extends Gate> clazz, Map<String, Object> config, ClassAssembler assembler) {
+        return (Gate) super.create(clazz, config, assembler);
     }
 
     /**
@@ -234,7 +235,7 @@ public class GateModule extends AbstractModule {
      */
     @Ignore(mode = Mode.INCLUDE)
     public void create(GateCommand cmd) {
-        Map<String, Gate> gates = createGates(cmd.getParameter());
+        Map<String, Gate> gates = createGates(cmd.getParameter(), null);
         if (!cmd.getTransient()) {
             /* 容器托管门 */
             setGates(gates);

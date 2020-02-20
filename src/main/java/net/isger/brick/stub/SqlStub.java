@@ -66,14 +66,14 @@ public class SqlStub extends AbstractStub {
     @Ignore(mode = Mode.INCLUDE)
     public void initial() {
         /* 初始数据源 */
-        if (dataSource == null) {
+        if (dataSource == null || (dataSource = getDataSource()) == null) {
             String value;
             // JNDI
-            if (Strings.isNotEmpty(value = getJndiName())) {
+            if (Strings.isNotEmpty(value = Strings.trim(getJndiName()))) {
                 try {
-                    dataSource = (DataSource) new InitialContext().lookup(value.trim());
+                    dataSource = (DataSource) new InitialContext().lookup(value);
                 } catch (Exception e) {
-                    throw new IllegalStateException("Couldn't lookup DataSource from " + value + " - " + e.getMessage(), e);
+                    throw Asserts.state("Couldn't lookup DataSource from [%s] - %s", value, e.getMessage(), e.getCause());
                 }
             }
             // JDBC
@@ -83,7 +83,7 @@ public class SqlStub extends AbstractStub {
                 }
                 dataSource = new BaseDataSource(getDriverName(), value, getUser(), getPassword());
             } else {
-                throw new IllegalStateException("Unexpected JNDI or JDBC configuration. Make sure you want to use the sql stub");
+                throw Asserts.state("Unexpected JNDI or JDBC configuration. Make sure you want to use the sql stub");
             }
         }
         /* 初始方言 */
@@ -178,7 +178,7 @@ public class SqlStub extends AbstractStub {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
-            throw new IllegalStateException("Failure to connect database", e.getCause());
+            throw Asserts.state("Failure to connect database", e.getCause());
         }
     }
 
@@ -429,7 +429,7 @@ public class SqlStub extends AbstractStub {
     protected Object[] getCondition(StubCommand cmd, int length) {
         Object config = cmd.getCondition();
         if (config instanceof Condition) {
-            throw new IllegalStateException("Unsupported feature in the current version");
+            throw Asserts.state("Unsupported feature in the current version");
         }
         return (Object[]) Helpers.newArray(config, length);
     }

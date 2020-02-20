@@ -238,7 +238,7 @@ public class Console implements Constants, Manageable {
             value = entry.getValue();
             /* 尝试加载为实例 */
             if (value instanceof Map) {
-                value = BaseLoader.toLoad(value);
+                value = BaseLoader.toLoad(value, null);
             }
             type = value.getClass();
             if (Map.class.isAssignableFrom(type)) {
@@ -290,7 +290,7 @@ public class Console implements Constants, Manageable {
      * @param res
      */
     protected final void loadModule(Map<String, Object> res) {
-        ModuleDescribe entity = (ModuleDescribe) loader.load(res);
+        ModuleDescribe entity = (ModuleDescribe) loader.load(res, null);
         String name = entity.getName();
         Module module = entity.getModule();
         addModule: {
@@ -321,7 +321,7 @@ public class Console implements Constants, Manageable {
             for (Artifact artifact : Depository.getArtifacts(name + "-" + entry.getKey(), prober)) {
                 config = loadResource(artifact);
                 if (config != null) {
-                    entry.getValue().load(config);
+                    entry.getValue().load(config, null);
                 }
             }
         }
@@ -366,7 +366,7 @@ public class Console implements Constants, Manageable {
             name = entry.getKey();
             value = entry.getValue();
             if ((module = getModule(name)) != null) {
-                module.load(value);
+                module.load(value, null);
             } else if (LOG.isDebugEnabled()) {
                 LOG.warn("(!) Skipped the unexpected module configuration [{} : {}]", name, value);
             }

@@ -6,6 +6,7 @@ import java.util.Map;
 import net.isger.brick.util.CommandOperator;
 import net.isger.brick.util.DesignLoader;
 import net.isger.util.Asserts;
+import net.isger.util.Callable;
 import net.isger.util.Reflects;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
@@ -61,8 +62,7 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * 获取目标类型
      */
     public Class<?> getTargetClass() {
-        throw Asserts.state("The %s must override the method getTargetClass()",
-                this.getClass());
+        throw Asserts.state("The %s must override the method getTargetClass()", this.getClass());
     }
 
     /**
@@ -91,8 +91,7 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * @param baseClass
      * @return
      */
-    protected final Class<?> getImplementClass(String name,
-            Class<?> baseClass) {
+    protected final Class<?> getImplementClass(String name, Class<?> baseClass) {
         Class<?> implClass = Reflects.getClass(getParameter(name));
         if (implClass == null) {
             implClass = super.getImplementClass();
@@ -113,7 +112,7 @@ public abstract class AbstractModule extends DesignLoader implements Module {
     /**
      * 创建目标实例（默认不支持键值对以外配置方式）
      */
-    protected Object create(Object res) {
+    protected Object create(Object res, Callable<?> assembler) {
         throw Asserts.argument("Unexpected config: %s", res);
     }
 
@@ -123,7 +122,7 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * @return
      */
     protected Object create() {
-        return super.create(getImplementClass(), null);
+        return super.create(getImplementClass(), null, null);
     }
 
     /**

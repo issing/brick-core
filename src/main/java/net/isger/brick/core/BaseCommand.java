@@ -2,6 +2,7 @@ package net.isger.brick.core;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,12 +11,15 @@ import java.util.Map.Entry;
 import org.apache.avro.Schema;
 
 import net.isger.brick.auth.AuthIdentity;
+import net.isger.brick.stub.model.Meta;
 import net.isger.brick.stub.model.Model;
-import net.isger.util.Callable;
 import net.isger.util.Helpers;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
+import net.isger.util.reflect.AssemblerAdapter;
 import net.isger.util.reflect.BoundField;
+import net.isger.util.reflect.ClassAssembler;
+import net.isger.util.reflect.TypeToken;
 
 /**
  * 基本命令
@@ -212,17 +216,17 @@ public class BaseCommand extends Command implements Cloneable {
         return getParameter(type, namespace, isBatch, null);
     }
 
-    public <T> T getParameter(Class<T> type, Callable<?> assembler) {
+    public <T> T getParameter(Class<T> type, ClassAssembler assembler) {
         return getParameter(type, null, false, assembler);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getParameter(Class<?> type, boolean isBatch, Callable<?> assembler) {
+    public <T> T getParameter(Class<?> type, boolean isBatch, ClassAssembler assembler) {
         return (T) shell.getParameter(type, null, isBatch, assembler);
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getParameter(Class<?> type, String namespace, boolean isBatch, Callable<?> assembler) {
+    public <T> T getParameter(Class<?> type, String namespace, boolean isBatch, ClassAssembler assembler) {
         return (T) shell.getParameter(type, namespace, isBatch, assembler);
     }
 
@@ -505,6 +509,9 @@ public class BaseCommand extends Command implements Cloneable {
 
         public final Object getParameter(Model model, String namespace, boolean isBatch) {
             Map<String, Object> params = Helpers.getMap(getParameter(), namespace);
+            if (params == null) {
+                return null;
+            }
             Model instance;
             if (!isBatch) {
                 instance = model.clone();
@@ -516,15 +523,11 @@ public class BaseCommand extends Command implements Cloneable {
             List<Object> values = new ArrayList<Object>();
             Object value;
             for (String name : model.metas().names()) {
-                value = params.get(name + "[]");
-                if (value == null) {
-                    value = params.get(name);
+                value = Helpers.getValues(params, name, null);
+                if (value != null) {
+                    names.add(name);
+                    values.add(value);
                 }
-                if (value == null) {
-                    continue;
-                }
-                names.add(name);
-                values.add(value);
             }
             Object[] columns = names.toArray();
             for (Object[] row : Helpers.newGrid(true, values.toArray())) {
@@ -535,13 +538,34 @@ public class BaseCommand extends Command implements Cloneable {
             return result;
         }
 
-        public final Object getParameter(Class<?> type, String namespace, boolean isBatch, Callable<?> assembler) {
-            Map<String, Object> params = Helpers.getMap(getParameter(), namespace);
+        @SuppressWarnings("unchecked")
+        public final Object getParameter(Class<?> type, String namespace, boolean isBatch, ClassAssembler assembler) {
+            /* 获取所有参数键值对 */
+            Map<String, Object> params = new HashMap<String, Object>();
+            Object payload = getPayload();
+            if (payload instanceof Map) {
+                params.putAll((Map<String, Object>) payload);
+            } else if (payload instanceof String && Strings.isNotEmpty(payload)) {
+                Map<String, Object> pending = Helpers.fromJson((String) payload, Map.class);
+                if (pending != null) {
+                    params.putAll(pending);
+                }
+            }
+            params.putAll(getParameter());
+            params = Helpers.getMap(params, namespace);
+            if (params == null) {
+                return null;
+            }
+            if (assembler == null) {
+                assembler = createAssembler();
+            }
+            /* 单实例转换 */
             if (Map.class.isAssignableFrom(type)) {
                 return params;
             } else if (!isBatch) {
                 return Reflects.newInstance(type, params, assembler);
             }
+            /* 批实例转换 */
             List<Object> result = new ArrayList<Object>();
             List<String> names = new ArrayList<String>();
             List<Object> values = new ArrayList<Object>();
@@ -550,9 +574,9 @@ public class BaseCommand extends Command implements Cloneable {
             Map<String, List<BoundField>> fields = Reflects.getBoundFields(type);
             for (Entry<String, List<BoundField>> entry : fields.entrySet()) {
                 name = entry.getKey();
-                value = getValue(params, name);
+                value = Helpers.getValues(params, name, null);
                 if (value == null) {
-                    value = getValue(params, name = entry.getValue().get(0).getAlias());
+                    value = Helpers.getValues(params, name = entry.getValue().get(0).getAlias(), null);
                 }
                 if (value != null) {
                     names.add(name);
@@ -563,38 +587,78 @@ public class BaseCommand extends Command implements Cloneable {
             for (Object[] row : Helpers.newGrid(true, values.toArray())) {
                 result.add(Reflects.newInstance(type, Reflects.toMap(columns, row), assembler));
             }
-            return result;
-        }
-
-        private Object getValue(Map<String, Object> params, String name) {
-            Object value = params.get(name + "[]");
-            if (value == null) {
-                value = params.get(name);
-            }
-            return value;
+            return Helpers.toArray(type, result.toArray());
         }
 
         public final Object getParameter(CharSequence key, String namespace, boolean isBatch, String suffix) {
             Map<String, Object> params = Helpers.getMap(getParameter(), namespace);
+            if (params == null) {
+                return null;
+            }
             if (!isBatch) {
                 return params.get(key);
             }
-            suffix = Strings.empty(suffix);
-            Object values = params.get(key + "[]" + suffix);
-            if (values == null) {
-                Object pending;
-                int amount = 0;
-                List<Object> container = new ArrayList<Object>();
-                while ((pending = params.get(key + "[" + (amount++) + "]" + suffix)) != null) {
-                    container.add(pending);
+            Object values = Helpers.getValues(params, key.toString(), suffix);
+            return values == null || values.getClass().isArray() ? values : Helpers.newArray(values);
+        }
+
+        protected ClassAssembler createAssembler() {
+            final Console console = CoreHelper.getConsole();
+            return console == null ? null : new AssemblerAdapter() {
+                public Class<?> assemble(Class<?> rawClass) {
+                    if (rawClass.isInterface()) {
+                        rawClass = console.getContainer().getInstance(Class.class, (Strings.toColumnName(rawClass.getSimpleName()).replaceAll("[_]", ".") + ".class"));
+                    }
+                    return rawClass;
                 }
-                if (container.size() > 0) {
-                    return Helpers.newArray(container.get(0).getClass(), container.toArray(), container.size());
-                } else {
-                    values = params.get(key);
+
+                @SuppressWarnings("unchecked")
+                public Object assemble(BoundField field, Object instance, Object value, Object... args) {
+                    Map<String, Object> data = (Map<String, Object>) args[0]; // 组装数据
+                    Assemble assermble = createAssemble(field); // 组装信息
+                    if (value == Reflects.UNKNOWN) {
+                        value = Helpers.getInstance(data, Strings.toFieldName(assermble.sourceColumn));
+                    }
+                    TypeToken<?> typeToken = field.getToken(); // 组装类型
+                    Class<?> rawClass = typeToken.getRawClass();
+                    if (Collection.class.isAssignableFrom(rawClass)) {
+                        rawClass = (Class<?>) Reflects.getActualType(typeToken.getType());
+                    } else if (rawClass.isArray()) {
+                        rawClass = (Class<?>) Reflects.getComponentType(typeToken.getType());
+                    }
+                    // 获取接口类型所配置的实现类型
+                    rawClass = assemble(rawClass);
+                    if (!(value == null || value instanceof Map)) {
+                        Map<String, Object> params = new HashMap<String, Object>();
+                        params.put(assermble.targetField, value);
+                        value = params;
+                    }
+                    return Reflects.newInstance(rawClass, (Map<String, Object>) value, this);
                 }
+            };
+        }
+
+        @SuppressWarnings("unchecked")
+        private Assemble createAssemble(BoundField field) {
+            Assemble assemble = new Assemble();
+            assemble.meta = Meta.createMeta(field); // 元字段
+            if (assemble.meta.toModel() == null) {
+                assemble.sourceColumn = assemble.meta.getName();
+                assemble.targetField = (String) assemble.meta.getValue();
+            } else {
+                Map<String, Object> params = (Map<String, Object>) assemble.meta.getValue();
+                Map<String, Object> source = (Map<String, Object>) params.get("source");
+                assemble.sourceColumn = (String) source.get("name");
+                Map<String, Object> target = (Map<String, Object>) params.get("target");
+                assemble.targetField = Strings.toFieldName((String) target.get("name"));
             }
-            return Helpers.newArray(values);
+            return assemble;
+        }
+
+        private class Assemble {
+            Meta meta;
+            String sourceColumn;
+            String targetField;
         }
 
         public final Map<String, Object> getParameter() {

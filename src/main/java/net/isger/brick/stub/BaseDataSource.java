@@ -25,8 +25,7 @@ public class BaseDataSource implements DataSource {
 
     private String password;
 
-    public BaseDataSource(String driverName, String url, String user,
-            String password) {
+    public BaseDataSource(String driverName, String url, String user, String password) {
         super();
         this.driverName = driverName;
         this.url = url;
@@ -43,8 +42,7 @@ public class BaseDataSource implements DataSource {
         return getConnection(this.user, this.password);
     }
 
-    public Connection getConnection(String user, String password)
-            throws SQLException {
+    public Connection getConnection(String user, String password) throws SQLException {
         return DriverManager.getConnection(this.url, user, password);
     }
 

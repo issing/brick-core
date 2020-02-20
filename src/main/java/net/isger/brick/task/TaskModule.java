@@ -10,6 +10,7 @@ import net.isger.brick.core.AbstractModule;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.inject.ConstantStrategy;
 import net.isger.util.Asserts;
+import net.isger.util.reflect.ClassAssembler;
 
 /**
  * 任务模块
@@ -51,8 +52,8 @@ public class TaskModule extends AbstractModule {
     /**
      * 创建任务
      */
-    protected Object create(Class<?> clazz, Map<String, Object> res) {
-        Task task = (Task) super.create(clazz, res);
+    protected Object create(Class<?> clazz, Map<String, Object> res, ClassAssembler assembler) {
+        Task task = (Task) super.create(clazz, res, assembler);
         setTask(task);
         return task;
     }
@@ -64,8 +65,7 @@ public class TaskModule extends AbstractModule {
      */
     @SuppressWarnings("unchecked")
     protected Task getTask() {
-        return container.getInstance((Class<Task>) getTargetClass(),
-                Constants.SYSTEM);
+        return container.getInstance((Class<Task>) getTargetClass(), Constants.SYSTEM);
     }
 
     /**

@@ -7,6 +7,7 @@ import java.util.Map;
 
 import net.isger.util.Asserts;
 import net.isger.util.Reflects;
+import net.isger.util.reflect.ClassAssembler;
 import net.isger.util.reflect.conversion.Conversion;
 
 public class MetasConversion implements Conversion {
@@ -21,32 +22,31 @@ public class MetasConversion implements Conversion {
     }
 
     public Object convert(Object value) {
-        return convert(Metas.class, value);
+        return convert(Metas.class, value, null);
     }
 
-    public Object convert(Type type, Object value) {
+    public Object convert(Type type, Object value, ClassAssembler assembler) {
         Metas metas = new Metas();
         if (value instanceof Object[]) {
             value = Arrays.asList((Object[]) value);
         }
         if (value instanceof List) {
             for (Object i : (List<?>) value) {
-                metas.add(createMeta(i));
+                metas.add(createMeta(i, assembler));
             }
         } else {
-            metas.add(createMeta(value));
+            metas.add(createMeta(value, assembler));
         }
         return metas;
     }
 
     @SuppressWarnings("unchecked")
-    private Meta createMeta(Object value) {
+    private Meta createMeta(Object value, ClassAssembler assembler) {
         Meta meta;
         if (value instanceof Object[]) {
             meta = new Meta((Object[]) value);
         } else if (value instanceof Map) {
-            meta = Reflects.newInstance(Meta.class,
-                    (Map<String, Object>) value);
+            meta = Reflects.newInstance(Meta.class, (Map<String, Object>) value, assembler);
         } else if (value instanceof Meta) {
             meta = (Meta) value;
         } else {

@@ -59,8 +59,7 @@ public class AuthChecker extends CommandHandler {
      * @return
      */
     public boolean isIgnore(Object token) {
-        return token instanceof BaseCommand
-                && isIgnore(((BaseCommand) token).getPermission());
+        return token instanceof BaseCommand && isIgnore(((BaseCommand) token).getPermission());
     }
 
     /**

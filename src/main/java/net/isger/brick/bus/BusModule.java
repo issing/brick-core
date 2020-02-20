@@ -10,6 +10,7 @@ import net.isger.brick.core.AbstractModule;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.inject.ConstantStrategy;
 import net.isger.util.Asserts;
+import net.isger.util.reflect.ClassAssembler;
 
 public class BusModule extends AbstractModule {
 
@@ -45,8 +46,8 @@ public class BusModule extends AbstractModule {
     /**
      * 创建总线
      */
-    protected Object create(Class<?> clazz, Map<String, Object> res) {
-        Bus bus = (Bus) super.create(clazz, res);
+    protected Object create(Class<?> clazz, Map<String, Object> res, ClassAssembler assembler) {
+        Bus bus = (Bus) super.create(clazz, res, assembler);
         setBus(bus);
         return bus;
     }
