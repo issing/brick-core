@@ -131,6 +131,7 @@ public class BaseAuth extends BaseGate implements Auth {
      */
     protected void logout(AuthIdentity identity) {
         identity.clear();
+        identity.setToken(null);
     }
 
     /**
