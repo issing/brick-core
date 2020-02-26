@@ -33,9 +33,7 @@ public class TaskCommand extends BaseCommand {
     }
 
     public static TaskCommand cast(BaseCommand cmd) {
-        return cmd == null || cmd.getClass() == TaskCommand.class
-                ? (TaskCommand) cmd
-                : cmd.infect(new TaskCommand(false));
+        return cmd == null || cmd.getClass() == TaskCommand.class ? (TaskCommand) cmd : cmd.infect(new TaskCommand(false));
     }
 
     public Command getCommand() {

@@ -71,10 +71,10 @@ public class Preparer {
             if (context instanceof InternalContext) {
                 context = ((InternalContext) context).getContext();
                 if (context instanceof InternalContext) {
-                    break isInternal;
+                    break isInternal; // 恢复上下文
                 }
             }
-            context = null;
+            context = null; // 清空上下文
         }
         Context.setAction(context);
     }

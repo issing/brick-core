@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 import net.isger.brick.Constants;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Console;
+import net.isger.brick.core.Context;
 import net.isger.brick.util.CommandOperator;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
@@ -50,14 +51,19 @@ public class BaseTask implements Task {
     public void submit(TaskCommand cmd) {
         final BaseCommand command = BaseCommand.cast(cmd.getCommand());
         final net.isger.util.Callable<Object> callback = cmd.getCallback();
-        cmd.setResult(executor
-                .submit(command == null ? callback : new Callable<Object>() {
-                    public Object call() throws Exception {
-                        console.execute(command);
-                        return callback == null ? command.getResult()
-                                : callback.call(command);
-                    }
-                }));
+        final Context context = Context.getAction();
+        cmd.setResult(executor.submit(command == null ? new Callable<Object>() {
+            public Object call() throws Exception {
+                Context.setAction(context);
+                return callback.call();
+            }
+        } : new Callable<Object>() {
+            public Object call() throws Exception {
+                console.execute(command);
+                Context.setAction(context);
+                return callback == null ? command.getResult() : callback.call(command);
+            }
+        }));
     }
 
     public void destroy() {
