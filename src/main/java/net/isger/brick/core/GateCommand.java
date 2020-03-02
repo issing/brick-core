@@ -1,5 +1,6 @@
 package net.isger.brick.core;
 
+import net.isger.util.Helpers;
 import net.isger.util.Strings;
 
 public class GateCommand extends BaseCommand {
@@ -7,6 +8,8 @@ public class GateCommand extends BaseCommand {
     public static final String CTRL_DOMAIN = "gate-domain";
 
     public static final String CTRL_TRANSIENT = "gate-transient";
+
+    public static final String CTRL_IMMEDIATE = "gate-immediate";
 
     public static final String OPERATE_INITIAL = "initial";
 
@@ -36,8 +39,7 @@ public class GateCommand extends BaseCommand {
     }
 
     public static GateCommand cast(BaseCommand cmd) {
-        return cmd == null || cmd.getClass() == GateCommand.class ? (GateCommand) cmd
-                : cmd.infect(new GateCommand(false));
+        return cmd == null || cmd.getClass() == GateCommand.class ? (GateCommand) cmd : cmd.infect(new GateCommand(false));
     }
 
     public final String getPermission() {
@@ -66,12 +68,19 @@ public class GateCommand extends BaseCommand {
     }
 
     public boolean getTransient() {
-        Boolean transiented = getHeader(CTRL_TRANSIENT);
-        return transiented != null && transiented;
+        return Helpers.toBoolean(getHeader(CTRL_TRANSIENT));
     }
 
     public void setTransient(boolean transiented) {
         setHeader(CTRL_TRANSIENT, transiented);
+    }
+
+    public boolean getImmediate() {
+        return Helpers.toBoolean(getHeader(CTRL_TRANSIENT));
+    }
+
+    public void setImmediate(boolean immediated) {
+        setHeader(CTRL_TRANSIENT, immediated);
     }
 
 }
