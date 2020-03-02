@@ -89,7 +89,7 @@ public abstract class Context {
      * @return
      */
     public abstract Console getConsole();
-    
+
     /**
      * 获取命令
      * 
