@@ -358,10 +358,10 @@ public class BaseCommand extends Command implements Cloneable {
         if (shell == null) {
             shell = this.shell;
         }
-        this.shell.mappings = Helpers.getMap(shell.mappings);
-        this.shell.setHeaders(Helpers.getMap(shell.getHeaders()));
-        this.shell.setParameters(Helpers.getMap(shell.getParameters()));
-        this.shell.setFooters(Helpers.getMap(shell.getFooters()));
+        this.shell.mappings = Helpers.newMap(shell.mappings);
+        this.shell.setHeaders(Helpers.newMap(shell.getHeaders()));
+        this.shell.setParameters(Helpers.newMap(shell.getParameters()));
+        this.shell.setFooters(Helpers.newMap(shell.getFooters()));
     }
 
     private class ShellCommand {
@@ -507,11 +507,21 @@ public class BaseCommand extends Command implements Cloneable {
             set(HEADERS, key, value);
         }
 
+        @SuppressWarnings("unchecked")
         public final Object getParameter(Model model, String namespace, boolean isBatch) {
-            Map<String, Object> params = Helpers.getMap(getParameter(), namespace);
-            if (params == null) {
-                return null;
+            /* 获取所有参数键值对 */
+            Map<String, Object> params = new HashMap<String, Object>();
+            Object payload = getPayload();
+            if (payload instanceof Map) {
+                params.putAll((Map<String, Object>) payload);
+            } else if (payload instanceof String && Strings.isNotEmpty(payload)) {
+                Map<String, Object> pending = Helpers.fromJson((String) payload, Map.class);
+                if (pending != null) {
+                    params.putAll(pending);
+                }
             }
+            params.putAll(getParameter());
+            params = Helpers.coalesce(Helpers.getMap(params, namespace), params);
             Model instance;
             if (!isBatch) {
                 instance = model.clone();
@@ -523,7 +533,7 @@ public class BaseCommand extends Command implements Cloneable {
             List<Object> values = new ArrayList<Object>();
             Object value;
             for (String name : model.metas().names()) {
-                value = Helpers.getValues(params, name, null);
+                value = Helpers.getValues(params, name);
                 if (value != null) {
                     names.add(name);
                     values.add(value);
@@ -552,10 +562,7 @@ public class BaseCommand extends Command implements Cloneable {
                 }
             }
             params.putAll(getParameter());
-            params = Helpers.getMap(params, namespace);
-            if (params == null) {
-                return null;
-            }
+            params = Helpers.coalesce(Helpers.getMap(params, namespace), params);
             if (assembler == null) {
                 assembler = createAssembler();
             }
@@ -572,11 +579,15 @@ public class BaseCommand extends Command implements Cloneable {
             String name;
             Object value;
             Map<String, List<BoundField>> fields = Reflects.getBoundFields(type);
+            BoundField field;
+            Class<?> rawClass;
             for (Entry<String, List<BoundField>> entry : fields.entrySet()) {
                 name = entry.getKey();
-                value = Helpers.getValues(params, name, null);
+                field = entry.getValue().get(0);
+                rawClass = assembler.assemble(field.getToken().getRawClass());
+                value = Helpers.getValues(params, name, rawClass);
                 if (value == null) {
-                    value = Helpers.getValues(params, name = entry.getValue().get(0).getAlias(), null);
+                    value = Helpers.getValues(params, name = field.getAlias(), rawClass);
                 }
                 if (value != null) {
                     names.add(name);
@@ -590,13 +601,23 @@ public class BaseCommand extends Command implements Cloneable {
             return Helpers.toArray(type, result.toArray());
         }
 
+        @SuppressWarnings("unchecked")
         public final Object getParameter(CharSequence key, String namespace, boolean isBatch, String suffix) {
-            Map<String, Object> params = Helpers.getMap(getParameter(), namespace);
-            if (params == null) {
-                return null;
+            /* 获取所有参数键值对 */
+            Map<String, Object> params = new HashMap<String, Object>();
+            Object payload = getPayload();
+            if (payload instanceof Map) {
+                params.putAll((Map<String, Object>) payload);
+            } else if (payload instanceof String && Strings.isNotEmpty(payload)) {
+                Map<String, Object> pending = Helpers.fromJson((String) payload, Map.class);
+                if (pending != null) {
+                    params.putAll(pending);
+                }
             }
+            params.putAll(getParameter());
+            params = Helpers.coalesce(Helpers.getMap(params, namespace), params); // 名称空间不为空时，参数集合将被层级化
             if (!isBatch) {
-                return params.get(key);
+                return Helpers.getValue(params, key.toString());
             }
             Object values = Helpers.getValues(params, key.toString(), suffix);
             return values == null || values.getClass().isArray() ? values : Helpers.newArray(values);
