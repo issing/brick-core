@@ -17,9 +17,8 @@ public class H2Dialect extends SqlDialect {
         return super.isSupport(name) || DRIVER_NAME.equals(name);
     }
 
-    public PageSql getSearchEntry(Page page, String sql, Object[] values) {
+    protected PageSql createPageSql(Page page, String sql, Object[] values) {
         return new PageSql(page, sql, values) {
-
             public Object[] getWrapValues(Object[] values) {
                 Page page = super.getPage();
                 int valCount = 2;

@@ -238,7 +238,7 @@ public class Console implements Constants, Manageable {
             value = entry.getValue();
             /* 尝试加载为实例 */
             if (value instanceof Map) {
-                value = BaseLoader.toLoad(value, null);
+                value = BaseLoader.toLoad(value);
             }
             type = value.getClass();
             if (Map.class.isAssignableFrom(type)) {

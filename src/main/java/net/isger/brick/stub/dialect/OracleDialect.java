@@ -11,11 +11,10 @@ public class OracleDialect extends SqlDialect {
         return super.isSupport(name) || DRIVER_NAME.equals(name);
     }
 
-    public PageSql getSearchEntry(Page page, String sql, Object[] values) {
+    protected PageSql createPageSql(Page page, String sql, Object[] values) {
         return new PageSql(page, sql, values) {
             public String getWrapSql(String sql) {
-                return "select * from (select t1.*, rownum rn from (" + sql
-                        + ") t1 where rownum <= ?) t2 where rn > ?";
+                return "select * from (select t1.*, rownum rn from (" + sql + ") t1 where rownum <= ?) t2 where rn > ?";
             }
 
             public Object[] getWrapValues(Object[] values) {
@@ -29,8 +28,7 @@ public class OracleDialect extends SqlDialect {
                 } else {
                     wrapValues = new Object[valCount];
                 }
-                wrapValues[valCount - 1] = (page.getStart() - 1)
-                        * page.getLimit();
+                wrapValues[valCount - 1] = (page.getStart() - 1) * page.getLimit();
                 wrapValues[valCount - 2] = page.getStart() * page.getLimit();
                 return wrapValues;
             }

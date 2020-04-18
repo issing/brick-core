@@ -37,18 +37,17 @@ public class PostgresDialect extends SqlDialect {
     public PostgresDialect() {
         addDescriber(LONG, getNumberDescriber(BIGINT, false));
         addDescriber(INT, getNumberDescriber(INT, false));
-        addDescriber(BOOLEAN,
-                new DescriberDelegate(getNumberDescriber(BOOL, false)) {
-                    public String describe(Option option, Object... extents) {
-                        String value = super.describe(option, extents);
-                        switch (option.getType().intValue()) {
-                        case OPTION_DEFAULT:
-                            value = String.valueOf(Helpers.toBoolean(value));
-                            break;
-                        }
-                        return value;
-                    }
-                });
+        addDescriber(BOOLEAN, new DescriberDelegate(getNumberDescriber(BOOL, false)) {
+            public String describe(Option option, Object... extents) {
+                String value = super.describe(option, extents);
+                switch (option.getType().intValue()) {
+                case OPTION_DEFAULT:
+                    value = String.valueOf(Helpers.toBoolean(value));
+                    break;
+                }
+                return value;
+            }
+        });
     }
 
     public boolean isSupport(String name) {
@@ -67,7 +66,7 @@ public class PostgresDialect extends SqlDialect {
         return type;
     }
 
-    public PageSql getSearchEntry(Page page, String sql, Object[] values) {
+    protected PageSql createPageSql(Page page, String sql, Object[] values) {
         return new PageSql(page, sql, values) {
             public String getWrapSql(String sql) {
                 return sql + " limit ? offset ?";
@@ -84,8 +83,7 @@ public class PostgresDialect extends SqlDialect {
                 } else {
                     wrapValues = new Object[valCount];
                 }
-                wrapValues[valCount - 1] = (page.getStart() - 1)
-                        * page.getLimit();
+                wrapValues[valCount - 1] = (page.getStart() - 1) * page.getLimit();
                 wrapValues[valCount - 2] = page.getLimit();
                 return wrapValues;
             }

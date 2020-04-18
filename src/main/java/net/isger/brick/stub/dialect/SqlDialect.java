@@ -272,23 +272,37 @@ public class SqlDialect implements Dialect {
 
     public SqlEntry getSearchEntry(String sql, Object[] values) {
         Page page = getPage(values);
+        if (page != null) {
+            int size = values.length;
+            List<Object> pending = new ArrayList<Object>(size - 1);
+            if (size == 1) {
+                values = new Object[0];
+            } else {
+                for (Object value : values) {
+                    if (value instanceof Page) {
+                        continue;
+                    }
+                    pending.add(value);
+                }
+                values = pending.toArray();
+            }
+        }
+        return getSearchEntry(page, sql, values);
+    }
+
+    private SqlEntry getSearchEntry(Page page, String sql, Object[] values) {
         if (page == null) {
             return new SqlEntry(sql, values);
         }
-        Object[] target = new Object[values.length - 1];
-        System.arraycopy(values, 0, target, 0, target.length);
-        return getSearchEntry(page, sql, target);
+        return createPageSql(page, sql, values);
     }
 
-    protected SqlEntry getSearchEntry(Page page, String sql, Object[] values) {
+    protected PageSql createPageSql(Page page, String sql, Object[] values) {
         return new PageSql(page, sql, values);
     }
 
     protected Page getPage(Object[] values) {
-        if (values != null && values.length > 0 && values[values.length - 1] instanceof Page) {
-            return (Page) values[values.length - 1];
-        }
-        return null;
+        return Helpers.getInstance(values, Page.class);
     }
 
     public SqlEntry getExistsEntry(Object table) {
