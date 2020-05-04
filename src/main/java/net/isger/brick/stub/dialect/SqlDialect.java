@@ -463,6 +463,8 @@ public class SqlDialect implements Dialect {
     protected Object getColumnValue(String name, Object value) {
         if (value instanceof Number || value instanceof Boolean || value instanceof CharSequence) {
             return value;
+        } else if (value instanceof Class<?>) {
+            return ((Class<?>) value).getName();
         }
         // TODO 根据名称规则获取对象属性（临时解决方案）
         String[] pending = name.split("[_]", 2);

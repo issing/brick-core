@@ -35,10 +35,10 @@ public abstract class Context {
     }
 
     protected Context(Map<String, Object> contextMap) {
-        this.context = new ConcurrentHashMap<String, Object>();
-        this.reals = new LinkedBlockingDeque<BaseCommand>();
+        context = new ConcurrentHashMap<String, Object>();
+        reals = new LinkedBlockingDeque<BaseCommand>();
         if (contextMap != null) {
-            this.context.putAll(contextMap);
+            context.putAll(contextMap);
         }
     }
 
@@ -48,7 +48,7 @@ public abstract class Context {
      * @return
      */
     public Map<String, Object> getContextMap() {
-        return Collections.unmodifiableMap(this.context);
+        return Collections.unmodifiableMap(context);
     }
 
     /**
