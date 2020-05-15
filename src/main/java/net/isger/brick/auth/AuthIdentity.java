@@ -77,7 +77,6 @@ public class AuthIdentity {
     }
 
     public void setTimeout(int timeout) {
-
     }
 
     public void clear() {
