@@ -46,6 +46,7 @@ public class BaseBus implements Bus {
             protocol.initial();
         }
         TaskCommand cmd = new TaskCommand();
+        cmd.setDaemon(true);
         cmd.setOperate(TaskCommand.OPERATE_SUBMIT);
         for (final Endpoint endpoint : endpoints.gets().values()) {
             container.inject(endpoint);

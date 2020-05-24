@@ -3,6 +3,7 @@ package net.isger.brick.task;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Command;
 import net.isger.util.Callable;
+import net.isger.util.Helpers;
 
 /**
  * 任务命令
@@ -10,6 +11,8 @@ import net.isger.util.Callable;
  * @author issing
  */
 public class TaskCommand extends BaseCommand {
+
+    public static final String CTRL_DAEMON = "task-daemon";
 
     public static final String CTRL_COMMAND = "task-command";
 
@@ -36,20 +39,52 @@ public class TaskCommand extends BaseCommand {
         return cmd == null || cmd.getClass() == TaskCommand.class ? (TaskCommand) cmd : cmd.infect(new TaskCommand(false));
     }
 
+    public boolean getDaemon() {
+        return getDaemon(this);
+    }
+
+    public void setDaemon(boolean daemon) {
+        setDaemon(this, daemon);
+    }
+
     public Command getCommand() {
-        return getHeader(CTRL_COMMAND);
+        return getCommand(this);
     }
 
     public void setCommand(Command command) {
-        setHeader(CTRL_COMMAND, command);
+        setCommand(this, command);
     }
 
     public <T> Callable<T> getCallback() {
-        return getHeader(CTRL_CALLBACK);
+        return getCallback(this);
     }
 
     public void setCallback(Callable<?> callback) {
-        setHeader(CTRL_CALLBACK, callback);
+        setCallback(this, callback);
+    }
+
+    public static boolean getDaemon(BaseCommand cmd) {
+        return Helpers.toBoolean(cmd.getHeader(CTRL_DAEMON));
+    }
+
+    public static void setDaemon(BaseCommand cmd, boolean deamon) {
+        cmd.setHeader(CTRL_DAEMON, deamon);
+    }
+
+    public static Command getCommand(BaseCommand cmd) {
+        return cmd.getHeader(CTRL_COMMAND);
+    }
+
+    public static void setCommand(BaseCommand cmd, Command command) {
+        cmd.setHeader(CTRL_COMMAND, command);
+    }
+
+    public static <T> Callable<T> getCallback(BaseCommand cmd) {
+        return cmd.getHeader(CTRL_CALLBACK);
+    }
+
+    public static void setCallback(BaseCommand cmd, Callable<?> callback) {
+        cmd.setHeader(CTRL_CALLBACK, callback);
     }
 
 }

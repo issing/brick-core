@@ -3,6 +3,7 @@ package net.isger.brick.task;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import net.isger.brick.Constants;
 import net.isger.brick.core.BaseCommand;
@@ -29,11 +30,20 @@ public class BaseTask implements Task {
     @Ignore(mode = Mode.INCLUDE)
     private CommandOperator operator;
 
-    private ExecutorService executor;
+    private volatile ExecutorService executor;
+
+    private volatile ExecutorService daemonExecutor;
 
     public BaseTask() {
         operator = new CommandOperator(this);
         executor = Executors.newCachedThreadPool();
+        daemonExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
+            public Thread newThread(Runnable runnable) {
+                Thread thread = Executors.defaultThreadFactory().newThread(runnable);
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
     }
 
     public void initial() {
@@ -49,10 +59,11 @@ public class BaseTask implements Task {
      * @param cmd
      */
     public void submit(TaskCommand cmd) {
+        boolean daemon = cmd.getDaemon();
         final BaseCommand command = BaseCommand.cast(cmd.getCommand());
         final net.isger.util.Callable<Object> callback = cmd.getCallback();
         final Context context = Context.getAction();
-        cmd.setResult(executor.submit(command == null ? new Callable<Object>() {
+        cmd.setResult((daemon ? daemonExecutor : executor).submit(command == null ? new Callable<Object>() {
             public Object call() throws Exception {
                 Context.setAction(context);
                 return callback.call();
