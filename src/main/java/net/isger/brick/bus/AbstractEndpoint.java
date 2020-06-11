@@ -53,39 +53,39 @@ public abstract class AbstractEndpoint implements Endpoint {
 
     public AbstractEndpoint() {
         operator = new CommandOperator(this);
-        status = Status.INACTIVATE;
+        status = Status.INACTIVATE; // 非激活状态
         parameters = new HashMap<String, Object>();
     }
 
     public final void initial() {
-        if (Strings.isEmpty(this.protocol)) {
-            this.protocol = name();
+        if (Strings.isEmpty(protocol)) {
+            protocol = name();
         }
-        endpointProtocol = findProtocol(this.protocol, this.getClass(), null);
+        endpointProtocol = findProtocol(protocol, getClass(), null);
         if (handler != null) {
             container.inject(handler);
         }
         open();
-        status = Status.ACTIVATED;
+        status = Status.ACTIVATED; // 激活状态状态
     }
 
     @SuppressWarnings("unchecked")
-    private Protocol findProtocol(String name, Class<?> clazz, String namespace) {
+    private Protocol findProtocol(String name, Class<?> rawClass, String namespace) {
         Protocol protocol;
         if (Strings.isEmpty(namespace)) {
             protocol = bus.getProtocol(name);
         } else {
             protocol = bus.getProtocol(name + "." + namespace);
         }
-        if (protocol == null && clazz != AbstractEndpoint.class) {
-            protocol = findProtocol(name, clazz.getSuperclass(), Endpoints.getName((Class<Endpoint>) clazz));
+        if (protocol == null && rawClass != AbstractEndpoint.class) {
+            protocol = findProtocol(name, rawClass.getSuperclass(), Endpoints.getName((Class<Endpoint>) rawClass));
         }
         return protocol;
     }
 
     public String name() {
         if (Strings.isEmpty(name)) {
-            name = Endpoints.getName(this.getClass());
+            name = Endpoints.getName(getClass());
         }
         return name;
     }

@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import net.isger.util.Helpers;
-import net.isger.util.Strings;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.isger.util.Helpers;
+import net.isger.util.Strings;
 
 public class Protocols {
 
@@ -34,8 +34,7 @@ public class Protocols {
                 if (instance instanceof Protocol) {
                     add((Protocol) instance);
                 } else if (instance instanceof Map) {
-                    for (Entry<String, Object> entry : ((Map<String, Object>) instance)
-                            .entrySet()) {
+                    for (Entry<String, Object> entry : ((Map<String, Object>) instance).entrySet()) {
                         instance = entry.getValue();
                         if (instance instanceof Protocol) {
                             put(entry.getKey(), (Protocol) instance);
@@ -81,8 +80,7 @@ public class Protocols {
         return getName(clazz, "");
     }
 
-    public static final String getName(Class<? extends Protocol> clazz,
-            String name) {
+    public static final String getName(Class<? extends Protocol> clazz, String name) {
         return Helpers.getAliasName(clazz, "Protocol$", Strings.toLower(name));
     }
 

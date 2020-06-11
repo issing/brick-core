@@ -40,18 +40,24 @@ public class BaseBus implements Bus {
         endpoints = new Endpoints();
     }
 
+    /**
+     * 总线初始
+     */
+    @SuppressWarnings("unchecked")
     public void initial() {
+        /* 初始协议 */
         for (Protocol protocol : protocols.gets().values()) {
             container.inject(protocol);
             protocol.initial();
         }
+        /* 初始端点 */
         TaskCommand cmd = new TaskCommand();
         cmd.setDaemon(true);
         cmd.setOperate(TaskCommand.OPERATE_SUBMIT);
         for (final Endpoint endpoint : endpoints.gets().values()) {
             container.inject(endpoint);
-            cmd.setCallback(new Callable<Object>() {
-                public Object call(Object... args) {
+            cmd.setCallback(new Callable<Exception>() {
+                public Exception call(Object... args) {
                     try {
                         endpoint.initial();
                     } catch (Exception e) {
@@ -61,15 +67,15 @@ public class BaseBus implements Bus {
                 }
             });
             console.execute(cmd);
-            ready((Future<?>) cmd.getResult(), endpoint);
+            ready((Future<Exception>) cmd.getResult(), endpoint); // 等待初始完成
         }
     }
 
-    private void ready(Future<?> future, Endpoint endpoint) {
+    private void ready(Future<Exception> future, Endpoint endpoint) {
         do {
             Exception result;
             try {
-                result = (Exception) future.get(100, TimeUnit.MILLISECONDS);
+                result = future.get(100, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 result = null;
             }
@@ -87,10 +93,16 @@ public class BaseBus implements Bus {
 
     public void destroy() {
         for (Protocol protocol : protocols.gets().values()) {
-            protocol.destroy();
+            try {
+                protocol.destroy();
+            } catch (Exception e) {
+            }
         }
         for (Endpoint endpoint : endpoints.gets().values()) {
-            endpoint.destroy();
+            try {
+                endpoint.destroy();
+            } catch (Exception e) {
+            }
         }
     }
 

@@ -73,6 +73,10 @@ public abstract class SocketEndpoint extends AbstractEndpoint {
         return (SocketProtocol) super.getProtocol();
     }
 
+    protected InetSocketAddress newAddress(String host, int port) {
+        return new InetSocketAddress(host, port);
+    }
+
     protected void open() {
         address = newAddress(host, port);
         try {
@@ -87,10 +91,6 @@ public abstract class SocketEndpoint extends AbstractEndpoint {
     }
 
     protected void close() {
-    }
-
-    protected InetSocketAddress newAddress(String host, int port) {
-        return new InetSocketAddress(host, port);
     }
 
 }

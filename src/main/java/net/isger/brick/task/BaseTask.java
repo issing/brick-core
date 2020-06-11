@@ -59,26 +59,26 @@ public class BaseTask implements Task {
      * @param cmd
      */
     public void submit(TaskCommand cmd) {
-        boolean daemon = cmd.getDaemon();
-        final BaseCommand command = BaseCommand.cast(cmd.getCommand());
-        final net.isger.util.Callable<Object> callback = cmd.getCallback();
-        final Context context = Context.getAction();
-        cmd.setResult((daemon ? daemonExecutor : executor).submit(command == null ? new Callable<Object>() {
+        final BaseCommand taskCmd = BaseCommand.cast(cmd.getCommand()); // 任务命令
+        final net.isger.util.Callable<Object> callback = cmd.getCallback(); // 任务回调
+        final Context context = Context.getAction(); // 任务上下文
+        cmd.setResult((cmd.getDaemon() ? daemonExecutor : executor).submit(taskCmd == null ? new Callable<Object>() {
             public Object call() throws Exception {
                 Context.setAction(context);
                 return callback.call();
             }
         } : new Callable<Object>() {
             public Object call() throws Exception {
-                console.execute(command);
+                console.execute(taskCmd);
                 Context.setAction(context);
-                return callback == null ? command.getResult() : callback.call(command);
+                return callback == null ? taskCmd.getResult() : callback.call(taskCmd);
             }
         }));
     }
 
     public void destroy() {
         executor.shutdownNow();
+        daemonExecutor.shutdownNow();
     }
 
 }
