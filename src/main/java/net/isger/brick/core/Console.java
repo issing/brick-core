@@ -402,6 +402,15 @@ public class Console implements Constants, Manageable {
     }
 
     /**
+     * 准备就绪
+     *
+     * @return
+     */
+    public final boolean hasReady() {
+        return initialized;
+    }
+
+    /**
      * 获取容器
      * 
      */

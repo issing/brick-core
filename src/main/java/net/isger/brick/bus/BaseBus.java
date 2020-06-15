@@ -1,15 +1,11 @@
 package net.isger.brick.bus;
 
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
 import net.isger.brick.Constants;
 import net.isger.brick.bus.protocol.Protocol;
 import net.isger.brick.bus.protocol.Protocols;
 import net.isger.brick.core.Console;
 import net.isger.brick.inject.Container;
 import net.isger.brick.task.TaskCommand;
-import net.isger.util.Asserts;
 import net.isger.util.Callable;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
@@ -43,7 +39,6 @@ public class BaseBus implements Bus {
     /**
      * 总线初始
      */
-    @SuppressWarnings("unchecked")
     public void initial() {
         /* 初始协议 */
         for (Protocol protocol : protocols.gets().values()) {
@@ -67,20 +62,7 @@ public class BaseBus implements Bus {
                 }
             });
             console.execute(cmd);
-            ready((Future<Exception>) cmd.getResult(), endpoint); // 等待初始完成
         }
-    }
-
-    private void ready(Future<Exception> future, Endpoint endpoint) {
-        do {
-            Exception result;
-            try {
-                result = future.get(100, TimeUnit.MILLISECONDS);
-            } catch (Exception e) {
-                result = null;
-            }
-            Asserts.throwState(result == null, "Failure to initialize the endpoint of bus [%s]", endpoint.getClass().getName(), result);
-        } while (endpoint.getStatus() == Status.INACTIVATE);
     }
 
     public Protocol getProtocol(String name) {
