@@ -32,12 +32,12 @@ public class BaseTask implements Task {
 
     private volatile ExecutorService executor;
 
-    private volatile ExecutorService daemonExecutor;
+    private volatile ExecutorService daemonor;
 
     public BaseTask() {
         operator = new CommandOperator(this);
         executor = Executors.newCachedThreadPool();
-        daemonExecutor = Executors.newCachedThreadPool(new ThreadFactory() {
+        daemonor = Executors.newCachedThreadPool(new ThreadFactory() {
             public Thread newThread(Runnable runnable) {
                 Thread thread = Executors.defaultThreadFactory().newThread(runnable);
                 thread.setDaemon(true);
@@ -59,26 +59,26 @@ public class BaseTask implements Task {
      * @param cmd
      */
     public void submit(TaskCommand cmd) {
-        final BaseCommand taskCmd = BaseCommand.cast(cmd.getCommand()); // 任务命令
+        final BaseCommand task = BaseCommand.cast(cmd.getCommand()); // 任务命令
         final net.isger.util.Callable<Object> callback = cmd.getCallback(); // 任务回调
         final Context context = Context.getAction(); // 任务上下文
-        cmd.setResult((cmd.getDaemon() ? daemonExecutor : executor).submit(taskCmd == null ? new Callable<Object>() {
+        cmd.setResult((cmd.getDaemon() ? daemonor : executor).submit(task == null ? new Callable<Object>() {
             public Object call() throws Exception {
                 Context.setAction(context);
                 return callback.call();
             }
         } : new Callable<Object>() {
             public Object call() throws Exception {
-                console.execute(taskCmd);
+                console.execute(task);
                 Context.setAction(context);
-                return callback == null ? taskCmd.getResult() : callback.call(taskCmd);
+                return callback == null ? task.getResult() : callback.call(task);
             }
         }));
     }
 
     public void destroy() {
         executor.shutdownNow();
-        daemonExecutor.shutdownNow();
+        daemonor.shutdownNow();
     }
 
 }

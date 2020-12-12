@@ -52,16 +52,23 @@ public class AuthCommand extends GateCommand {
     }
 
     public static AuthCommand cast(BaseCommand cmd) {
-        return cmd == null || cmd.getClass() == AuthCommand.class ? (AuthCommand) cmd
-                : cmd.infect(new AuthCommand(false));
+        return cmd == null || cmd.getClass() == AuthCommand.class ? (AuthCommand) cmd : cmd.infect(new AuthCommand(false));
     }
 
     public Object getToken() {
-        return getHeader(CTRL_TOKEN);
+        return getToken(this);
     }
 
     public void setToken(Object token) {
-        setHeader(CTRL_TOKEN, token);
+        setToken(this, token);
+    }
+
+    public static Object getToken(BaseCommand cmd) {
+        return cmd.getHeader(CTRL_TOKEN);
+    }
+
+    public static void setToken(BaseCommand cmd, Object token) {
+        cmd.setHeader(CTRL_TOKEN, token);
     }
 
 }

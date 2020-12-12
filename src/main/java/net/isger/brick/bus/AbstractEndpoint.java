@@ -43,7 +43,7 @@ public abstract class AbstractEndpoint implements Endpoint {
     @Ignore(mode = Mode.INCLUDE)
     private String protocol;
 
-    private Protocol endpointProtocol;
+    private transient Protocol endpointProtocol;
 
     @Ignore(mode = Mode.INCLUDE)
     private IdentityHandler handler;

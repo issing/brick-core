@@ -35,6 +35,18 @@ public class TaskCommand extends BaseCommand {
         return cast(BaseCommand.getAction());
     }
 
+    public static TaskCommand newAction() {
+        return cast(BaseCommand.newAction());
+    }
+
+    public static TaskCommand mockAction() {
+        return cast(BaseCommand.mockAction());
+    }
+
+    public static TaskCommand realAction() {
+        return cast(BaseCommand.realAction());
+    }
+
     public static TaskCommand cast(BaseCommand cmd) {
         return cmd == null || cmd.getClass() == TaskCommand.class ? (TaskCommand) cmd : cmd.infect(new TaskCommand(false));
     }

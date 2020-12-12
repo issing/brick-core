@@ -53,12 +53,13 @@ public class BaseBus implements Bus {
             container.inject(endpoint);
             cmd.setCallback(new Callable<Exception>() {
                 public Exception call(Object... args) {
+                    Exception cause = null;
                     try {
                         endpoint.initial();
                     } catch (Exception e) {
-                        return e;
+                        cause = e;
                     }
-                    return null;
+                    return cause;
                 }
             });
             console.execute(cmd);
@@ -73,6 +74,9 @@ public class BaseBus implements Bus {
         return endpoints.get(name);
     }
 
+    /**
+     * 总线注销
+     */
     public void destroy() {
         for (Protocol protocol : protocols.gets().values()) {
             try {

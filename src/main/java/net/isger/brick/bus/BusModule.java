@@ -12,6 +12,12 @@ import net.isger.brick.inject.ConstantStrategy;
 import net.isger.util.Asserts;
 import net.isger.util.reflect.ClassAssembler;
 
+/**
+ * 总线模块
+ * 
+ * @author issing
+ *
+ */
 public class BusModule extends AbstractModule {
 
     private static final String BUS = "bus";
