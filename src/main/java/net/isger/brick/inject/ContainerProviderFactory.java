@@ -59,7 +59,7 @@ public class ContainerProviderFactory {
                 throw e;
             }
             if (LOG.isDebugEnabled()) {
-                LOG.warn("(!) Failed to load class \"{}\"", BINDER);
+                LOG.warn("(!) Failed to load class [{}]", BINDER);
                 LOG.warn("(!) Defaulting to no-operation (NOP) provider implementation");
             }
             initialized = UNKNOWN;

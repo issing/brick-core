@@ -15,7 +15,11 @@ public class AuthIdentity {
 
     private String id;
 
+    private long mark;
+
     private long time;
+
+    private int frequency;
 
     private AuthToken<?> token;
 
@@ -35,7 +39,7 @@ public class AuthIdentity {
 
     public AuthIdentity(String id, AuthToken<?> token) {
         this.id = Strings.empty(id, Helpers.makeUUID());
-        this.time = System.currentTimeMillis();
+        this.mark = this.time = System.currentTimeMillis();
         this.attributes = new HashMap<String, Object>();
         this.token = token;
     }
@@ -46,6 +50,10 @@ public class AuthIdentity {
 
     public long getTime() {
         return time;
+    }
+
+    public int getFrequency() {
+        return frequency;
     }
 
     public boolean isLogin() {
@@ -74,6 +82,11 @@ public class AuthIdentity {
 
     public void active(boolean create) {
         this.time = System.currentTimeMillis();
+        if ((this.time - this.mark) / 1000 / 60 >= 1) {
+            this.mark = this.time;
+            this.frequency = 0;
+        }
+        this.frequency++;
     }
 
     public void setTimeout(int timeout) {

@@ -64,11 +64,11 @@ public class AuthPreparer extends Preparer {
             String domain;
             if (module.getGate(domain = console.getModuleName(command)) != null) {
                 /* 检测干涉 */
-                AuthCommand cmd = AuthHelper.toCommand(command.getIdentity(), domain, command);
+                AuthCommand cmd = AuthHelper.makeCommand(command.getIdentity(), domain, command);
                 cmd.setOperate(AuthCommand.OPERATE_CHECK);
                 command = cmd;
             } else if (command.getIdentity() == null) {
-                AuthCommand cmd = AuthHelper.toCommand(Constants.SYSTEM, new BaseToken(Helpers.makeUUID(), command));
+                AuthCommand cmd = AuthHelper.makeCommand(Constants.SYSTEM, new BaseToken(Helpers.makeUUID(), command));
                 cmd.setOperate(AuthCommand.OPERATE_LOGIN);
                 console.execute(cmd);
                 command.setIdentity(cmd.getIdentity());

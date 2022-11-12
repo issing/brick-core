@@ -4,6 +4,8 @@ import net.isger.brick.inject.ContainerProvider;
 
 public class BrickCoreBinder {
 
+    private static final String MAGIC = "Dummy";
+
     private static final BrickCoreBinder BINDER;
 
     static {
@@ -22,7 +24,7 @@ public class BrickCoreBinder {
     }
 
     public String toString() {
-        return "Dummy";
+        return MAGIC;
     }
 
 }

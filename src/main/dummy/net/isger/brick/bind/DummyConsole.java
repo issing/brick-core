@@ -1,11 +1,11 @@
 package net.isger.brick.bind;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Console;
 import net.isger.brick.core.Context;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DummyConsole extends Console {
 
@@ -18,7 +18,7 @@ public class DummyConsole extends Console {
     public void operate() {
         BaseCommand cmd = Context.getAction().getCommand();
         if (cmd != null) {
-            LOG.info("operate(): {}", cmd.getOperate());
+            LOG.info("The dummy console operate: {}", cmd.getOperate());
         }
     }
 }

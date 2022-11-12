@@ -95,7 +95,9 @@ public abstract class Context {
      * 
      * @return
      */
-    public abstract BaseCommand getCommand();
+    public BaseCommand getCommand() {
+        return null;
+    }
 
     /**
      * 拷贝命令

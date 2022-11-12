@@ -11,8 +11,20 @@ import net.isger.util.Manageable;
  */
 public interface Bus extends Manageable {
 
+    /**
+     * 获取协议
+     * 
+     * @param name
+     * @return
+     */
     public Protocol getProtocol(String name);
 
+    /**
+     * 获取端点
+     * 
+     * @param name
+     * @return
+     */
     public Endpoint getEndpoint(String name);
 
 }
