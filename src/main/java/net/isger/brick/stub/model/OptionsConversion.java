@@ -12,9 +12,16 @@ import net.isger.util.reflect.conversion.Conversion;
 
 public class OptionsConversion implements Conversion {
 
-    public static final OptionsConversion CONVERSION = new OptionsConversion();
+    private static OptionsConversion INSTANCE;
 
     private OptionsConversion() {
+    }
+
+    public static OptionsConversion getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new OptionsConversion();
+        }
+        return INSTANCE;
     }
 
     public boolean isSupport(Type type) {

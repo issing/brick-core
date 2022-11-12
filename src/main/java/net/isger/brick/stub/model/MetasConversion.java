@@ -12,9 +12,16 @@ import net.isger.util.reflect.conversion.Conversion;
 
 public class MetasConversion implements Conversion {
 
-    public static final MetasConversion CONVERSION = new MetasConversion();
+    private static MetasConversion INSTANCE;
 
     private MetasConversion() {
+    }
+
+    public static MetasConversion getInstance() {
+        if (INSTANCE == null) {
+            INSTANCE = new MetasConversion();
+        }
+        return INSTANCE;
     }
 
     public boolean isSupport(Type type) {

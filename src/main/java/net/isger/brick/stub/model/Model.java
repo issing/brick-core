@@ -44,7 +44,7 @@ public class Model implements Cloneable {
     private Metas metas;
 
     static {
-        Converter.addConversion(MetasConversion.CONVERSION);
+        Converter.addConversion(MetasConversion.getInstance());
     }
 
     public Model() {

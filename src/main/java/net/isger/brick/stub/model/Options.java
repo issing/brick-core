@@ -20,7 +20,7 @@ public class Options implements Cloneable {
     }
 
     public void set(Object... options) {
-        set((Options) OptionsConversion.CONVERSION.convert(options));
+        set((Options) OptionsConversion.getInstance().convert(options));
     }
 
     public void set(Option... options) {

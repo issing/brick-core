@@ -98,7 +98,7 @@ public final class Meta implements Cloneable {
     private transient BoundField field;
 
     static {
-        Converter.addConversion(OptionsConversion.CONVERSION);
+        Converter.addConversion(OptionsConversion.getInstance());
     }
 
     public Meta() {
@@ -263,7 +263,7 @@ public final class Meta implements Cloneable {
                     if (target != null) {
                         paramMetas.add(target);
                     }
-                    model.metas().set((Metas) MetasConversion.CONVERSION.convert(paramMetas));
+                    model.metas().set((Metas) MetasConversion.getInstance().convert(paramMetas));
                     return model;
                 }
                 break;
