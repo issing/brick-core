@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets;
  * 常量信息
  * 
  * @author issing
- * 
  */
 public interface Constants {
 
@@ -18,13 +17,15 @@ public interface Constants {
 
     public static final String DEFAULT = "default";
 
-    public static final String DEFAULT_ENCODING = StandardCharsets.UTF_8.name();
-
     // -----------------------------------------------------------------
+
+    public static final String BRICK_NAME = "brick.name";
+
+    public static final String BRICK_PATH = "brick.path";
 
     public static final String BRICK_ENCODING = "brick.encoding";
 
-    public static final String BRICK_NAME = "brick.name";
+    public static final String ENC_UTF8 = StandardCharsets.UTF_8.name();
 
     public static final String BRICK_RELOAD = "brick.reload";
 
@@ -55,6 +56,11 @@ public interface Constants {
     // =================================================================
 
     public static final String CONF_NAME = "name";
+
+    // -----------------------------------------------------------------
+
+    /** 语境模块（当前作业隶属模块） */
+    public static final String CTX_MODULE = "brick.core.module";
 
     // =================================================================
 

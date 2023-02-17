@@ -74,7 +74,7 @@ class InternalContainer implements Container {
                 return InternalContainer.this;
             }
         });
-        /* 添加注入后备器 */
+        /* 添加注入后备器（第三方注入容器扩展接口） */
         for (InjectReserver reserver : Helpers.sort(new ArrayList<InjectReserver>(getInstances(InjectReserver.class).values()))) {
             this.reserver = InjectMulticaster.addInternal(this.reserver, reserver);
         }
@@ -273,9 +273,7 @@ class InternalContainer implements Container {
      * 
      * @param key
      * @param instance
-     *            注入实例
      * @param context
-     *            上下文
      */
     private void inject(Key<?> key, Object instance, InternalContext context) {
         if (context.hasInject(instance)) {
@@ -299,7 +297,7 @@ class InternalContainer implements Container {
                 }
             }
         }
-        List<BoundMethod> methods = Reflects.getBoundMethods(instanceClass, Digest.class);
+        List<BoundMethod> methods = Reflects.getBoundMethods(instanceClass, Digest.class, false);
         Collections.sort(methods, new Comparator<BoundMethod>() {
             public int compare(BoundMethod prev, BoundMethod next) {
                 return prev.getAnnotation(Digest.class).value() - next.getAnnotation(Digest.class).value();
@@ -384,7 +382,7 @@ class InternalContainer implements Container {
         InternalContext[] reference = context.get();
         if (reference[0] != null) {
             for (Object instance : reference[0].instances) {
-                List<BoundMethod> methods = Reflects.getBoundMethods(instance.getClass(), Digest.class);
+                List<BoundMethod> methods = Reflects.getBoundMethods(instance.getClass(), Digest.class, false);
                 Collections.sort(methods, new Comparator<BoundMethod>() {
                     public int compare(BoundMethod prev, BoundMethod next) {
                         return prev.getAnnotation(Digest.class).value() - next.getAnnotation(Digest.class).value();

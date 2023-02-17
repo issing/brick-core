@@ -16,18 +16,18 @@ public class Dialects {
 
     private static final Logger LOG;
 
-    private static final Dialects DIALECTS;
+    private static final Dialects INSTANCE;
 
     private Map<String, Dialect> dialects;
 
     static {
         LOG = LoggerFactory.getLogger(Dialects.class);
-        DIALECTS = new Dialects();
+        INSTANCE = new Dialects();
         new Director() {
             protected String directPath() {
                 return directPath(KEY_DIALECTS, DIALECT_PATH);
             }
-        }.direct(DIALECTS);
+        }.direct(INSTANCE);
     }
 
     private Dialects() {
@@ -39,7 +39,7 @@ public class Dialects {
         if (LOG.isDebugEnabled()) {
             LOG.info("Achieve dialect [{}]", name);
         }
-        dialect = DIALECTS.dialects.put(name, dialect);
+        dialect = INSTANCE.dialects.put(name, dialect);
         if (dialect != null && LOG.isDebugEnabled()) {
             LOG.warn("(!) Discard dialect [{}]", dialect);
         }
@@ -47,7 +47,7 @@ public class Dialects {
 
     public static Dialect getDialect(String driverName) {
         Dialect result = null;
-        for (Dialect dialect : DIALECTS.dialects.values()) {
+        for (Dialect dialect : INSTANCE.dialects.values()) {
             if (dialect.isSupport(driverName)) {
                 result = dialect;
                 break;

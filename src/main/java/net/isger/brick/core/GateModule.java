@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import net.isger.brick.inject.ConstantStrategy;
 import net.isger.brick.stub.StubCommand;
 import net.isger.util.Asserts;
+import net.isger.util.Helpers;
 import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
@@ -21,7 +22,6 @@ import net.isger.util.reflect.ClassAssembler;
  * 关卡模块
  * 
  * @author issing
- *
  */
 public class GateModule extends AbstractModule {
 
@@ -195,7 +195,7 @@ public class GateModule extends AbstractModule {
     public void initial() {
         super.initial();
         /* 初始所有门 */
-        for (Entry<String, Gate> entry : getGates().entrySet()) {
+        for (Entry<String, Gate> entry : Helpers.sortByValue(getGates().entrySet())) {
             initial(entry.getKey(), entry.getValue());
         }
     }

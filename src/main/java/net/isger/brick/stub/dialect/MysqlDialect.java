@@ -14,7 +14,7 @@ import net.isger.util.Strings;
  */
 public class MysqlDialect extends SqlDialect {
 
-    private static final String DRIVER_NAME = "com.mysql.jdbc.Driver";
+    private static final String[] DRIVER_NAMES = { "com.mysql.jdbc.Driver", "com.mysql.cj.jdbc.Driver" };
 
     public static final String NUMERIC = "numeric";
 
@@ -26,7 +26,12 @@ public class MysqlDialect extends SqlDialect {
     }
 
     public boolean isSupport(String name) {
-        return super.isSupport(name) || DRIVER_NAME.equals(name);
+        for (String driverName : DRIVER_NAMES) {
+            if (driverName.equals(name)) {
+                return true;
+            }
+        }
+        return super.isSupport(name);
     }
 
     protected String type(Meta meta, String name) {

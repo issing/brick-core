@@ -59,28 +59,52 @@ public class GateCommand extends BaseCommand {
         return null;
     }
 
+    public static String getDomain(BaseCommand cmd) {
+        return cmd.getHeader(CTRL_DOMAIN);
+    }
+
+    public static void setDomain(BaseCommand cmd, String domain) {
+        cmd.setHeader(CTRL_DOMAIN, domain);
+    }
+
     public String getDomain() {
-        return getHeader(CTRL_DOMAIN);
+        return getDomain(this);
     }
 
     public void setDomain(String domain) {
-        setHeader(CTRL_DOMAIN, domain);
+        setDomain(this, domain);
+    }
+
+    public static boolean getTransient(BaseCommand cmd) {
+        return Helpers.toBoolean(cmd.getHeader(CTRL_TRANSIENT));
+    }
+
+    public static void setTransient(BaseCommand cmd, boolean transiented) {
+        cmd.setHeader(CTRL_TRANSIENT, transiented);
     }
 
     public boolean getTransient() {
-        return Helpers.toBoolean(getHeader(CTRL_TRANSIENT));
+        return getTransient(this);
     }
 
     public void setTransient(boolean transiented) {
-        setHeader(CTRL_TRANSIENT, transiented);
+        setTransient(this, transiented);
+    }
+
+    public static boolean getImmediate(BaseCommand cmd) {
+        return Helpers.toBoolean(cmd.getHeader(CTRL_IMMEDIATE));
+    }
+
+    public static void setImmediate(BaseCommand cmd, boolean immediated) {
+        cmd.setHeader(CTRL_IMMEDIATE, immediated);
     }
 
     public boolean getImmediate() {
-        return Helpers.toBoolean(getHeader(CTRL_TRANSIENT));
+        return getImmediate(this);
     }
 
     public void setImmediate(boolean immediated) {
-        setHeader(CTRL_TRANSIENT, immediated);
+        setImmediate(this, immediated);
     }
 
 }

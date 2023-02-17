@@ -15,7 +15,7 @@ public class TextSocketEncoder implements Encoder {
     private String delimiter;
 
     public TextSocketEncoder() {
-        this(Constants.DEFAULT_ENCODING, Constants.DEFAULT_ENCODING,
+        this(Constants.ENC_UTF8, Constants.ENC_UTF8,
                 TextSocketProtocol.DELIMITER);
     }
 

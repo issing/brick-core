@@ -15,7 +15,6 @@ import net.isger.util.anno.Ignore.Mode;
  * 总线基类
  * 
  * @author issing
- *
  */
 public class BaseBus implements Bus {
 
@@ -42,15 +41,15 @@ public class BaseBus implements Bus {
     public void initial() {
         /* 初始协议 */
         for (Protocol protocol : protocols.gets().values()) {
-            container.inject(protocol);
+            container.inject(protocol); // 依赖注入
             protocol.initial();
         }
-        /* 初始端点 */
+        /* 初始端点（线程任务） */
         TaskCommand cmd = new TaskCommand();
-        cmd.setDaemon(true);
+        cmd.setDaemon(true); // 后台守护进程方式
         cmd.setOperate(TaskCommand.OPERATE_SUBMIT);
         for (final Endpoint endpoint : endpoints.gets().values()) {
-            container.inject(endpoint);
+            container.inject(endpoint); // 依赖注入
             cmd.setCallback(new Callable<Exception>() {
                 public Exception call(Object... args) {
                     Exception cause = null;
@@ -62,14 +61,20 @@ public class BaseBus implements Bus {
                     return cause;
                 }
             });
-            console.execute(cmd);
+            console.execute(cmd); // 执行初始任务
         }
     }
 
+    /**
+     * 获取协议
+     */
     public Protocol getProtocol(String name) {
         return protocols.get(name);
     }
 
+    /**
+     * 获取端点
+     */
     public Endpoint getEndpoint(String name) {
         return endpoints.get(name);
     }
@@ -78,15 +83,17 @@ public class BaseBus implements Bus {
      * 总线注销
      */
     public void destroy() {
-        for (Protocol protocol : protocols.gets().values()) {
-            try {
-                protocol.destroy();
-            } catch (Exception e) {
-            }
-        }
+        /* 注销端点 */
         for (Endpoint endpoint : endpoints.gets().values()) {
             try {
                 endpoint.destroy();
+            } catch (Exception e) {
+            }
+        }
+        /* 注销协议 */
+        for (Protocol protocol : protocols.gets().values()) {
+            try {
+                protocol.destroy();
             } catch (Exception e) {
             }
         }

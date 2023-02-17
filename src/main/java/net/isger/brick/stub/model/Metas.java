@@ -16,7 +16,6 @@ import net.isger.util.reflect.BoundField;
  * 元数据容器
  * 
  * @author issing
- *
  */
 public class Metas implements Cloneable {
 
@@ -55,11 +54,9 @@ public class Metas implements Cloneable {
         if (Strings.isEmpty(name)) {
             Class<?> clazz = meta.getClass();
             Alias alias = clazz.getAnnotation(Alias.class);
-            name = alias == null || clazz == Meta.class ? meta.getName()
-                    : alias.value();
+            name = alias == null || clazz == Meta.class ? meta.getName() : alias.value();
             if (Strings.isEmpty(name)) {
-                name = Strings.replaceIgnoreCase(clazz.getSimpleName(), "Meta$",
-                        "");
+                name = Strings.replaceIgnoreCase(clazz.getSimpleName(), "Meta$", "");
             }
         }
         if (name.indexOf('.') != -1) {
@@ -106,11 +103,9 @@ public class Metas implements Cloneable {
             table = table.getClass();
         }
         Metas metas = new Metas();
-        Map<String, List<BoundField>> boundFields = Reflects
-                .getBoundFields((Class<?>) table);
+        Map<String, List<BoundField>> boundFields = Reflects.getBoundFields((Class<?>) table);
         if (boundFields != null) {
-            List<List<BoundField>> fields = new ArrayList<List<BoundField>>(
-                    boundFields.values());
+            List<List<BoundField>> fields = new ArrayList<List<BoundField>>(boundFields.values());
             for (List<BoundField> field : fields) {
                 metas.add(Meta.createMeta(field.get(0)));
             }

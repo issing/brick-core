@@ -8,7 +8,7 @@ import net.isger.brick.stub.dialect.Dialect;
 import net.isger.brick.stub.dialect.SqlDialect;
 import net.isger.raw.Artifact;
 import net.isger.raw.Depository;
-import net.isger.raw.StringRaw;
+import net.isger.raw.TextRaw;
 import net.isger.util.Asserts;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
@@ -298,7 +298,7 @@ public final class Meta implements Cloneable {
     public static Meta create(String affix) {
         Meta meta = new Meta();
         if (Strings.isNotEmpty(affix)) {
-            Artifact artifact = Depository.getArtifact(new StringRaw(affix));
+            Artifact artifact = Depository.getArtifact(new TextRaw(affix));
             if (artifact != null) {
                 meta = artifact.transform(Meta.class);
             }

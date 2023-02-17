@@ -6,8 +6,10 @@ import java.util.Map;
 
 import net.isger.brick.Constants;
 import net.isger.brick.bus.protocol.Protocol;
+import net.isger.brick.core.Console;
 import net.isger.brick.inject.Container;
 import net.isger.brick.util.CommandOperator;
+import net.isger.util.Helpers;
 import net.isger.util.Strings;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
@@ -26,6 +28,11 @@ public abstract class AbstractEndpoint implements Endpoint {
     @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
     protected Container container;
+
+    /** 控制台 */
+    @Ignore(mode = Mode.INCLUDE)
+    @Alias(Constants.SYSTEM)
+    protected Console console;
 
     @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
@@ -64,6 +71,10 @@ public abstract class AbstractEndpoint implements Endpoint {
         endpointProtocol = findProtocol(protocol, getClass(), null);
         if (handler != null) {
             container.inject(handler);
+        }
+        /* 等待控制台就绪 */
+        while (!console.hasReady()) {
+            Helpers.sleep(200l);
         }
         open();
         status = Status.ACTIVATED; // 激活状态状态

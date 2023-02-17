@@ -302,7 +302,7 @@ public class SqlDialect implements Dialect {
     }
 
     protected Page getPage(Object[] values) {
-        return Helpers.getInstance(values, Page.class);
+        return Helpers.getElement(values, Page.class);
     }
 
     public SqlEntry getExistsEntry(Object table) {

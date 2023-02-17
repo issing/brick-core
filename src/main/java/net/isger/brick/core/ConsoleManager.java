@@ -47,6 +47,9 @@ public class ConsoleManager {
     /** 控制台名称 */
     private final String name;
 
+    /** 控制台路径 */
+    private final String path;
+
     /** 供应容器集合 */
     private final List<ContainerProvider> providers;
 
@@ -75,8 +78,13 @@ public class ConsoleManager {
     }
 
     public ConsoleManager(String name) {
+        this(name, System.getProperty("user.dir"));
+    }
+
+    public ConsoleManager(String name, String path) {
         lock = new ReentrantLock();
         this.name = Strings.empty(name, Constants.BRICK);
+        this.path = Strings.empty(path, System.getProperty("user.dir"));
         providers = new ArrayList<ContainerProvider>();
         loadContainerProviders();
     }
@@ -86,7 +94,9 @@ public class ConsoleManager {
      */
     private void loadContainerProviders() {
         clearContainerProviders();
-        /* 服务形式加载（/META-INF/net.isger.brick.inject.ContainerProvider） */
+        /*
+         * 服务形式加载（/META-INF/services/net.isger.brick.inject.ContainerProvider）
+         */
         ServiceLoader<ContainerProvider> loader = ServiceLoader.load(ContainerProvider.class, Reflects.getClassLoader(this));
         Iterator<ContainerProvider> iterator = loader.iterator();
         while (iterator.hasNext()) {
@@ -226,13 +236,14 @@ public class ConsoleManager {
     protected Container createBootstrap() {
         ContainerBuilder builder = new ContainerBuilder();
         builder.constant(Constants.BRICK_NAME, name);
+        builder.constant(Constants.BRICK_PATH, path);
         builder.constant(Constants.BRICK_RELOAD, Boolean.FALSE);
-        ContainerProviderFactory.getProvider().register(builder);
+        ContainerProviderFactory.getProvider().register(builder); // 引导供应器
         return builder.create(Constants.BOOTSTRAP);
     }
 
     /**
-     * 创建容器
+     * 创建应用容器
      * 
      * @param providers
      * @return
@@ -258,7 +269,7 @@ public class ConsoleManager {
     }
 
     /**
-     * 创建容器构建器
+     * 创建应用容器构建器
      * 
      * @return
      */

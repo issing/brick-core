@@ -324,7 +324,7 @@ public class SqlStub extends AbstractStub {
                     Asserts.throwState(Strings.isNotEmpty(sql), "Not found the sql [%s] in the configuration file", id);
                     args = (Object[]) args[1];
                 } else if (isSpecify) {
-                    args = (Object[]) Helpers.newArray(args[0], Helpers.getInstance(args[1], Page.class));
+                    args = (Object[]) Helpers.newArray(args[0], Helpers.getElement(args[1], Page.class));
                 } else if (args[0] == null && args[1] instanceof Object[]) {
                     args = (Object[]) args[1];
                 }

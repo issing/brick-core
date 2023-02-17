@@ -4,7 +4,7 @@ import java.util.Map;
 
 import net.isger.raw.Artifact;
 import net.isger.raw.Depository;
-import net.isger.raw.StringRaw;
+import net.isger.raw.TextRaw;
 import net.isger.util.Sqls;
 import net.isger.util.Strings;
 import net.isger.util.anno.Affix;
@@ -111,7 +111,7 @@ public class Model implements Cloneable {
 
     public void modelSchema(Object schema) {
         if (schema instanceof String) {
-            Artifact artifact = Depository.getArtifact(new StringRaw((String) schema));
+            Artifact artifact = Depository.getArtifact(new TextRaw((String) schema));
             if (artifact != null) {
                 schema = artifact.transform(Map.class);
             }

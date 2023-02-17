@@ -7,6 +7,7 @@ import java.util.Map;
 import net.isger.brick.Constants;
 import net.isger.brick.inject.Container;
 import net.isger.brick.util.CommandOperator;
+import net.isger.util.Ordered;
 import net.isger.util.anno.Alias;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
@@ -18,7 +19,7 @@ import net.isger.util.anno.Ignore.Mode;
  *
  */
 @Ignore
-public class BaseGate implements Gate {
+public class BaseGate implements Gate, Ordered {
 
     @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
@@ -29,6 +30,9 @@ public class BaseGate implements Gate {
     private CommandOperator operator;
 
     @Ignore(mode = Mode.INCLUDE)
+    private int order;
+
+    @Ignore(mode = Mode.INCLUDE)
     private Map<String, Object> parameters;
 
     public BaseGate() {
@@ -37,6 +41,10 @@ public class BaseGate implements Gate {
     }
 
     public void initial() {
+    }
+
+    public int order() {
+        return order;
     }
 
     protected final Object getParameter(String name) {

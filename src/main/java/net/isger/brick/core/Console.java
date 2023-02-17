@@ -1,5 +1,6 @@
 package net.isger.brick.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -83,10 +84,12 @@ public class Console implements Constants, Manageable {
     private Preparer preparer;
 
     /** 模块依赖 */
-    private transient Dependency moduleDependency;
+    private transient Dependency dependency;
 
     /** 注销钩子 */
     private transient Thread hook;
+
+    private transient List<Airfone> airfones;
 
     static {
         LOG = LoggerFactory.getLogger(Console.class);
@@ -95,7 +98,8 @@ public class Console implements Constants, Manageable {
     public Console() {
         operator = new CommandOperator(this);
         preparer = new Preparer();
-        moduleDependency = new Dependency();
+        dependency = new Dependency();
+        airfones = new ArrayList<Airfone>();
     }
 
     /**
@@ -121,7 +125,7 @@ public class Console implements Constants, Manageable {
         // 初始模块
         try {
             Map<String, Module> modules = getModules();
-            for (Object node : moduleDependency.getNodes()) {
+            for (Object node : dependency.getNodes()) {
                 modules.get(node).initial();
             }
         } catch (Throwable e) {
@@ -154,7 +158,7 @@ public class Console implements Constants, Manageable {
      * @param name
      * @param module
      */
-    protected void setupModule(String name, Module module) {
+    protected final void setupModule(String name, Module module) {
         setupModule(name, module, null);
     }
 
@@ -166,7 +170,7 @@ public class Console implements Constants, Manageable {
      * @param commandClass
      * @param dependencies
      */
-    protected void setupModule(String name, Module module, Class<? extends Command> commandClass, Object... dependencies) {
+    protected final void setupModule(String name, Module module, Class<? extends Command> commandClass, Object... dependencies) {
         if (getModule(name) == null) {
             addModule(name, module);
         }
@@ -182,7 +186,7 @@ public class Console implements Constants, Manageable {
      * @param name
      */
     @SuppressWarnings("unchecked")
-    private void loadKernel(String name) {
+    protected final void loadKernel(String name) {
         Object config;
         /* 加载参数配置 */
         for (Artifact artifact : Depository.getArtifacts(name + "-config", prober)) {
@@ -210,7 +214,7 @@ public class Console implements Constants, Manageable {
      * @param res
      */
     @SuppressWarnings("unchecked")
-    private void loadConstants(Collection<?> res) {
+    protected final void loadConstants(Collection<?> res) {
         for (Object config : res) {
             /* 加载指定常量资源 */
             if (config instanceof String) {
@@ -231,7 +235,7 @@ public class Console implements Constants, Manageable {
      * 
      * @param config
      */
-    protected void loadConstants(Map<String, Object> config) {
+    protected final void loadConstants(Map<String, Object> config) {
         Class<?> type;
         Object value;
         for (Entry<String, Object> entry : config.entrySet()) {
@@ -261,7 +265,7 @@ public class Console implements Constants, Manageable {
      * @param res
      */
     @SuppressWarnings("unchecked")
-    private void loadModule(Collection<?> res) {
+    protected final void loadModule(Collection<?> res) {
         String name;
         Map<String, Object> params;
         for (Object config : res) {
@@ -310,7 +314,6 @@ public class Console implements Constants, Manageable {
 
     /**
      * 加载应用
-     * 
      */
     @SuppressWarnings("unchecked")
     protected void loadApp() {
@@ -340,7 +343,7 @@ public class Console implements Constants, Manageable {
      * @param res
      */
     @SuppressWarnings("unchecked")
-    private final void loadConfig(Collection<?> res) {
+    protected final void loadConfig(Collection<?> res) {
         for (Object config : res) {
             if (config instanceof String) {
                 config = loadResource((String) config);
@@ -433,7 +436,7 @@ public class Console implements Constants, Manageable {
      * @return
      */
     public final Module getModule() {
-        return (Module) ((InternalContext) Context.getAction()).getInternal(Module.KEY_MODULE);
+        return (Module) ((InternalContext) Context.getAction()).getInternal(Constants.CTX_MODULE);
     }
 
     /**
@@ -541,7 +544,7 @@ public class Console implements Constants, Manageable {
     }
 
     public final void addDependencies(String name, List<Object> dependencies) {
-        moduleDependency.addNode(name, dependencies);
+        dependency.addNode(name, dependencies);
     }
 
     /**
@@ -591,6 +594,28 @@ public class Console implements Constants, Manageable {
     }
 
     /**
+     * 添加传音
+     * 
+     * @param airfone
+     */
+    public void addAirfone(Airfone airfone) {
+        if (!(airfone == null || airfones.contains(airfone))) {
+            airfones.add(airfone);
+        }
+    }
+
+    /**
+     * 移除传音
+     * 
+     * @param airfone
+     */
+    public void remove(Airfone airfone) {
+        if (airfone != null) {
+            airfones.remove(airfone);
+        }
+    }
+
+    /**
      * 控制台执行入口
      * 
      * @param command
@@ -606,7 +631,7 @@ public class Console implements Constants, Manageable {
                 operator.operate(cmd);
             } else {
                 /* 模块执行 */
-                context.setInternal(Module.KEY_MODULE, module);
+                context.setInternal(Constants.CTX_MODULE, module);
                 module.execute(cmd);
             }
         } finally {
@@ -621,15 +646,22 @@ public class Console implements Constants, Manageable {
         if (!initialized) {
             return;
         }
+        /* 传音确认 */
+        for (Airfone airfone : airfones) {
+            airfone.ack(Airfone.ACTION_DESTROY);
+        }
+        /* 模块注销 */
         Map<String, Module> modules = getModules();
-        List<Object> nodes = new LinkedList<Object>(moduleDependency.getNodes());
+        List<Object> nodes = new LinkedList<Object>(dependency.getNodes());
         Collections.reverse(nodes);
         for (Object node : nodes) {
             modules.get(node).destroy();
         }
+        /* 容器注销 */
         container.destroy();
         if (hook != null) {
             Runtime.getRuntime().removeShutdownHook(hook);
+            hook = null;
         }
         initialized = false;
     }
