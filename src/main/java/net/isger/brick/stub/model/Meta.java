@@ -21,36 +21,48 @@ import net.isger.util.reflect.Converter;
  * 元数据结构
  * 
  * @author issing
- *
  */
 @Alias("t_brick_stub_meta")
 public final class Meta implements Cloneable {
 
+    /** 唯一标识 */
     public static final String ID = "id";
 
+    /** 数据值 */
     public static final String VALUE = "value";
 
+    /** 引用类型 */
     public static final String TYPE_REFERENCE = SqlDialect.REFERENCE;
 
+    /** 数值模式 */
     public static final int MODE_VALUE_DATA = 0;
 
+    /** 字典模式 */
     public static final int MODE_VALUE_DICT = 1;
 
+    /** 数据元模式 */
     public static final int MODE_VALUE_META = 2;
 
-    public static final int MODE_EMBED = 0;
+    /** 嵌入 */
+    public static final int MODE_REFERENCE_EMBED = 0;
 
-    public static final int MODE_BRIDGE = 1;
+    /** 桥接 */
+    public static final int MODE_REFERENCE_BRIDGE = 1;
 
-    public static final int MODE_HOOK = 2;
+    /** 钩子 */
+    public static final int MODE_REFERENCE_HOOK = 2;
 
-    public static final int SCALE_O2O = 0;
+    /** 一对一 */
+    public static final int SCALE_REFERENCE_O2O = 0;
 
-    public static final int SCALE_O2M = 1;
+    /** 一对多 */
+    public static final int SCALE_REFERENCE_O2M = 1;
 
-    public static final int SCALE_M2O = 2;
+    /** 多对一 */
+    public static final int SCALE_REFERENCE_M2O = 2;
 
-    public static final int SCALE_M2M = 3;
+    /** 多对多 */
+    public static final int SCALE_REFERENCE_M2M = 3;
 
     /** 标识 */
     @Affix("{length : 20, options : [1, 3]}")
@@ -68,7 +80,7 @@ public final class Meta implements Cloneable {
     @Affix("{length : 50, options : 3}")
     private String name;
 
-    /** 类型 */
+    /** 类型（value：值类型；reference：引用类型） */
     @Affix("{length : 30, options : 3}")
     private String type;
 
@@ -88,9 +100,11 @@ public final class Meta implements Cloneable {
     @Affix("{type : 'text'}")
     private String description;
 
+    /** 选项 */
     @Affix("{type : 'reference'}")
     private Options options;
 
+    /** 元值 */
     @Affix("{type : 'reference'}")
     private Object value;
 
@@ -248,7 +262,7 @@ public final class Meta implements Cloneable {
     public Model toModel() {
         if (isReference()) {
             switch (getMode()) {
-            case MODE_BRIDGE:
+            case MODE_REFERENCE_BRIDGE:
                 if (value instanceof Map) {
                     Model model = new Model(name);
                     model.modelLabel(label);
@@ -330,5 +344,4 @@ public final class Meta implements Cloneable {
         meta.field = field;
         return meta;
     }
-
 }

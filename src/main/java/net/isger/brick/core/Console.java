@@ -1,6 +1,5 @@
 package net.isger.brick.core;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -89,7 +88,7 @@ public class Console implements Constants, Manageable {
     /** 注销钩子 */
     private transient Thread hook;
 
-    private transient List<Airfone> airfones;
+    private transient Airfone airfone;
 
     static {
         LOG = LoggerFactory.getLogger(Console.class);
@@ -99,13 +98,17 @@ public class Console implements Constants, Manageable {
         operator = new CommandOperator(this);
         preparer = new Preparer();
         dependency = new Dependency();
-        airfones = new ArrayList<Airfone>();
+        // status = UNINITIALIZED;
     }
 
     /**
      * 初始
      */
     public final synchronized void initial() {
+        // if (status != UNINITIALIZED || status != DESTROYED) {
+        // return;
+        // }
+        // status = INITIALIZING;
         if (initialized) {
             return;
         }
@@ -131,6 +134,7 @@ public class Console implements Constants, Manageable {
         } catch (Throwable e) {
             throw Asserts.state("Failure to initial module", e);
         }
+        // status = INITIALIZED;
         initialized = true;
     }
 
@@ -410,6 +414,7 @@ public class Console implements Constants, Manageable {
      * @return
      */
     public final boolean hasReady() {
+        // return status == INITIALIZED;
         return initialized;
     }
 
@@ -599,9 +604,7 @@ public class Console implements Constants, Manageable {
      * @param airfone
      */
     public void addAirfone(Airfone airfone) {
-        if (!(airfone == null || airfones.contains(airfone))) {
-            airfones.add(airfone);
-        }
+        this.airfone = AirfoneMulticaster.add(this.airfone, airfone);
     }
 
     /**
@@ -610,9 +613,7 @@ public class Console implements Constants, Manageable {
      * @param airfone
      */
     public void remove(Airfone airfone) {
-        if (airfone != null) {
-            airfones.remove(airfone);
-        }
+        this.airfone = AirfoneMulticaster.remove(this.airfone, airfone);
     }
 
     /**
@@ -643,12 +644,15 @@ public class Console implements Constants, Manageable {
      * 注销
      */
     public final synchronized void destroy() {
+        /* 等待初始中状态完成 */
         if (!initialized) {
             return;
         }
         /* 传音确认 */
-        for (Airfone airfone : airfones) {
-            airfone.ack(Airfone.ACTION_DESTROY);
+        if (airfone != null) {
+            while (!airfone.ack(Airfone.ACTION_DESTROY)) {
+                Helpers.sleep(200l);
+            }
         }
         /* 模块注销 */
         Map<String, Module> modules = getModules();
@@ -663,6 +667,7 @@ public class Console implements Constants, Manageable {
             Runtime.getRuntime().removeShutdownHook(hook);
             hook = null;
         }
+        // status = DESTROYED;
         initialized = false;
     }
 

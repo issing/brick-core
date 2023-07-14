@@ -10,10 +10,11 @@ public class Option implements Cloneable {
     @Affix("{length : 20, options : [1, 3]}")
     private String id;
 
+    /** 字段 */
     @Affix("{length : 20, options : 3}")
     private String itemId;
 
-    /** 类型 */
+    /** 类型（0：默认；1：主键；2：外键；3：非空；4：唯一；5：检查；6：索引） */
     @Affix("{length : 2, options : 3}")
     private Number type;
 
@@ -25,9 +26,9 @@ public class Option implements Cloneable {
     @Affix("{length : 50}")
     private String name;
 
-    /** 值 */
+    /** 项值 */
     @Affix("{type : text}")
-    private String value;
+    private Object value;
 
     public Number getType() {
         return type;
@@ -45,11 +46,11 @@ public class Option implements Cloneable {
         this.name = name;
     }
 
-    public String getValue() {
+    public Object getValue() {
         return value;
     }
 
-    public void setValue(String value) {
+    public void setValue(Object value) {
         this.value = value;
     }
 

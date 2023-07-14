@@ -3,13 +3,13 @@ package net.isger.brick.bus.protocol;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import net.isger.brick.bus.protocol.SocketProtocol.Encoder;
-import net.isger.brick.core.Command;
-import net.isger.util.Files;
-
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumWriter;
+
+import net.isger.brick.core.Command;
+import net.isger.util.Encoder;
+import net.isger.util.Files;
 
 public class CommandSocketEncoder implements Encoder {
 
@@ -21,8 +21,7 @@ public class CommandSocketEncoder implements Encoder {
 
     public byte[] encode(Object message) {
         ByteArrayOutputStream out;
-        org.apache.avro.io.Encoder encoder = EncoderFactory.get()
-                .binaryEncoder(out = new ByteArrayOutputStream(), null);
+        org.apache.avro.io.Encoder encoder = EncoderFactory.get().binaryEncoder(out = new ByteArrayOutputStream(), null);
         try {
             WRITER.write((Command) message, encoder);
             encoder.flush();

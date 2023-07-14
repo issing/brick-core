@@ -7,7 +7,7 @@ import net.isger.brick.stub.model.Meta;
 import net.isger.brick.stub.model.Option;
 import net.isger.util.Helpers;
 import net.isger.util.Strings;
-import net.isger.util.sql.Page;
+import net.isger.util.sql.Pager;
 import net.isger.util.sql.PageSql;
 
 /**
@@ -66,14 +66,14 @@ public class PostgresDialect extends SqlDialect {
         return type;
     }
 
-    protected PageSql createPageSql(Page page, String sql, Object[] values) {
+    protected PageSql createPageSql(Pager page, String sql, Object[] values) {
         return new PageSql(page, sql, values) {
             public String getWrapSql(String sql) {
                 return sql + " limit ? offset ?";
             }
 
             public Object[] getWrapValues(Object[] values) {
-                Page page = super.getPage();
+                Pager page = super.getPage();
                 int valCount = 2;
                 Object[] wrapValues = null;
                 if (values != null) {

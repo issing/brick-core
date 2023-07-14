@@ -1,6 +1,7 @@
 package net.isger.brick.stub.dialect;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -11,13 +12,14 @@ import net.isger.brick.stub.model.Metas;
 import net.isger.brick.stub.model.Model;
 import net.isger.brick.stub.model.Option;
 import net.isger.brick.stub.model.Options;
+import net.isger.brick.stub.model.OptionsConversion;
 import net.isger.util.Dates;
 import net.isger.util.Helpers;
 import net.isger.util.Numbers;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
 import net.isger.util.reflect.BoundField;
-import net.isger.util.sql.Page;
+import net.isger.util.sql.Pager;
 import net.isger.util.sql.PageSql;
 import net.isger.util.sql.SqlEntry;
 
@@ -71,19 +73,33 @@ public class SqlDialect implements Dialect {
         };
         NOTNULL_DESCRIBER = new DescriberAdapter() {
             public String describe(Option option, Object... extents) {
-                String value = option.getValue();
-                return Strings.isEmpty(value) || Boolean.parseBoolean(value) ? "NOT NULL" : "NULL";
+                Object value = option.getValue();
+                return Strings.isEmpty(value) || Helpers.toBoolean(value) ? "NOT NULL" : "NULL";
             }
         };
         UNIQUE_DESCRIBER = new DescriberAdapter() {
             public String describe(Option option, Object... extents) {
-                return "UNIQUE";
+                StringBuffer buffer = new StringBuffer(64);
+                buffer.append("UNIQUE");
+                String name = option.getName();
+                Object value = option.getValue();
+                if (Strings.isEmpty(name) || Strings.isEmpty(value)) {
+                    return buffer.toString();
+                }
+                String seal = seal();
+                buffer.append(" KEY ").append(seal).append("UK_").append(name).append(seal);
+                if (value instanceof String) {
+                    value = Arrays.asList(value);
+                }
+                buffer.append("(").append(Strings.join(true, ",", seal, (List<?>) value)).append(")");
+                return buffer.toString();
             }
         };
     }
 
     public SqlDialect() {
         describers = new HashMap<Object, Describer>();
+        /* 类型描述器 */
         addDescriber(REFERENCE, getReferenceDescriber(REFERENCE));
         addDescriber(STRING, getStringDescriber(STRING));
         addDescriber(NUMBER, getNumberDescriber(NUMBER));
@@ -92,6 +108,7 @@ public class SqlDialect implements Dialect {
         addDescriber(TIME, getDateDescriber(TIME));
         addDescriber(DATETIME, getDateDescriber(DATETIME));
         addDescriber(TIMESTAMP, getDateDescriber(TIMESTAMP));
+        /* 选项描述器 */
         addDescriber(OPTION_DEFAULT, DEFAULT_DESCRIBER);
         addDescriber(OPTION_PRIMARY, PRIMARY_DESCRIBER);
         addDescriber(OPTION_NOTNULL, NOTNULL_DESCRIBER);
@@ -125,25 +142,39 @@ public class SqlDialect implements Dialect {
      * @return
      */
     public SqlEntry getCreateEntry(Object table) {
-        return getCreateEntry(getTableName(table), getColumnDescribes(table));
+        Model model = Model.create(table);
+        List<String[]> describes = getColumnDescribes(model.metas());
+        Object optionsSchema = model.schemaValue("options");
+        if (Strings.isNotEmpty(optionsSchema)) {
+            Options options = (Options) OptionsConversion.getInstance().convert(optionsSchema);
+            if (options != null) {
+                describes.add(new String[] { null, getOptionDescribe(null, options) });
+            }
+        }
+        return getCreateEntry(model.modelName(), describes.toArray(new String[describes.size()][]));
     }
 
     public SqlEntry getCreateEntry(String table, String[][] describes) {
         String seal = seal();
         StringBuffer sql = new StringBuffer(512);
-        sql.append("CREATE TABLE ").append(table).append(" (");
-        int count;
-        for (String[] describe : describes) {
-            count = describe.length;
-            sql.append(seal).append(describe[0]).append(seal).append(" ");
-            for (int i = 1; i < count; i++) {
-                sql.append(describe[i]).append(" ");
+        sql.append("CREATE TABLE ").append(table);
+        if (describes.length > 0) {
+            sql.append(" (");
+            int count;
+            for (String[] describe : describes) {
+                count = describe.length;
+                if (Strings.isNotEmpty(describe[0])) {
+                    sql.append(seal).append(describe[0]).append(seal).append(" ");
+                }
+                for (int i = 1; i < count; i++) {
+                    sql.append(describe[i]).append(" ");
+                }
+                sql.setLength(sql.length() - 1);
+                sql.append(", ");
             }
-            sql.setLength(sql.length() - 1);
-            sql.append(", ");
+            sql.setLength(sql.length() - 2);
+            sql.append(")");
         }
-        sql.setLength(sql.length() - 2);
-        sql.append(")");
         return new SqlEntry(sql.toString());
     }
 
@@ -271,7 +302,7 @@ public class SqlDialect implements Dialect {
     }
 
     public SqlEntry getSearchEntry(String sql, Object[] values) {
-        Page page = getPage(values);
+        Pager page = getPage(values);
         if (page != null) {
             int size = values.length;
             List<Object> pending = new ArrayList<Object>(size - 1);
@@ -279,7 +310,7 @@ public class SqlDialect implements Dialect {
                 values = new Object[0];
             } else {
                 for (Object value : values) {
-                    if (value instanceof Page) {
+                    if (value instanceof Pager) {
                         continue;
                     }
                     pending.add(value);
@@ -290,19 +321,19 @@ public class SqlDialect implements Dialect {
         return getSearchEntry(page, sql, values);
     }
 
-    private SqlEntry getSearchEntry(Page page, String sql, Object[] values) {
+    private SqlEntry getSearchEntry(Pager page, String sql, Object[] values) {
         if (page == null) {
             return new SqlEntry(sql, values);
         }
         return createPageSql(page, sql, values);
     }
 
-    protected PageSql createPageSql(Page page, String sql, Object[] values) {
+    protected PageSql createPageSql(Pager page, String sql, Object[] values) {
         return new PageSql(page, sql, values);
     }
 
-    protected Page getPage(Object[] values) {
-        return Helpers.getElement(values, Page.class);
+    protected Pager getPage(Object[] values) {
+        return Helpers.getElement(values, Pager.class);
     }
 
     public SqlEntry getExistsEntry(Object table) {
@@ -336,8 +367,7 @@ public class SqlDialect implements Dialect {
         return columns.toArray(new String[columns.size()]);
     }
 
-    protected String[][] getColumnDescribes(Object table) {
-        Metas metas = Metas.getMetas(table);
+    protected List<String[]> getColumnDescribes(Metas metas) {
         List<String[]> describes = new ArrayList<String[]>(metas.size());
         String[] describe;
         for (Meta meta : metas.values()) {
@@ -346,7 +376,7 @@ public class SqlDialect implements Dialect {
                 describes.add(describe);
             }
         }
-        return describes.toArray(new String[describes.size()][]);
+        return describes;
     }
 
     protected String[] getColumnDescribe(Meta meta) {
@@ -382,17 +412,30 @@ public class SqlDialect implements Dialect {
         return new String[] { meta.getName(), describe };
     }
 
-    protected String getOptionDescribe(Describer describer, Meta meta) {
+    protected String getOptionDescribe(final Describer describer, final Meta meta) {
+        SqlDialect self = this;
+        return getOptionDescribe(describer == null ? null : new Describer() {
+            public String describe(Option option, Object... extents) {
+                return describer.describe(option, meta, self);
+            }
+
+            public String describe(Meta field) {
+                return describer.describe(field);
+            }
+        }, meta.options());
+    }
+
+    protected String getOptionDescribe(Describer describer, Options options) {
         StringBuffer buffer = new StringBuffer(128);
         Describer optionDescriber;
         String describe;
         Number type;
-        for (Option option : meta.options().values()) {
+        for (Option option : options.values()) {
             if ((type = option.getType()) == null) {
                 continue;
             }
             optionDescriber = describers.get(type.intValue());
-            if (optionDescriber != null && ((describe = optionDescriber.describe(option, describer == null ? null : describer.describe(option, meta, this))) != null)) {
+            if (optionDescriber != null && ((describe = optionDescriber.describe(option, describer == null ? null : describer.describe(option))) != null)) {
                 buffer.append(" ").append(describe);
             }
         }

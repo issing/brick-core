@@ -16,6 +16,8 @@ public interface Endpoint extends Manageable, Named {
 
     public Status getStatus();
 
+    public boolean isActive();
+
     public void operate(BusCommand cmd);
 
 }

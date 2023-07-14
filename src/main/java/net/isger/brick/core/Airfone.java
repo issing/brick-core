@@ -6,6 +6,6 @@ public interface Airfone {
 
     public static final int ACTION_DESTROY = 1;
 
-    public void ack(int action);
+    public boolean ack(int action);
 
 }

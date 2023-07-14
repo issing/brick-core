@@ -179,8 +179,16 @@ public class BaseCommand extends Command implements Cloneable {
         shell.setHeader(parameters);
     }
 
+    public void setHeader(Map<String, Object> parameters, boolean appended) {
+        shell.setHeader(parameters, appended);
+    }
+
     public void setHeader(CharSequence key, Object value) {
         shell.setHeader(key, value);
+    }
+
+    public void clearHeader() {
+        shell.setHeader(null);
     }
 
     public Model getParameter(Model model) {
@@ -263,8 +271,16 @@ public class BaseCommand extends Command implements Cloneable {
         shell.setParameter(parameters);
     }
 
+    public void setParameter(Map<String, ? extends Object> parameters, boolean appended) {
+        shell.setParameter(parameters, appended);
+    }
+
     public void setParameter(CharSequence key, Object value) {
         shell.setParameter(key, value);
+    }
+
+    public void clearParameter() {
+        shell.setParameter(null);
     }
 
     public Map<String, Object> getFooter() {
@@ -279,8 +295,16 @@ public class BaseCommand extends Command implements Cloneable {
         shell.setFooter(parameters);
     }
 
+    public void setFooter(Map<String, Object> parameters, boolean appended) {
+        shell.setFooter(parameters, appended);
+    }
+
     public void setFooter(CharSequence key, Object value) {
         shell.setFooter(key, value);
+    }
+
+    public void clearFooter() {
+        shell.setFooter(null);
     }
 
     public Object get(int index, CharSequence key) {
@@ -432,14 +456,15 @@ public class BaseCommand extends Command implements Cloneable {
         }
 
         @SuppressWarnings("unchecked")
-        protected void sets(int index, Map<String, ? extends Object> values) {
-            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(index);
+        protected void sets(int index, Map<String, ? extends Object> values, boolean appended) {
             if (values == null) {
-                clear(indeces);
-            } else {
-                for (Entry<String, ? extends Object> entry : values.entrySet()) {
-                    set(indeces, entry.getKey(), entry.getValue());
-                }
+                values = new HashMap<String, Object>();
+                appended = false;
+            }
+            Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(index);
+            if (!appended) clear(indeces);
+            for (Entry<String, ? extends Object> entry : values.entrySet()) {
+                set(indeces, entry.getKey(), entry.getValue());
             }
         }
 
@@ -500,7 +525,11 @@ public class BaseCommand extends Command implements Cloneable {
         }
 
         public final void setHeader(Map<String, Object> headers) {
-            sets(HEADERS, headers);
+            sets(HEADERS, headers, true);
+        }
+
+        public final void setHeader(Map<String, Object> headers, boolean appended) {
+            sets(HEADERS, headers, appended);
         }
 
         public final void setHeader(CharSequence key, Object value) {
@@ -687,7 +716,11 @@ public class BaseCommand extends Command implements Cloneable {
         }
 
         public final void setParameter(Map<String, ? extends Object> parameters) {
-            sets(PARAMETERS, parameters);
+            sets(PARAMETERS, parameters, true);
+        }
+
+        public final void setParameter(Map<String, ? extends Object> parameters, boolean appended) {
+            sets(PARAMETERS, parameters, appended);
         }
 
         public final void setParameter(CharSequence key, Object value) {
@@ -703,7 +736,11 @@ public class BaseCommand extends Command implements Cloneable {
         }
 
         public final void setFooter(Map<String, Object> footers) {
-            sets(FOOTERS, footers);
+            sets(FOOTERS, footers, true);
+        }
+
+        public final void setFooter(Map<String, Object> footers, boolean appended) {
+            sets(FOOTERS, footers, appended);
         }
 
         public final void setFooter(CharSequence key, Object value) {
@@ -762,8 +799,8 @@ public class BaseCommand extends Command implements Cloneable {
             return getSource().shell.gets(index);
         }
 
-        protected void sets(int index, Map<String, ? extends Object> values) {
-            getSource().shell.sets(index, values);
+        protected void sets(int index, Map<String, ? extends Object> values, boolean appended) {
+            getSource().shell.sets(index, values, appended);
         }
 
         protected <T> T get(int index, CharSequence key) {

@@ -17,6 +17,10 @@ public class TestEndpoint extends CommandOperator implements Endpoint {
         return status;
     }
 
+    public boolean isActive() {
+        return status == Status.ACTIVATED;
+    }
+
     public void initial() {
         System.out.println("TestEndpoint.initial().");
         status = Status.ACTIVATED;

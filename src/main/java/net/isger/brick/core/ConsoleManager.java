@@ -24,6 +24,7 @@ import net.isger.raw.Prober;
 import net.isger.raw.SuffixProber;
 import net.isger.util.Asserts;
 import net.isger.util.Callable;
+import net.isger.util.Files;
 import net.isger.util.Helpers;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
@@ -78,14 +79,14 @@ public class ConsoleManager {
     }
 
     public ConsoleManager(String name) {
-        this(name, System.getProperty("user.dir"));
+        this(name, null);
     }
 
     public ConsoleManager(String name, String path) {
-        lock = new ReentrantLock();
+        this.lock = new ReentrantLock();
         this.name = Strings.empty(name, Constants.BRICK);
-        this.path = Strings.empty(path, System.getProperty("user.dir"));
-        providers = new ArrayList<ContainerProvider>();
+        this.path = Strings.empty(path, Files.getBasePath());
+        this.providers = new ArrayList<ContainerProvider>();
         loadContainerProviders();
     }
 
@@ -94,9 +95,7 @@ public class ConsoleManager {
      */
     private void loadContainerProviders() {
         clearContainerProviders();
-        /*
-         * 服务形式加载（/META-INF/services/net.isger.brick.inject.ContainerProvider）
-         */
+        // 服务形式加载（/META-INF/services/net.isger.brick.inject.ContainerProvider）
         ServiceLoader<ContainerProvider> loader = ServiceLoader.load(ContainerProvider.class, Reflects.getClassLoader(this));
         Iterator<ContainerProvider> iterator = loader.iterator();
         while (iterator.hasNext()) {

@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import net.isger.brick.inject.ConstantStrategy;
-import net.isger.brick.stub.StubCommand;
 import net.isger.util.Asserts;
 import net.isger.util.Helpers;
 import net.isger.util.Strings;
@@ -243,11 +242,11 @@ public class GateModule extends AbstractModule {
         Gate gate;
         for (Entry<String, Gate> entry : gates.entrySet()) {
             container.inject(gate = entry.getValue());
-            StubCommand.mockAction();
+            GateCommand.mockAction();
             try {
                 gate.initial();
             } finally {
-                StubCommand.realAction();
+                GateCommand.realAction();
             }
         }
         cmd.setResult(gates);

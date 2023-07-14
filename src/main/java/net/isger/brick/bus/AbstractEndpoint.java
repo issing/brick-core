@@ -34,6 +34,7 @@ public abstract class AbstractEndpoint implements Endpoint {
     @Alias(Constants.SYSTEM)
     protected Console console;
 
+    /** 总线 */
     @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
     private Bus bus;
@@ -44,8 +45,6 @@ public abstract class AbstractEndpoint implements Endpoint {
 
     @Ignore(mode = Mode.INCLUDE)
     private String name;
-
-    private Status status;
 
     @Ignore(mode = Mode.INCLUDE)
     private String protocol;
@@ -58,13 +57,16 @@ public abstract class AbstractEndpoint implements Endpoint {
     @Ignore(mode = Mode.INCLUDE)
     private Map<String, Object> parameters;
 
+    private transient volatile Status status;
+
     public AbstractEndpoint() {
         operator = new CommandOperator(this);
-        status = Status.INACTIVATE; // 非激活状态
         parameters = new HashMap<String, Object>();
+        status = Status.INACTIVATE; // 非激活状态
     }
 
     public final void initial() {
+        status = Status.ACTIVATING; // 激活中状态
         if (Strings.isEmpty(protocol)) {
             protocol = name();
         }
@@ -77,7 +79,7 @@ public abstract class AbstractEndpoint implements Endpoint {
             Helpers.sleep(200l);
         }
         open();
-        status = Status.ACTIVATED; // 激活状态状态
+        status = Status.ACTIVATED; // 已激活状态状态
     }
 
     @SuppressWarnings("unchecked")
@@ -103,6 +105,10 @@ public abstract class AbstractEndpoint implements Endpoint {
 
     public Status getStatus() {
         return status;
+    }
+
+    public boolean isActive() {
+        return status == Status.ACTIVATED;
     }
 
     public String getProtocolName() {
@@ -143,7 +149,7 @@ public abstract class AbstractEndpoint implements Endpoint {
         if (status != Status.DEACTIVATED) {
             close();
         }
-        status = Status.DEACTIVATED;
+        status = Status.DEACTIVATED; // 已制动状态
     }
 
 }

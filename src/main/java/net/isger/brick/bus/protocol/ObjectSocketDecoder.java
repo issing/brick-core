@@ -1,11 +1,16 @@
 package net.isger.brick.bus.protocol;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 
-import net.isger.brick.bus.protocol.SocketProtocol.Decoder;
+import net.isger.util.Decoder;
 
 public class ObjectSocketDecoder implements Decoder {
+
+    public Object decode(byte[] content) {
+        return decode(new ByteArrayInputStream(content));
+    }
 
     public Object decode(InputStream is) {
         try {
@@ -14,5 +19,4 @@ public class ObjectSocketDecoder implements Decoder {
             throw new IllegalStateException(e);
         }
     }
-
 }

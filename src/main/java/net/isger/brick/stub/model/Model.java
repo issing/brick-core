@@ -1,5 +1,6 @@
 package net.isger.brick.stub.model;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import net.isger.raw.Artifact;
@@ -15,7 +16,6 @@ import net.isger.util.reflect.Converter;
  * 数据模型
  * 
  * @author issing
- *
  */
 @Alias("t_brick_stub_model")
 public class Model implements Cloneable {
@@ -37,10 +37,17 @@ public class Model implements Cloneable {
     private String description;
 
     /** 纲要 */
-    private transient Object schema;
+    private transient Map<String, Object> schema;
 
     /** 字段（桥接多对多引用） */
-    @Affix("{name : 't_brick_stub_item', type : 'reference', mode : 1, scale : 3, value : {source : {name : 'model_id', type : 'string', length : 20, options : 3, value : 't_brick_stub_model.id'}, target : {name : 'meta_id', type : 'string', length : 20, options : 3, value : 't_brick_stub_meta.id'}, metas : [{name : 'id', type : 'string', length : 20, options : [1, 3]}, {name : 'label', type : 'string', length : 50}, {name : 'name', type : 'string', length : 50}, {name : 'description', type : 'text'}]}}")
+    @Affix("{name : 't_brick_stub_item', type : 'reference', mode : 1, scale : 3, value : {" // 映射关系
+            + "source : {name : 'model_id', type : 'string', length : 20, options : 3, value : 't_brick_stub_model.id'}, " // 源外键
+            + "target : {name : 'meta_id', type : 'string', length : 20, options : 3, value : 't_brick_stub_meta.id'}, " // 目标外键
+            + "metas : [{name : 'id', type : 'string', length : 20, options : [1, 3]}, " // 目标元：唯一标识
+            + "{name : 'label', type : 'string', length : 50}, " // 目标元：标签
+            + "{name : 'name', type : 'string', length : 50}, " // 目标元：名称
+            + "{name : 'description', type : 'text'}]" // 目标元：描述
+            + "}}")
     private Metas metas;
 
     static {
@@ -49,7 +56,11 @@ public class Model implements Cloneable {
 
     public Model() {
         this.name = Sqls.getTableName(this.getClass(), "Model$");
-        this.metas = new Metas();
+        this.metas = Metas.getMetas(this);
+        if (this.metas == null) {
+            this.metas = new Metas();
+        }
+        this.schema = new HashMap<String, Object>();
     }
 
     public Model(Object[] metas) {
@@ -64,9 +75,15 @@ public class Model implements Cloneable {
         }
     }
 
-    public Model(String name, Metas metas) {
-        this.name = name;
-        this.metas = metas;
+    protected Model(Map<String, Object> schema, Metas metas) {
+        this();
+        if (metas != null) {
+            this.metas = metas;
+        }
+        if (schema != null) {
+            this.schema.putAll(schema);
+        }
+        this.name = Strings.empty(schemaValue("name"), this.name);
     }
 
     public boolean isModel() {
@@ -105,18 +122,12 @@ public class Model implements Cloneable {
         this.description = description;
     }
 
-    public Object modelSchema() {
-        return schema;
+    public Object schemaValue(String name) {
+        return schema.get(name);
     }
 
-    public void modelSchema(Object schema) {
-        if (schema instanceof String) {
-            Artifact artifact = Depository.getArtifact(new TextRaw((String) schema));
-            if (artifact != null) {
-                schema = artifact.transform(Map.class);
-            }
-        }
-        this.schema = schema;
+    public void schemaValue(String name, Object value) {
+        schema.put(name, value);
     }
 
     public Metas metas() {
@@ -198,21 +209,29 @@ public class Model implements Cloneable {
     }
 
     public static String getName(Object instance) {
-        if (instance instanceof Model) {
-            return ((Model) instance).modelName();
-        } else if (instance instanceof String) {
-            return (String) instance;
-        }
-        return Sqls.getTableName(instance instanceof Class ? (Class<?>) instance : instance.getClass());
+        return create(instance).modelName();
     }
 
+    @SuppressWarnings("unchecked")
     public static Model create(Object instance) {
         if (instance instanceof Model) {
             return (Model) instance;
         } else if (instance instanceof String) {
             return new Model((String) instance);
         }
-        return new Model(Sqls.getTableName(instance instanceof Class ? (Class<?>) instance : instance.getClass()), Metas.getMetas(instance));
+        Class<?> table = instance instanceof Class ? (Class<?>) instance : instance.getClass();
+        Map<String, Object> schema = new HashMap<String, Object>();
+        Affix affix = table.getAnnotation(Affix.class);
+        if (affix != null) {
+            Artifact artifact = Depository.getArtifact(new TextRaw(Strings.empty(affix.value())));
+            if (artifact != null) {
+                schema.putAll(artifact.transform(Map.class));
+            }
+        }
+        if (Strings.isEmpty(schema.get("name"))) {
+            schema.put("name", Sqls.getTableName(table));
+        }
+        return new Model(schema, Metas.getMetas(table));
     }
 
 }

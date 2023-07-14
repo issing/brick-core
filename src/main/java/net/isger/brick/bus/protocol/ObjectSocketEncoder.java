@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
-import net.isger.brick.bus.protocol.SocketProtocol.Encoder;
+import net.isger.util.Encoder;
 
 public class ObjectSocketEncoder implements Encoder {
 

@@ -1,12 +1,13 @@
 package net.isger.brick.bus.protocol;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import net.isger.brick.Constants;
-import net.isger.brick.bus.protocol.SocketProtocol.Decoder;
 import net.isger.util.Asserts;
+import net.isger.util.Decoder;
 import net.isger.util.Strings;
 
 public class TextSocketDecoder implements Decoder {
@@ -18,12 +19,10 @@ public class TextSocketDecoder implements Decoder {
     private transient byte[] delimiter;
 
     public TextSocketDecoder() {
-        this(Constants.ENC_UTF8, Constants.ENC_UTF8,
-                TextSocketProtocol.DELIMITER);
+        this(Constants.ENC_UTF8, Constants.ENC_UTF8, TextSocketProtocol.DELIMITER);
     }
 
-    public TextSocketDecoder(String sourceCharset, String targetCharset,
-            String delimiter) {
+    public TextSocketDecoder(String sourceCharset, String targetCharset, String delimiter) {
         this.sourceCharset = sourceCharset;
         this.targetCharset = targetCharset;
         try {
@@ -31,6 +30,10 @@ public class TextSocketDecoder implements Decoder {
         } catch (UnsupportedEncodingException e) {
             throw Asserts.argument("Unsupported encoding [{}]", sourceCharset);
         }
+    }
+
+    public Object decode(byte[] content) {
+        return decode(new ByteArrayInputStream(content));
     }
 
     public Object decode(InputStream is) {
@@ -50,13 +53,11 @@ public class TextSocketDecoder implements Decoder {
                 is.reset();
                 is.skip(i + j);
                 value = new String(data, 0, i, sourceCharset).trim();
-                if (value.length() == 0
-                        || value.equals(new String(delimiter, targetCharset))) {
+                if (value.length() == 0 || value.equals(new String(delimiter, targetCharset))) {
                     is.mark(0);
                     continue;
                 }
-                return Strings.toCharset(value.getBytes(sourceCharset),
-                        sourceCharset, targetCharset);
+                return Strings.toCharset(value.getBytes(sourceCharset), sourceCharset, targetCharset);
             }
             is.reset();
         } catch (IOException e) {

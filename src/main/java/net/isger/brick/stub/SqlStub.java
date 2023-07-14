@@ -23,7 +23,7 @@ import net.isger.util.Sqls;
 import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
-import net.isger.util.sql.Page;
+import net.isger.util.sql.Pager;
 import net.isger.util.sql.PageSql;
 import net.isger.util.sql.SqlEntry;
 import net.isger.util.sql.SqlTransformer;
@@ -111,7 +111,7 @@ public class SqlStub extends AbstractStub {
      * @param cmd
      */
     protected void initialStandard(StubCommand cmd) {
-        cmd.setCondition(new Page());
+        cmd.setCondition(new Pager());
         /* 模型 */
         initialModel(cmd, new Model());
         /* 元数据 */
@@ -178,7 +178,7 @@ public class SqlStub extends AbstractStub {
         try {
             return dataSource.getConnection();
         } catch (SQLException e) {
-            throw Asserts.state("Failure to connect database", e.getCause());
+            throw Asserts.state("Failure to connect database", e);
         }
     }
 
@@ -324,7 +324,7 @@ public class SqlStub extends AbstractStub {
                     Asserts.throwState(Strings.isNotEmpty(sql), "Not found the sql [%s] in the configuration file", id);
                     args = (Object[]) args[1];
                 } else if (isSpecify) {
-                    args = (Object[]) Helpers.newArray(args[0], Helpers.getElement(args[1], Page.class));
+                    args = (Object[]) Helpers.newArray(args[0], Helpers.getElement(args[1], Pager.class));
                 } else if (args[0] == null && args[1] instanceof Object[]) {
                     args = (Object[]) args[1];
                 }

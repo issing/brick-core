@@ -1,6 +1,6 @@
 package net.isger.brick.stub.dialect;
 
-import net.isger.util.sql.Page;
+import net.isger.util.sql.Pager;
 import net.isger.util.sql.PageSql;
 
 public class OracleDialect extends SqlDialect {
@@ -11,14 +11,14 @@ public class OracleDialect extends SqlDialect {
         return super.isSupport(name) || DRIVER_NAME.equals(name);
     }
 
-    protected PageSql createPageSql(Page page, String sql, Object[] values) {
+    protected PageSql createPageSql(Pager page, String sql, Object[] values) {
         return new PageSql(page, sql, values) {
             public String getWrapSql(String sql) {
                 return "select * from (select t1.*, rownum rn from (" + sql + ") t1 where rownum <= ?) t2 where rn > ?";
             }
 
             public Object[] getWrapValues(Object[] values) {
-                Page page = super.getPage();
+                Pager page = super.getPage();
                 int valCount = 2;
                 Object[] wrapValues = null;
                 if (values != null) {

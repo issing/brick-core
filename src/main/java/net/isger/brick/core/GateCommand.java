@@ -9,8 +9,6 @@ public class GateCommand extends BaseCommand {
 
     public static final String CTRL_TRANSIENT = "gate-transient";
 
-    public static final String CTRL_IMMEDIATE = "gate-immediate";
-
     public static final String OPERATE_INITIAL = "initial";
 
     public static final String OPERATE_CREATE = "create";
@@ -89,22 +87,6 @@ public class GateCommand extends BaseCommand {
 
     public void setTransient(boolean transiented) {
         setTransient(this, transiented);
-    }
-
-    public static boolean getImmediate(BaseCommand cmd) {
-        return Helpers.toBoolean(cmd.getHeader(CTRL_IMMEDIATE));
-    }
-
-    public static void setImmediate(BaseCommand cmd, boolean immediated) {
-        cmd.setHeader(CTRL_IMMEDIATE, immediated);
-    }
-
-    public boolean getImmediate() {
-        return getImmediate(this);
-    }
-
-    public void setImmediate(boolean immediated) {
-        setImmediate(this, immediated);
     }
 
 }

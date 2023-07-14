@@ -1,5 +1,7 @@
 package net.isger.brick.bus.protocol;
 
+import net.isger.util.Decoder;
+import net.isger.util.Encoder;
 import net.isger.util.anno.Alias;
 
 @Alias("object.socket")
