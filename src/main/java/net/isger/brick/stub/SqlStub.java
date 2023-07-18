@@ -23,8 +23,8 @@ import net.isger.util.Sqls;
 import net.isger.util.Strings;
 import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
-import net.isger.util.sql.Pager;
 import net.isger.util.sql.PageSql;
+import net.isger.util.sql.Pager;
 import net.isger.util.sql.SqlEntry;
 import net.isger.util.sql.SqlTransformer;
 import net.isger.util.sql.SqlTransformerAdapter;
@@ -344,7 +344,7 @@ public class SqlStub extends AbstractStub {
                 if (countSql != null) {
                     Object[] target = new Object[result.length + 1];
                     System.arraycopy(result, 0, target, 0, result.length);
-                    target[result.length] = ((Number) ((Object[][]) Sqls.query(countSql, sqlEntry.getValues(), conn)[1])[0][0]).longValue();
+                    target[result.length] = ((Number) ((Object[][]) Sqls.query(countSql, ((PageSql) sqlEntry).getCountValues(), conn)[1])[0][0]).longValue();
                     result = (Object[]) target;
                 }
             }

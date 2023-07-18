@@ -14,7 +14,7 @@ import net.isger.util.Strings;
  */
 public class MysqlDialect extends SqlDialect {
 
-    private static final String[] DRIVER_NAMES = { "com.mysql.jdbc.Driver", "com.mysql.cj.jdbc.Driver" };
+    private static final String[] DRIVER_NAMES = { "com.mysql.jdbc.Driver", "com.mysql.cj.jdbc.Driver", "org.mariadb.jdbc.Driver" };
 
     public static final String NUMERIC = "numeric";
 
