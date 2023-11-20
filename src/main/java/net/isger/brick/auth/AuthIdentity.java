@@ -64,19 +64,19 @@ public class AuthIdentity {
         return token;
     }
 
-    void setToken(AuthToken<?> token) {
+    protected void setToken(AuthToken<?> token) {
         this.token = token;
     }
 
     public Object getAttribute(String name) {
-        return attributes.get(name);
+        return this.attributes.get(name);
     }
 
     public void setAttribute(String name, Object value) {
         if (value == null) {
-            attributes.remove(name);
+            this.attributes.remove(name);
         } else {
-            attributes.put(name, value);
+            this.attributes.put(name, value);
         }
     }
 
@@ -93,7 +93,7 @@ public class AuthIdentity {
     }
 
     public void clear() {
-        attributes.clear();
+        this.attributes.clear();
     }
 
 }

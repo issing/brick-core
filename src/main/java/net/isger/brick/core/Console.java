@@ -49,7 +49,7 @@ import net.isger.util.load.Loader;
  * @author issing
  * 
  */
-public class Console implements Constants, Manageable {
+public class Console implements Manageable {
 
     private static final String SUFFIX_MODULE = ".module";
 
@@ -65,15 +65,15 @@ public class Console implements Constants, Manageable {
     private transient CommandOperator operator;
 
     @Ignore(mode = Mode.INCLUDE)
-    @Alias(SYSTEM)
+    @Alias(Constants.SYSTEM)
     private Container container;
 
     @Ignore(mode = Mode.INCLUDE)
-    @Alias(SYSTEM)
+    @Alias(Constants.SYSTEM)
     private PlaceholderConfigurer configurer;
 
     @Ignore(mode = Mode.INCLUDE)
-    @Alias(BRICK_NAME)
+    @Alias(Constants.BRICK_NAME)
     private String name;
 
     @Ignore(mode = Mode.INCLUDE)
@@ -120,7 +120,7 @@ public class Console implements Constants, Manageable {
             }
         }));
         /* 初始内核 */
-        Class<?> describeClass = container.getInstance(Class.class, BRICK_DESCRIBE);
+        Class<?> describeClass = container.getInstance(Class.class, Constants.BRICK_DESCRIBE);
         Asserts.isAssignable(ModuleDescribe.class, describeClass, "Invalid module describe [%s] in container", describeClass);
         loader = new BaseLoader(describeClass);
         loadKernel();
@@ -144,14 +144,14 @@ public class Console implements Constants, Manageable {
      */
     protected void loadKernel() {
         /* 默认内核 */
-        setupModule(MOD_CACHE, new CacheModule(), CacheCommand.class); // 缓存模块
-        setupModule(MOD_AUTH, new AuthModule(), AuthCommand.class, MOD_CACHE); // 认证模块
-        setupModule(MOD_TASK, new TaskModule(), TaskCommand.class, MOD_AUTH); // 任务模块
-        setupModule(MOD_BUS, new BusModule(), BusCommand.class, MOD_TASK); // 总线模块
-        setupModule(MOD_STUB, new StubModule(), StubCommand.class, MOD_AUTH); // 存根模块
+        setupModule(Constants.MOD_CACHE, new CacheModule(), CacheCommand.class); // 缓存模块
+        setupModule(Constants.MOD_AUTH, new AuthModule(), AuthCommand.class, Constants.MOD_CACHE); // 认证模块
+        setupModule(Constants.MOD_TASK, new TaskModule(), TaskCommand.class, Constants.MOD_AUTH); // 任务模块
+        setupModule(Constants.MOD_BUS, new BusModule(), BusCommand.class, Constants.MOD_TASK); // 总线模块
+        setupModule(Constants.MOD_STUB, new StubModule(), StubCommand.class, Constants.MOD_AUTH); // 存根模块
         /* 加载内核 */
-        if (!Strings.matchsIgnoreCase(name, BRICK)) {
-            loadKernel(BRICK); // 加载默认配置
+        if (!Strings.matchsIgnoreCase(name, Constants.BRICK)) {
+            loadKernel(Constants.BRICK); // 加载默认配置
         }
         loadKernel(name);
     }
@@ -281,8 +281,8 @@ public class Console implements Constants, Manageable {
                     continue;
                 }
                 params = new HashMap<String, Object>((Map<String, Object>) config);
-                if (!params.containsKey(CONF_NAME)) {
-                    params.put(CONF_NAME, name);
+                if (!params.containsKey(Constants.CONF_NAME)) {
+                    params.put(Constants.CONF_NAME, name);
                 }
             } else if (!(config instanceof Map)) {
                 LOG.warn("(!) Skipped invalid module config {}", config);

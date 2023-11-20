@@ -12,6 +12,8 @@ import net.isger.util.Callable;
  */
 public class CoreHelper {
 
+    private static final ThreadLocal<Console> CONSOLE;
+
     private static final Callable<Object> CALLABLE_CONSOLE;
 
     private static final Callable<Object> CALLABLE_MODULE;
@@ -19,6 +21,7 @@ public class CoreHelper {
     private static final Callable<Object> CALLABLE_GATE;
 
     static {
+        CONSOLE = new ThreadLocal<Console>();
         CALLABLE_CONSOLE = new Callable<Object>() {
             public Object call(Object... args) {
                 BaseCommand cmd = (BaseCommand) args[0];
@@ -62,7 +65,14 @@ public class CoreHelper {
     }
 
     public static Console getConsole() {
-        return Context.getAction().getConsole();
+        Console console;
+        Context context = Context.getAction();
+        if (context == null) {
+            console = CONSOLE.get();
+        } else {
+            console = context.getConsole();
+        }
+        return console;
     }
 
     public static Module getModule() {
@@ -75,6 +85,10 @@ public class CoreHelper {
 
     public static CacheModule getCacheModule() {
         return (CacheModule) getConsole().getModule(Constants.MOD_CACHE);
+    }
+
+    public static void setConsole(Console console) {
+        CONSOLE.set(console);
     }
 
 }
