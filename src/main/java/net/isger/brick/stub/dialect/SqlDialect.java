@@ -148,7 +148,7 @@ public class SqlDialect implements Dialect {
         if (Strings.isNotEmpty(optionsSchema)) {
             Options options = (Options) OptionsConversion.getInstance().convert(optionsSchema);
             if (options != null) {
-                describes.add(new String[] { null, getOptionDescribe(null, options) });
+                describes.add(new String[] { null, getOptionDescribe(null, options, true) });
             }
         }
         return getCreateEntry(model.modelName(), describes.toArray(new String[describes.size()][]));
@@ -422,11 +422,11 @@ public class SqlDialect implements Dialect {
             public String describe(Meta field) {
                 return describer.describe(field);
             }
-        }, meta.options());
+        }, meta.options(), false);
     }
 
-    protected String getOptionDescribe(Describer describer, Options options) {
-        StringBuffer buffer = new StringBuffer(128);
+    protected String getOptionDescribe(Describer describer, Options options, boolean hasComma) {
+        StringBuffer sql = new StringBuffer(128);
         Describer optionDescriber;
         String describe;
         Number type;
@@ -436,10 +436,12 @@ public class SqlDialect implements Dialect {
             }
             optionDescriber = describers.get(type.intValue());
             if (optionDescriber != null && ((describe = optionDescriber.describe(option, describer == null ? null : describer.describe(option))) != null)) {
-                buffer.append(" ").append(describe);
+                sql.append(" ").append(describe);
+                if (hasComma) sql.append(", ");
             }
         }
-        return buffer.toString();
+        if (hasComma && sql.length() > 0) sql.setLength(sql.length() - 2);
+        return sql.toString();
     }
 
     protected String getDateDescribe(Object value) {

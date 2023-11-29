@@ -24,6 +24,18 @@ public class BusCommand extends BaseCommand {
         return cast(BaseCommand.getAction());
     }
 
+    public static BusCommand newAction() {
+        return cast(BaseCommand.newAction());
+    }
+
+    public static BusCommand mockAction() {
+        return cast(BaseCommand.mockAction());
+    }
+
+    public static BusCommand realAction() {
+        return cast(BaseCommand.realAction());
+    }
+
     public static BusCommand cast(BaseCommand cmd) {
         return cmd == null || cmd.getClass() == BusCommand.class ? (BusCommand) cmd : cmd.infect(new BusCommand(false));
     }
@@ -34,6 +46,10 @@ public class BusCommand extends BaseCommand {
 
     public void setEndpoint(String endpoint) {
         setHeader(CTRL_ENDPOINT, endpoint);
+    }
+
+    public BusCommand clone() {
+        return (BusCommand) super.clone();
     }
 
 }

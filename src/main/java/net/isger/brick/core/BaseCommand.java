@@ -550,7 +550,7 @@ public class BaseCommand extends Command implements Cloneable {
                 }
             }
             params.putAll(getParameter());
-            params = Helpers.coalesce(Helpers.getMap(params, namespace), params);
+            params = Helpers.coalesce((Map<String, Object>) Helpers.getMap(params, namespace), params);
             Model instance;
             if (!isBatch) {
                 instance = model.clone();
@@ -591,7 +591,7 @@ public class BaseCommand extends Command implements Cloneable {
                 }
             }
             params.putAll(getParameter());
-            params = Helpers.coalesce(Helpers.getMap(params, namespace), params);
+            params = Helpers.coalesce((Map<String, Object>) Helpers.getMap(params, namespace), params);
             if (assembler == null) {
                 assembler = createAssembler();
             }
@@ -644,7 +644,7 @@ public class BaseCommand extends Command implements Cloneable {
                 }
             }
             params.putAll(getParameter());
-            params = Helpers.coalesce(Helpers.getMap(params, namespace), params); // 名称空间不为空时，参数集合将被层级化
+            params = Helpers.coalesce((Map<String, Object>) Helpers.getMap(params, namespace), params); // 名称空间不为空时，参数集合将被层级化
             if (!isBatch) {
                 return Helpers.getValue(params, key.toString());
             }
