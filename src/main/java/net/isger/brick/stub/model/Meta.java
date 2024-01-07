@@ -243,11 +243,21 @@ public final class Meta implements Cloneable {
         return value;
     }
 
+    @SuppressWarnings("unchecked")
     public Object getValue(Object instance) {
-        if (field != null && field.getField().getDeclaringClass().isInstance(instance)) {
-            return field.getValue(instance);
+        Object value = getValue();
+        if (field != null) {
+            if (field.getField().getDeclaringClass().isInstance(instance)) {
+                value = field.getValue(instance);
+            } else if (instance instanceof Map) {
+                Map<String, Object> values = (Map<String, Object>) instance;
+                value = values.get(field.getAlias());
+                if (value == null) {
+                    value = values.get(field.getName());
+                }
+            }
         }
-        return getValue();
+        return value;
     }
 
     public void setValue(Object value) {

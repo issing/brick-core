@@ -19,7 +19,7 @@ public class Authorizer extends CommandHandler {
     private Handler handler;
 
     public Authorizer() {
-        handler = Handler.NOP;
+        this.handler = Handler.NOP;
     }
 
     /**

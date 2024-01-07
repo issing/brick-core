@@ -139,7 +139,7 @@ public class GateModule extends AbstractModule {
     protected Gate setGate(String name, Gate gate) {
         Asserts.throwArgument(Strings.isNotEmpty(name) && gate != null, "The gate cannot be null or empty");
         if (LOG.isDebugEnabled()) {
-            LOG.info("Binding [{}] gate [{}] for the module {}", name, gate, this);
+            LOG.info("Binding [{}] gate [{}] for the module [{}]", name, gate, this);
         }
         return set(name, gate.getClass(), gate);
     }
@@ -151,7 +151,7 @@ public class GateModule extends AbstractModule {
         }
         gate = ConstantStrategy.set(container, type, name, gate);
         if (gate != null) {
-            LOG.warn("(!) Discard [{}] gate [{}] in the module {}", name, gate, this);
+            LOG.warn("(!) Discard [{}] gate [{}] in the module [{}]", name, gate, this);
         }
         return gate;
     }

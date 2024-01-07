@@ -38,10 +38,10 @@ public class AuthIdentity {
     }
 
     public AuthIdentity(String id, AuthToken<?> token) {
-        this.id = Strings.empty(id, Helpers.makeUUID());
+        this.id = Strings.isEmpty(id) ? Helpers.makeUUID() : id;
+        this.token = token;
         this.mark = this.time = System.currentTimeMillis();
         this.attributes = new HashMap<String, Object>();
-        this.token = token;
     }
 
     public String getId() {

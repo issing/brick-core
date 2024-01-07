@@ -462,7 +462,10 @@ public class BaseCommand extends Command implements Cloneable {
                 appended = false;
             }
             Map<CharSequence, ByteBuffer> indeces = (Map<CharSequence, ByteBuffer>) get(index);
-            if (!appended) clear(indeces);
+            if (!appended) {
+                clear(indeces);
+                if (index == PARAMETERS) this.setPayload(null);
+            }
             for (Entry<String, ? extends Object> entry : values.entrySet()) {
                 set(indeces, entry.getKey(), entry.getValue());
             }

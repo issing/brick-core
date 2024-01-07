@@ -36,7 +36,7 @@ public class Model implements Cloneable {
     @Affix("{type : 'text'}")
     private String description;
 
-    /** 纲要 */
+    /** 纲要（表整体描述） */
     private transient Map<String, Object> schema;
 
     /** 字段（桥接多对多引用） */

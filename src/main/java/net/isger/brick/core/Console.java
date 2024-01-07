@@ -98,17 +98,12 @@ public class Console implements Manageable {
         operator = new CommandOperator(this);
         preparer = new Preparer();
         dependency = new Dependency();
-        // status = UNINITIALIZED;
     }
 
     /**
      * 初始
      */
     public final synchronized void initial() {
-        // if (status != UNINITIALIZED || status != DESTROYED) {
-        // return;
-        // }
-        // status = INITIALIZING;
         if (initialized) {
             return;
         }
@@ -134,7 +129,6 @@ public class Console implements Manageable {
         } catch (Throwable e) {
             throw Asserts.state("Failure to initial module", e);
         }
-        // status = INITIALIZED;
         initialized = true;
     }
 

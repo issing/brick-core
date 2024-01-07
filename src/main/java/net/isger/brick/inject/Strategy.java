@@ -19,7 +19,6 @@ public interface Strategy {
      * @return
      * @throws Exception
      */
-    public <T> T find(Class<T> type, String name, Callable<? extends T> callable)
-            throws Exception;
+    public <T> T find(Class<T> type, String name, Callable<? extends T> callable) throws Exception;
 
 }

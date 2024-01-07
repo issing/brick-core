@@ -31,9 +31,9 @@ public abstract class AbstractDesigner implements Designer {
      */
     public void design(Map<String, Object> config) {
         synchronized (this) {
-            if (!prepared) {
-                prepare();
-                prepared = true;
+            if (!this.prepared) {
+                this.prepare();
+                this.prepared = true;
             }
         }
     }
@@ -50,7 +50,7 @@ public abstract class AbstractDesigner implements Designer {
      */
     protected final void addConversion(Conversion conversion) {
         if (!Converter.contains(conversion)) {
-            container.inject(conversion);
+            this.container.inject(conversion);
             Converter.addConversion(conversion);
         }
     }

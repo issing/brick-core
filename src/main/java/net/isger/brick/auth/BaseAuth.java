@@ -12,13 +12,13 @@ import net.isger.util.Helpers;
 public class BaseAuth extends BaseGate implements Auth {
 
     /** 检验器 */
-    private AuthChecker checker;
+    protected AuthChecker checker;
 
     /** 认证器 */
-    private Authenticator authenticator;
+    protected Authenticator authenticator;
 
     /** 授权器 */
-    private Authorizer authorizer;
+    protected Authorizer authorizer;
 
     /**
      * 初始
@@ -26,20 +26,14 @@ public class BaseAuth extends BaseGate implements Auth {
     public void initial() {
         super.initial();
         /* 检验器 */
-        if (checker == null) {
-            checker = new AuthChecker();
-        }
-        container.inject(checker);
+        if (this.checker == null) this.checker = new AuthChecker();
+        this.container.inject(this.checker);
         /* 认证器 */
-        if (authenticator == null) {
-            authenticator = new Authenticator();
-        }
-        container.inject(authenticator);
+        if (this.authenticator == null) this.authenticator = new Authenticator();
+        this.container.inject(this.authenticator);
         /* 授权器 */
-        if (authorizer == null) {
-            authorizer = new Authorizer();
-        }
-        container.inject(authorizer);
+        if (this.authorizer == null) this.authorizer = new Authorizer();
+        this.container.inject(this.authorizer);
     }
 
     /**
@@ -48,17 +42,12 @@ public class BaseAuth extends BaseGate implements Auth {
     public final void login(AuthCommand cmd) {
         /* 身份处理 */
         AuthIdentity identity = cmd.getIdentity();
-        if (identity == null) {
-            cmd.setIdentity(identity = createIdentity());
-        } else if (identity.isLogin()) {
-            logout(identity);
-        }
+        if (identity == null) cmd.setIdentity(identity = createIdentity());
+        else if (identity.isLogin()) logout(identity);
         /* 登录处理 */
         Object result = null;
-        AuthToken<?> token = login(identity, authenticator.handle(cmd));
-        if (token != null) {
-            result = token.getSource();
-        }
+        AuthToken<?> token = login(identity, this.authenticator.handle(cmd));
+        if (token != null) result = token.getSource();
         cmd.setResult(result);
     }
 
@@ -79,9 +68,7 @@ public class BaseAuth extends BaseGate implements Auth {
      * @return
      */
     protected AuthToken<?> login(AuthIdentity identity, AuthToken<?> token) {
-        if (token != null) {
-            identity.setToken(token);
-        }
+        if (token != null) identity.setToken(token);
         return token;
     }
 
@@ -89,11 +76,12 @@ public class BaseAuth extends BaseGate implements Auth {
      * 检查
      */
     public final void check(AuthCommand cmd) {
+        Object token = cmd.getToken();
         /* 认证初验 */
         AuthIdentity identity = cmd.getIdentity();
-        cmd.setResult(identity != null && Helpers.toBoolean(check(identity, cmd.getToken())) || checker.isIgnore(cmd.getToken()));
+        cmd.setResult(identity != null && Helpers.toBoolean(this.check(identity, token)) || this.isIgnore(token));
         /* 检验器终验 */
-        checker.handle(cmd);
+        this.checker.handle(cmd);
     }
 
     /**
@@ -108,10 +96,20 @@ public class BaseAuth extends BaseGate implements Auth {
     }
 
     /**
+     * 忽略
+     * 
+     * @param token
+     * @return
+     */
+    protected boolean isIgnore(Object token) {
+        return this.checker.isIgnore(token);
+    }
+
+    /**
      * 授权
      */
     public final void auth(AuthCommand cmd) {
-        cmd.setResult(authorizer.handle(cmd));
+        cmd.setResult(this.authorizer.handle(cmd));
     }
 
     /**

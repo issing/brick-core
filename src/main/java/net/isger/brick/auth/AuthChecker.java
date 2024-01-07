@@ -27,12 +27,12 @@ public class AuthChecker extends CommandHandler {
     private Handler handler;
 
     public AuthChecker() {
-        ignores = new ArrayList<String>();
-        handler = Handler.NOP;
+        this.ignores = new ArrayList<String>();
+        this.handler = Handler.NOP;
     }
 
     public List<String> getIgnores() {
-        return Collections.unmodifiableList(ignores);
+        return Collections.unmodifiableList(this.ignores);
     }
 
     /**
@@ -47,7 +47,7 @@ public class AuthChecker extends CommandHandler {
             cmd.setOperate(null);
             result = super.handle(cmd);
         } else {
-            result = handler.handle(cmd);
+            result = this.handler.handle(cmd);
         }
         return result;
     }
@@ -69,7 +69,7 @@ public class AuthChecker extends CommandHandler {
      * @return
      */
     public boolean isIgnore(String permission) {
-        return ignores.contains(permission);
+        return this.ignores.contains(permission);
     }
 
 }

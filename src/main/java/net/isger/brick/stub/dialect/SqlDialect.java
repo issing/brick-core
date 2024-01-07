@@ -19,8 +19,8 @@ import net.isger.util.Numbers;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
 import net.isger.util.reflect.BoundField;
-import net.isger.util.sql.Pager;
 import net.isger.util.sql.PageSql;
+import net.isger.util.sql.Pager;
 import net.isger.util.sql.SqlEntry;
 
 /**
@@ -30,6 +30,8 @@ import net.isger.util.sql.SqlEntry;
  *
  */
 public class SqlDialect implements Dialect {
+
+    private final static Map<String, Model> MODELS;
 
     private final static Map<String, String> TYPES;
 
@@ -54,6 +56,7 @@ public class SqlDialect implements Dialect {
         TYPES.put(INTEGER.toUpperCase(), INT.toUpperCase());
         TYPES.put(SHORT.toUpperCase(), INT.toUpperCase());
         TYPES.put(BOOLEAN.toUpperCase(), INT.toUpperCase());
+        MODELS = new HashMap<String, Model>();
     }
 
     {
@@ -115,6 +118,12 @@ public class SqlDialect implements Dialect {
         addDescriber(OPTION_UNIQUE, UNIQUE_DESCRIBER);
     }
 
+    public static Model getModel(String name) {
+        synchronized (MODELS) {
+            return MODELS.get(name);
+        }
+    }
+
     public String name() {
         if (Strings.isEmpty(name)) {
             name = Helpers.getAliasName(this.getClass(), "Dialect$");
@@ -149,6 +158,12 @@ public class SqlDialect implements Dialect {
             Options options = (Options) OptionsConversion.getInstance().convert(optionsSchema);
             if (options != null) {
                 describes.add(new String[] { null, getOptionDescribe(null, options, true) });
+            }
+        }
+        /* 收录模型 */
+        synchronized (MODELS) {
+            if (!MODELS.containsKey(model.modelName())) {
+                MODELS.put(model.modelName(), model.clone());
             }
         }
         return getCreateEntry(model.modelName(), describes.toArray(new String[describes.size()][]));
@@ -302,42 +317,49 @@ public class SqlDialect implements Dialect {
     }
 
     public SqlEntry getSearchEntry(String sql, Object[] values) {
-        Pager page = getPage(values);
-        if (page != null) {
-            int size = values.length;
-            List<Object> pending = new ArrayList<Object>(size - 1);
-            if (size == 1) {
-                values = new Object[0];
-            } else {
-                for (Object value : values) {
-                    if (value instanceof Pager) {
-                        continue;
-                    }
-                    pending.add(value);
-                }
-                values = pending.toArray();
-            }
-        }
-        return getSearchEntry(page, sql, values);
+        Pager pager = getPager(values);
+        // if (pager != null) {
+        // int size = values.length;
+        // List<Object> pending = new ArrayList<Object>(size - 1);
+        // if (size == 1) {
+        // values = new Object[0];
+        // } else {
+        // for (Object value : values) {
+        // if (value instanceof Pager) {
+        // continue;
+        // }
+        // pending.add(value);
+        // }
+        // values = pending.toArray();
+        // }
+        // }
+        return getSearchEntry(pager, sql, values);
     }
 
-    private SqlEntry getSearchEntry(Pager page, String sql, Object[] values) {
-        if (page == null) {
+    private SqlEntry getSearchEntry(Pager pager, String sql, Object[] values) {
+        if (pager == null) {
             return new SqlEntry(sql, values);
         }
-        return createPageSql(page, sql, values);
+        return createPageSql(pager, sql, values);
     }
 
-    protected PageSql createPageSql(Pager page, String sql, Object[] values) {
-        return new PageSql(page, sql, values);
+    protected PageSql createPageSql(Pager pager, String sql, Object[] values) {
+        return new PageSql(pager, sql, values);
     }
 
-    protected Pager getPage(Object[] values) {
+    protected Pager getPager(Object[] values) {
         return Helpers.getElement(values, Pager.class);
     }
 
     public SqlEntry getExistsEntry(Object table) {
-        return getExistsEntry(getTableName(table));
+        Model model = Model.create(table);
+        /* 收录模型 */
+        synchronized (MODELS) {
+            if (!MODELS.containsKey(model.modelName())) {
+                MODELS.put(model.modelName(), model.clone());
+            }
+        }
+        return getExistsEntry(getTableName(model));
     }
 
     public SqlEntry getExistsEntry(String tableName) {

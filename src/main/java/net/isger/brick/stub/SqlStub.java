@@ -79,7 +79,7 @@ public class SqlStub extends AbstractStub {
             // JDBC
             else if (Strings.isNotEmpty(value = getUrl()) && Strings.isNotEmpty(getDriverName())) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.info("Initializing DataSource url {}", value);
+                    LOG.info("Initializing DataSource url [{}]", value);
                 }
                 dataSource = new BaseDataSource(getDriverName(), value, getUser(), getPassword());
             } else {
