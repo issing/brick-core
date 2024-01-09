@@ -595,9 +595,7 @@ public class BaseCommand extends Command implements Cloneable {
             }
             params.putAll(getParameter());
             params = Helpers.coalesce((Map<String, Object>) Helpers.getMap(params, namespace), params);
-            if (assembler == null) {
-                assembler = createAssembler();
-            }
+            if (assembler == null) assembler = this.createAssembler(params);
             /* 单实例转换 */
             if (Map.class.isAssignableFrom(type)) {
                 return params;
@@ -655,11 +653,14 @@ public class BaseCommand extends Command implements Cloneable {
             return values == null || values.getClass().isArray() ? values : Helpers.newArray(values);
         }
 
-        protected ClassAssembler createAssembler() {
+        protected ClassAssembler createAssembler(final Map<String, Object> params) {
             final Console console = CoreHelper.getConsole();
             return console == null ? null : new AssemblerAdapter() {
                 public Class<?> assemble(Class<?> rawClass) {
-                    if (rawClass.isInterface()) {
+                    Class<?> clazz = Reflects.getClass(params.get(Reflects.KEY_CLASS));
+                    if (clazz != null && rawClass.isAssignableFrom(clazz)) {
+                        rawClass = clazz;
+                    } else if (rawClass.isInterface()) {
                         rawClass = console.getContainer().getInstance(Class.class, (Strings.toColumnName(rawClass.getSimpleName()).replaceAll("[_]", ".") + ".class"));
                     }
                     return rawClass;
