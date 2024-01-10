@@ -6,7 +6,7 @@
     <parent>
         <groupId>net.isger</groupId>
         <artifactId>brick-primary</artifactId>
-        <version>${brick.version}</version>
+        <version>0.0.3-SNAPSHOT</version>
     </parent>
     <artifactId>brick-core</artifactId>
     <packaging>jar</packaging>
@@ -100,8 +100,7 @@
                         <configuration>
                             <tasks>
                                 <echo>Removing brick's dummy BrickCoreBinder</echo>
-                                <delete
-                                    dir="target/classes/net/isger/brick/bind" />
+                                <delete dir="target/classes/net/isger/brick/bind" />
                             </tasks>
                         </configuration>
                     </execution>
