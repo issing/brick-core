@@ -15,7 +15,7 @@ public class TextSocketEncoder implements Encoder {
     private String delimiter;
 
     public TextSocketEncoder() {
-        this(Constants.ENC_UTF8, Constants.ENC_UTF8, TextSocketProtocol.DELIMITER);
+        this(Constants.ENCODING_UTF_8, Constants.ENCODING_UTF_8, TextSocketProtocol.DELIMITER);
     }
 
     public TextSocketEncoder(String sourceCharset, String targetCharset, String delimiter) {
@@ -28,9 +28,9 @@ public class TextSocketEncoder implements Encoder {
         byte[] data = null;
         if (message != null) {
             try {
-                data = (message + delimiter).getBytes(sourceCharset);
-                if (!sourceCharset.equalsIgnoreCase(targetCharset)) {
-                    data = Strings.toCharset(data, sourceCharset, targetCharset).getBytes(targetCharset);
+                data = (message + this.delimiter).getBytes(this.sourceCharset);
+                if (!this.sourceCharset.equalsIgnoreCase(targetCharset)) {
+                    data = Strings.toCharset(data, this.sourceCharset, this.targetCharset).getBytes(this.targetCharset);
                 }
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException(e);
@@ -40,19 +40,19 @@ public class TextSocketEncoder implements Encoder {
     }
 
     public String getSourceCharset() {
-        return sourceCharset;
+        return this.sourceCharset;
     }
 
     public String getTargetCharset() {
-        return targetCharset;
+        return this.targetCharset;
     }
 
     public final String getEncoding() {
-        return getSourceCharset();
+        return this.getSourceCharset();
     }
 
     public String getDelimiter() {
-        return delimiter;
+        return this.delimiter;
     }
 
 }

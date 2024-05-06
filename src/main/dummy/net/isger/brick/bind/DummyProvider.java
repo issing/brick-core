@@ -14,7 +14,7 @@ public class DummyProvider implements ContainerProvider {
 
     public void register(ContainerBuilder builder) {
         builder.factory(Console.class, Constants.SYSTEM, DummyConsole.class, Scope.SINGLETON);
-        builder.constant(Constants.BRICK_ENCODING, Constants.ENC_UTF8);
+        builder.constant(Constants.BRICK_ENCODING, Constants.ENCODING_UTF_8);
         builder.constant(Constants.BRICK_RAW, Constants.RAW_JSON);
     }
 

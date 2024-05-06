@@ -26,11 +26,11 @@ class InternalContext {
     }
 
     public boolean hasInject(Object instance) {
-        return instance == null || instances.contains(instance) || (conductor != null && conductor.hasInject(instance));
+        return instance == null || this.instances.contains(instance) || (this.conductor != null && this.conductor.hasInject(instance));
     }
 
-    public Strategy getStrategy(Class<?> type, String name) {
-        Strategy strategy = container.getStrategy(type, name);
+    public <T> Strategy<T> getStrategy(Class<T> type, String name) {
+        Strategy<T> strategy = this.container.getStrategy(type, name);
         Asserts.throwState(strategy != null, "Scope strategy not set. Please call Container.setStrategy().");
         return strategy;
     }

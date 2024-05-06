@@ -15,13 +15,13 @@ import net.isger.util.anno.Ignore.Mode;
  * 抽象模块
  * 
  * @author issing
- * 
  */
 public abstract class AbstractModule extends DesignLoader implements Module {
 
     public static final String TARGET = "target";
 
     /** 模块操作器 */
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     private CommandOperator operator;
 
     /** 模块参数 */
@@ -29,8 +29,8 @@ public abstract class AbstractModule extends DesignLoader implements Module {
     private Map<String, Object> parameters;
 
     public AbstractModule() {
-        operator = new CommandOperator(this);
-        parameters = new HashMap<String, Object>();
+        this.operator = new CommandOperator(this);
+        this.parameters = new HashMap<String, Object>();
     }
 
     /**
@@ -40,7 +40,7 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * @return
      */
     protected Object getParameter(String name) {
-        return parameters.get(name);
+        return this.parameters.get(name);
     }
 
     /**
@@ -52,9 +52,9 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      */
     protected void setParameter(String name, Object value) {
         if (value == null) {
-            parameters.remove(name);
+            this.parameters.remove(name);
         } else {
-            parameters.put(name, value);
+            this.parameters.put(name, value);
         }
     }
 
@@ -71,7 +71,7 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * @return
      */
     public Class<?> getImplementClass() {
-        return getImplementClass(TARGET);
+        return this.getImplementClass(TARGET);
     }
 
     /**
@@ -81,7 +81,7 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * @return
      */
     protected final Class<?> getImplementClass(String name) {
-        return getImplementClass(name, getBaseClass());
+        return this.getImplementClass(name, this.getBaseClass());
     }
 
     /**
@@ -92,10 +92,10 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * @return
      */
     protected final Class<?> getImplementClass(String name, Class<?> baseClass) {
-        Class<?> implClass = Reflects.getClass(getParameter(name));
+        Class<?> implClass = Reflects.getClass(this.getParameter(name));
         if (implClass == null) {
             implClass = super.getImplementClass();
-            if (implClass == getTargetClass()) {
+            if (implClass == this.getTargetClass()) {
                 implClass = baseClass;
             }
         }
@@ -122,7 +122,7 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * @return
      */
     protected Object create() {
-        return super.create(getImplementClass(), null, null);
+        return super.create(this.getImplementClass(), null, null);
     }
 
     /**
@@ -155,14 +155,14 @@ public abstract class AbstractModule extends DesignLoader implements Module {
      * 模块执行
      */
     public void execute(BaseCommand cmd) {
-        operator.operate(cmd);
+        this.operator.operate(cmd);
     }
 
     /**
      * 模块注销
      */
     public void destroy() {
-        parameters.clear();
+        this.parameters.clear();
     }
 
 }

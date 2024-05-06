@@ -18,7 +18,7 @@ import net.isger.util.anno.Ignore.Mode;
 import net.isger.util.reflect.ClassAssembler;
 
 /**
- * 关卡模块
+ * 闸门模块
  * 
  * @author issing
  */
@@ -28,19 +28,26 @@ public class GateModule extends AbstractModule {
 
     private static final Logger LOG;
 
+    /*  */
+    private volatile transient Status status;
+
     static {
         LOG = LoggerFactory.getLogger(GateModule.class);
     }
 
+    public GateModule() {
+        this.status = Status.UNINITIALIZED;
+    }
+
     /**
-     * 获取门目标类型
+     * 获取闸门目标类型
      */
     public Class<? extends Gate> getTargetClass() {
         return Gate.class;
     }
 
     /**
-     * 获取门实现类型
+     * 获取闸门实现类型
      */
     @SuppressWarnings("unchecked")
     public Class<? extends Gate> getImplementClass() {
@@ -52,7 +59,7 @@ public class GateModule extends AbstractModule {
     }
 
     /**
-     * 获取门基本实现
+     * 获取闸门基本实现
      * 
      * @return
      */
@@ -70,14 +77,14 @@ public class GateModule extends AbstractModule {
     }
 
     /**
-     * 创建门
+     * 创建闸门
      */
     protected Gate create() {
         return (Gate) super.create();
     }
 
     /**
-     * 创建门
+     * 创建闸门
      * 
      * @param res
      * @return
@@ -118,7 +125,7 @@ public class GateModule extends AbstractModule {
     }
 
     /**
-     * 添加门
+     * 添加闸门
      * 
      * @param gates
      * @return
@@ -157,50 +164,67 @@ public class GateModule extends AbstractModule {
     }
 
     /**
-     * 获取门
+     * 获取闸门
      * 
      * @return
      */
     @SuppressWarnings("unchecked")
     public final Map<String, Gate> getGates() {
-        return container.getInstances((Class<Gate>) getTargetClass());
+        return this.container.getInstances((Class<Gate>) getTargetClass());
     }
 
     public final Gate getGate() {
-        return (Gate) getInternal(Gate.KEY_GATE);
+        return (Gate) this.getInternal(Gate.KEY_GATE);
     }
 
     @SuppressWarnings("unchecked")
     public Gate getGate(String name) {
-        return container.getInstance((Class<Gate>) getTargetClass(), name);
+        return this.container.getInstance((Class<Gate>) getTargetClass(), name);
     }
 
     /**
-     * 删除门
+     * 删除闸门
      * 
      * @param name
      */
     protected Gate delGate(String name) {
         Gate gate = getGate(name);
-        if (gate == null) {
-            return null;
-        }
+        if (gate == null) return null;
         return set(name, gate.getClass(), null);
     }
 
     /**
-     * 初始门模块
+     * 准备就绪
+     *
+     * @return
      */
-    public void initial() {
-        super.initial();
-        /* 初始所有门 */
-        for (Entry<String, Gate> entry : Helpers.sortByValue(getGates().entrySet())) {
-            initial(entry.getKey(), entry.getValue());
-        }
+    public boolean hasReady() {
+        return this.status == Status.INITIALIZED;
     }
 
     /**
-     * 初始指定门
+     * 模块状态
+     */
+    public Status getStatus() {
+        return this.status;
+    }
+
+    /**
+     * 初始模块
+     */
+    public synchronized void initial() {
+        if (!(status == Status.UNINITIALIZED || status == Status.DESTROYED)) return;
+        this.status = Status.INITIALIZING;
+        super.initial();
+        /* 初始所有门 */
+        for (Entry<String, Gate> entry : Helpers.sortByValue(getGates().entrySet())) {
+            this.initial(entry.getKey(), entry.getValue());
+        }
+        this.status = Status.INITIALIZED;
+    }
+
+    /**
+     * 初始闸门
      * 
      * @param domain
      * @param gate
@@ -210,7 +234,7 @@ public class GateModule extends AbstractModule {
     }
 
     /**
-     * 执行门命令
+     * 执行命令
      */
     public final void execute(BaseCommand cmd) {
         GateCommand gcmd = cmd instanceof GateCommand ? (GateCommand) cmd : GateCommand.cast(cmd);
@@ -228,7 +252,7 @@ public class GateModule extends AbstractModule {
     }
 
     /**
-     * 创建门
+     * 创建闸门
      * 
      * @param cmd
      */
@@ -253,7 +277,7 @@ public class GateModule extends AbstractModule {
     }
 
     /**
-     * 移除门
+     * 移除闸门
      * 
      * @param cmd
      */
@@ -273,18 +297,20 @@ public class GateModule extends AbstractModule {
     }
 
     /**
-     * 注销门模块
+     * 注销模块
      */
-    public void destroy() {
+    public synchronized void destroy() {
+        if (this.status == Status.UNINITIALIZED || this.status == Status.DESTROYED) return;
         /* 注销所有门 */
         for (Entry<String, Gate> entry : getGates().entrySet()) {
             destroy(entry.getKey(), entry.getValue());
         }
         super.destroy();
+        this.status = Status.DESTROYED;
     }
 
     /**
-     * 注销指定门
+     * 注销闸门
      * 
      * @param key
      * @param gate

@@ -21,8 +21,8 @@ import net.isger.util.reflect.ClassAssembler;
 @Ignore
 public class DesignLoader extends ConsoleLoader {
 
-    @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     protected Container container;
 
     /** 模块设计器 */
@@ -34,15 +34,13 @@ public class DesignLoader extends ConsoleLoader {
 
     public DesignLoader(Class<?> targetClass) {
         super(targetClass);
-        designers = new HashMap<String, Designer>();
+        this.designers = new HashMap<String, Designer>();
     }
 
     protected Object create(Class<?> clazz, Map<String, Object> res, ClassAssembler assembler) {
         // 设计配置项
-        Designer designer = getDesigner(clazz, assembler);
-        if (designer != null) {
-            designer.design(res);
-        }
+        Designer designer = this.getDesigner(clazz, assembler);
+        if (designer != null) designer.design(res);
         // 创建实例
         return super.create(clazz, res, assembler);
     }
@@ -56,23 +54,23 @@ public class DesignLoader extends ConsoleLoader {
     protected Designer getDesigner(Class<?> rawClass, ClassAssembler assembler) {
         String name = rawClass.getName() + "Designer";
         Designer designer;
-        synchronized (designers) {
-            designer = designers.get(name);
-            if (!designers.containsKey(name)) {
+        synchronized (this.designers) {
+            designer = this.designers.get(name);
+            if (!this.designers.containsKey(name)) {
                 newDesigner: {
                     try {
                         designer = (Designer) Reflects.newInstance(name, assembler);
                         if (designer != null) {
-                            container.inject(designer);
+                            this.container.inject(designer);
                             break newDesigner;
                         }
                     } catch (Exception e) {
                     }
-                    if (rawClass != getTargetClass()) {
-                        designer = getDesigner(getTargetClass(), assembler);
+                    if (rawClass != this.getTargetClass()) {
+                        designer = this.getDesigner(this.getTargetClass(), assembler);
                     }
                 }
-                designers.put(name, designer);
+                this.designers.put(name, designer);
             }
         }
         return designer;

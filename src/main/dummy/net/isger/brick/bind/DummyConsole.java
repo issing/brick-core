@@ -21,4 +21,5 @@ public class DummyConsole extends Console {
             LOG.info("The dummy console operate: {}", cmd.getOperate());
         }
     }
+
 }

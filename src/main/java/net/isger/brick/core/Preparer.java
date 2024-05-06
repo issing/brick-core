@@ -14,9 +14,9 @@ import net.isger.util.anno.Ignore.Mode;
 public class Preparer {
 
     /** 控制台 */
-    @Ignore(mode = Mode.INCLUDE)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     @Alias(Constants.SYSTEM)
-    private Console console;
+    protected Console console;
 
     /**
      * 配备

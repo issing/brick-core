@@ -15,8 +15,8 @@ import net.isger.util.anno.Ignore.Mode;
 
 public class TestModule extends GateModule {
 
-    @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     private Cache cache;
 
     private String something;
@@ -25,17 +25,12 @@ public class TestModule extends GateModule {
     private List<Module> modules;
 
     public void operate() {
-        BaseCommand.getAction().setResult(
-                "TestModule does not implement the operate ["
-                        + Context.getAction().getCommand().getOperate()
-                        + "] - cache.get(\"say\"): " + cache.get("say"));
+        BaseCommand.getAction().setResult("TestModule does not implement the operate [" + Context.getAction().getCommand().getOperate() + "] - cache.get(\"say\"): " + cache.get("say"));
     }
 
     public void say() {
         cache.set("say", something + " in the cache");
-        BaseCommand.getAction().setResult(
-                "TestModule say [" + something + "] - (Modules: " + modules
-                        + ")");
+        BaseCommand.getAction().setResult("TestModule say [" + something + "] - (Modules: " + modules + ")");
     }
 
 }

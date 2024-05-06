@@ -13,14 +13,18 @@ import net.isger.util.anno.Ignore.Mode;
 public class CommandHandler implements Handler {
 
     /** 控制台 */
-    @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
-    private Console console;
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
+    protected Console console;
+
+    public int getStatus() {
+        return 1;
+    }
 
     public Object handle(Object message) {
         if (message instanceof Command) {
             BaseCommand cmd = BaseCommand.cast((Command) message);
-            console.execute(cmd);
+            this.console.execute(cmd);
             message = cmd.getResult();
         }
         return message;

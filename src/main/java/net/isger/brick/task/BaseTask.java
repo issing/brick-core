@@ -22,12 +22,12 @@ import net.isger.util.anno.Ignore.Mode;
 public class BaseTask implements Task {
 
     /** 控制台 */
-    @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
-    private Console console;
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
+    protected Console console;
 
     /** 操作器 */
-    @Ignore(mode = Mode.INCLUDE)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     private CommandOperator operator;
 
     private volatile ExecutorService executor;
@@ -35,9 +35,9 @@ public class BaseTask implements Task {
     private volatile ExecutorService daemonor;
 
     public BaseTask() {
-        operator = new CommandOperator(this);
-        executor = Executors.newCachedThreadPool();
-        daemonor = Executors.newCachedThreadPool(new ThreadFactory() {
+        this.operator = new CommandOperator(this);
+        this.executor = Executors.newCachedThreadPool();
+        this.daemonor = Executors.newCachedThreadPool(new ThreadFactory() {
             public Thread newThread(Runnable runnable) {
                 Thread thread = Executors.defaultThreadFactory().newThread(runnable);
                 thread.setDaemon(true);
@@ -46,11 +46,19 @@ public class BaseTask implements Task {
         });
     }
 
-    public void initial() {
+    public boolean hasReady() {
+        return true;
+    }
+
+    public Status getStatus() {
+        return Status.STATELESS;
+    }
+
+    public synchronized void initial() {
     }
 
     public void operate(TaskCommand cmd) {
-        operator.operate(cmd);
+        this.operator.operate(cmd);
     }
 
     /**
@@ -62,23 +70,23 @@ public class BaseTask implements Task {
         final BaseCommand task = BaseCommand.cast(cmd.getCommand()); // 任务命令
         final net.isger.util.Callable<Object> callback = cmd.getCallback(); // 任务回调
         final Context context = Context.getAction(); // 任务上下文
-        cmd.setResult((cmd.getDaemon() ? daemonor : executor).submit(task == null ? new Callable<Object>() {
+        cmd.setResult((cmd.getDaemon() ? this.daemonor : this.executor).submit(task == null ? new Callable<Object>() {
             public Object call() throws Exception {
                 Context.setAction(context);
                 return callback.call();
             }
         } : new Callable<Object>() {
             public Object call() throws Exception {
-                console.execute(task);
+                BaseTask.this.console.execute(task);
                 Context.setAction(context);
                 return callback == null ? task.getResult() : callback.call(task);
             }
         }));
     }
 
-    public void destroy() {
-        executor.shutdownNow();
-        daemonor.shutdownNow();
+    public synchronized void destroy() {
+        this.executor.shutdownNow();
+        this.daemonor.shutdownNow();
     }
 
 }

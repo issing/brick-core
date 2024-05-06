@@ -9,7 +9,6 @@ import java.lang.annotation.Target;
  * 采集注解
  * 
  * @author issing
- *
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD })

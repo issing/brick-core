@@ -117,7 +117,7 @@ public class CommandOperator extends DynamicOperator {
             // TODO 不完善（参考BaseScreen适配）
             value = cmd.getParameter(name);
             if (value != null && !type.isInstance(value)) {
-                value = Converter.convert(type, value);
+                value = Converter.convert(type, value, Assemblers.createAssembler());
             }
         }
         return value;

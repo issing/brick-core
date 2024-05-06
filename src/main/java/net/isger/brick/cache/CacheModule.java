@@ -14,12 +14,12 @@ public class CacheModule extends GateModule {
 
     private static final String CACHE = "cache";
 
-    @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.BRICK_CACHES)
-    private List<String> caches;
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
+    protected List<String> caches;
 
     public CacheModule() {
-        caches = new ArrayList<String>();
+        this.caches = new ArrayList<String>();
     }
 
     public Class<? extends Gate> getTargetClass() {
@@ -28,11 +28,8 @@ public class CacheModule extends GateModule {
 
     @SuppressWarnings("unchecked")
     public Class<? extends Gate> getImplementClass() {
-        Class<? extends Gate> implClass = (Class<? extends Gate>) getImplementClass(
-                CACHE, null);
-        if (implClass == null) {
-            implClass = super.getImplementClass();
-        }
+        Class<? extends Gate> implClass = (Class<? extends Gate>) this.getImplementClass(CACHE, null);
+        if (implClass == null) implClass = super.getImplementClass();
         return implClass;
     }
 
@@ -40,9 +37,12 @@ public class CacheModule extends GateModule {
         return BaseCache.class;
     }
 
+    /**
+     * 初始缓存
+     */
     public void initial() {
-        for (String cache : caches) {
-            makeCache(cache);
+        for (String cache : this.caches) {
+            this.makeCache(cache);
         }
         super.initial();
     }
@@ -55,7 +55,7 @@ public class CacheModule extends GateModule {
      */
     private void makeCache(String name) {
         if (this.getGate(name) == null) {
-            this.setGate(name, create());
+            this.setGate(name, this.create());
         }
     }
 

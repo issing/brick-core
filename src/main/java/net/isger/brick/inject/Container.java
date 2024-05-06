@@ -31,38 +31,42 @@ public interface Container extends Manageable {
     /**
      * 获取策略
      * 
+     * @param <T>
      * @param type 实例类型
      * @return 实例策略
      */
-    public Strategy getStrategy(Class<?> type);
+    public <T> Strategy<T> getStrategy(Class<T> type);
 
     /**
      * 获取策略
      * 
+     * @param <T>
      * @param type 实例类型
      * @param name 托管名称
      * @return 实例策略
      */
-    public Strategy getStrategy(Class<?> type, String name);
+    public <T> Strategy<T> getStrategy(Class<T> type, String name);
 
     /**
      * 设置策略
      * 
+     * @param <T>
      * @param type 实例类型
      * @param strategy 实例策略
      * @return 实例策略（原配置策略，没有则返回“null”值️）
      */
-    public Strategy setStrategy(Class<?> type, Strategy strategy);
+    public <T> Strategy<T> setStrategy(Class<T> type, Strategy<T> strategy);
 
     /**
      * 设置策略
      * 
+     * @param <T>
      * @param type 实例类型
      * @param name 托管名称
      * @param strategy 实例策略（策略为“null”值将会移除当前配置策略）
      * @return 实例策略（原配置策略，没有则返回“null”值️）
      */
-    public Strategy setStrategy(Class<?> type, String name, Strategy strategy);
+    public <T> Strategy<T> setStrategy(Class<T> type, String name, Strategy<T> strategy);
 
     /**
      * 获取托管实例

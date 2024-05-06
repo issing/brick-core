@@ -55,19 +55,18 @@ public class Endpoints {
     }
 
     public Map<String, Endpoint> gets() {
-        return Collections.unmodifiableMap(endpoints);
+        return Collections.unmodifiableMap(this.endpoints);
     }
 
     public Endpoint get(String name) {
-        return endpoints.get(name);
+        return this.endpoints.get(name);
     }
 
     public static final String getName(Class<? extends Endpoint> clazz) {
         return getName(clazz, "");
     }
 
-    public static final String getName(Class<? extends Endpoint> clazz,
-            String name) {
+    public static final String getName(Class<? extends Endpoint> clazz, String name) {
         return Helpers.getAliasName(clazz, "Endpoint$", Strings.toLower(name));
     }
 

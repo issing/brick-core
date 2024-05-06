@@ -1,5 +1,6 @@
 package net.isger.brick.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,6 +27,7 @@ import net.isger.brick.stub.StubCommand;
 import net.isger.brick.stub.StubModule;
 import net.isger.brick.task.TaskCommand;
 import net.isger.brick.task.TaskModule;
+import net.isger.brick.util.Assemblers;
 import net.isger.brick.util.CommandOperator;
 import net.isger.raw.Artifact;
 import net.isger.raw.Depository;
@@ -42,12 +44,12 @@ import net.isger.util.anno.Ignore;
 import net.isger.util.anno.Ignore.Mode;
 import net.isger.util.load.BaseLoader;
 import net.isger.util.load.Loader;
+import net.isger.util.reflect.ClassAssembler;
 
 /**
  * 基础控制台
  * 
  * @author issing
- * 
  */
 public class Console implements Manageable {
 
@@ -55,8 +57,11 @@ public class Console implements Manageable {
 
     private static final Logger LOG;
 
-    /** 初始化状态 */
-    private volatile transient boolean initialized;
+    /** 控制台状态 */
+    private transient volatile Status status;
+
+    /** 类装配器 */
+    private transient ClassAssembler assembler;
 
     /** 配置加载器 */
     private transient Loader loader;
@@ -64,21 +69,26 @@ public class Console implements Manageable {
     /** 命令操作器 */
     private transient CommandOperator operator;
 
-    @Ignore(mode = Mode.INCLUDE)
+    /** 核心容器 */
     @Alias(Constants.SYSTEM)
-    private Container container;
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
+    protected Container container;
 
-    @Ignore(mode = Mode.INCLUDE)
+    /** 资源预留占位配置器 */
     @Alias(Constants.SYSTEM)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     private PlaceholderConfigurer configurer;
 
+    /** 控制台名称 */
     @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.BRICK_NAME)
     private String name;
 
+    /** 资源探查器 */
     @Ignore(mode = Mode.INCLUDE)
     private Prober prober;
 
+    /** 预处理器 */
     @Ignore(mode = Mode.INCLUDE)
     private Preparer preparer;
 
@@ -88,6 +98,7 @@ public class Console implements Manageable {
     /** 注销钩子 */
     private transient Thread hook;
 
+    /** 传声器 */
     private transient Airfone airfone;
 
     static {
@@ -95,41 +106,101 @@ public class Console implements Manageable {
     }
 
     public Console() {
-        operator = new CommandOperator(this);
-        preparer = new Preparer();
-        dependency = new Dependency();
+        this.operator = new CommandOperator(this);
+        this.preparer = new Preparer();
+        this.dependency = new Dependency();
+        this.status = Status.UNINITIALIZED;
+    }
+
+    /**
+     * 准备就绪
+     *
+     * @return
+     */
+    public final boolean hasReady() {
+        return this.status == Status.INITIALIZED;
+    }
+
+    /**
+     * 控制台状态
+     */
+    public final Status getStatus() {
+        return this.status;
     }
 
     /**
      * 初始
      */
     public final synchronized void initial() {
-        if (initialized) {
-            return;
-        }
+        if (!(status == Status.UNINITIALIZED || status == Status.DESTROYED)) return;
+        this.status = Status.INITIALIZING;
         // 注销钩子
-        Runtime.getRuntime().addShutdownHook(hook = new Thread(new Runnable() {
+        Runtime.getRuntime().addShutdownHook(this.hook = new Thread(new Runnable() {
             public void run() {
-                hook = null;
-                destroy();
+                Console.this.hook = null;
+                Console.this.destroy();
             }
         }));
         /* 初始内核 */
-        Class<?> describeClass = container.getInstance(Class.class, Constants.BRICK_DESCRIBE);
-        Asserts.isAssignable(ModuleDescribe.class, describeClass, "Invalid module describe [%s] in container", describeClass);
-        loader = new BaseLoader(describeClass);
-        loadKernel();
-        loadApp();
+        this.assembler = Assemblers.createAssembler(this.container); // 类装配器
+        Class<?> moduleDescribe = this.container.getInstance(Class.class, Constants.BRICK_DESCRIBE); // 模块描述
+        Asserts.isAssignable(ModuleDescribe.class, moduleDescribe, "Invalid module describe [%s] in container", moduleDescribe);
+        this.loader = new BaseLoader(moduleDescribe); // 模块加载器
+        this.loadKernel();
+        this.loadApp();
         // 初始模块
+        Map<String, Module> modules = new HashMap<String, Module>(this.getModules());
         try {
-            Map<String, Module> modules = getModules();
-            for (Object node : dependency.getNodes()) {
-                modules.get(node).initial();
+            for (Object node : this.dependency.getNodes()) {
+                this.container.inject(modules.get(node)).initial(); // 强制注入后再行初始化
             }
         } catch (Throwable e) {
             throw Asserts.state("Failure to initial module", e);
         }
-        initialized = true;
+        this.status = Status.INITIALIZED;
+        /* 等待就绪 */
+        loop: for (;;) {
+            ready: {
+                List<Entry<String, Module>> entries = new ArrayList<Entry<String, Module>>(modules.entrySet());
+                for (Entry<String, Module> entry : entries) {
+                    if (entry.getValue().hasReady()) {
+                        modules.remove(entry.getKey());
+                    } else {
+                        Helpers.sleep(200l);
+                        break ready;
+                    }
+                }
+                break loop;
+            }
+        }
+
+    }
+
+    /**
+     * 加载资源
+     * 
+     * @param res
+     * @return
+     */
+    public Object loadResource(String res) {
+        return this.loadResource(Depository.getArtifact(res, this.prober));
+    }
+
+    /**
+     * 加载资源
+     * 
+     * @param artifact
+     * @return
+     */
+    private Object loadResource(Artifact artifact) {
+        Object resource = null;
+        if (artifact != null) {
+            resource = artifact.transform(Object.class);
+            if (this.configurer != null) {
+                resource = this.configurer.displace(resource);
+            }
+        }
+        return resource;
     }
 
     /**
@@ -138,44 +209,16 @@ public class Console implements Manageable {
      */
     protected void loadKernel() {
         /* 默认内核 */
-        setupModule(Constants.MOD_CACHE, new CacheModule(), CacheCommand.class); // 缓存模块
-        setupModule(Constants.MOD_AUTH, new AuthModule(), AuthCommand.class, Constants.MOD_CACHE); // 认证模块
-        setupModule(Constants.MOD_TASK, new TaskModule(), TaskCommand.class, Constants.MOD_AUTH); // 任务模块
-        setupModule(Constants.MOD_BUS, new BusModule(), BusCommand.class, Constants.MOD_TASK); // 总线模块
-        setupModule(Constants.MOD_STUB, new StubModule(), StubCommand.class, Constants.MOD_AUTH); // 存根模块
+        this.setupModule(Constants.MOD_CACHE, new CacheModule(), CacheCommand.class);                   // 缓存模块
+        this.setupModule(Constants.MOD_AUTH, new AuthModule(), AuthCommand.class, Constants.MOD_CACHE); // 认证模块
+        this.setupModule(Constants.MOD_TASK, new TaskModule(), TaskCommand.class, Constants.MOD_AUTH);  // 任务模块
+        this.setupModule(Constants.MOD_BUS, new BusModule(), BusCommand.class, Constants.MOD_TASK);     // 总线模块
+        this.setupModule(Constants.MOD_STUB, new StubModule(), StubCommand.class, Constants.MOD_AUTH);  // 存根模块
         /* 加载内核 */
-        if (!Strings.matchsIgnoreCase(name, Constants.BRICK)) {
-            loadKernel(Constants.BRICK); // 加载默认配置
+        if (!Strings.matchsIgnoreCase(this.name, Constants.BRICK)) {
+            this.loadKernel(Constants.BRICK); // 加载默认配置（指定非“brick”配置时，将首先加载全局默认“brick”配置）
         }
-        loadKernel(name);
-    }
-
-    /**
-     * 安装模块
-     *
-     * @param name
-     * @param module
-     */
-    protected final void setupModule(String name, Module module) {
-        setupModule(name, module, null);
-    }
-
-    /**
-     * 安装模块
-     *
-     * @param name
-     * @param module
-     * @param commandClass
-     * @param dependencies
-     */
-    protected final void setupModule(String name, Module module, Class<? extends Command> commandClass, Object... dependencies) {
-        if (getModule(name) == null) {
-            addModule(name, module);
-        }
-        addDependencies(name, dependencies);
-        if (commandClass != null) {
-            addCommand(name, commandClass);
-        }
+        this.loadKernel(this.name); // 加载目标配置
     }
 
     /**
@@ -187,22 +230,50 @@ public class Console implements Manageable {
     protected final void loadKernel(String name) {
         Object config;
         /* 加载参数配置 */
-        for (Artifact artifact : Depository.getArtifacts(name + "-config", prober)) {
-            config = loadResource(artifact);
+        for (Artifact artifact : Depository.getArtifacts(name + "-config", this.prober)) {
+            config = this.loadResource(artifact);
             if (config instanceof Collection) {
-                loadConstants((Collection<?>) config);
+                this.loadConstants((Collection<?>) config);
             } else if (config instanceof Map) {
-                loadConstants((Map<String, Object>) config);
+                this.loadConstants((Map<String, Object>) config);
             }
         }
         /* 加载内核配置 */
-        for (Artifact artifact : Depository.getArtifacts(name + "-kernel", prober)) {
-            config = loadResource(artifact);
+        for (Artifact artifact : Depository.getArtifacts(name + "-kernel", this.prober)) {
+            config = this.loadResource(artifact);
             if (config instanceof Collection) {
-                loadModule((Collection<?>) config);
+                this.loadModule((Collection<?>) config);
             } else if (config instanceof Map) {
-                loadModule((Map<String, Object>) config);
+                this.loadModule((Map<String, Object>) config);
             }
+        }
+    }
+
+    /**
+     * 安装模块
+     *
+     * @param name
+     * @param module
+     */
+    protected final void setupModule(String name, Module module) {
+        this.setupModule(name, module, null);
+    }
+
+    /**
+     * 安装模块
+     *
+     * @param name
+     * @param module
+     * @param commandClass
+     * @param dependencies
+     */
+    protected final void setupModule(String name, Module module, Class<? extends Command> commandClass, Object... dependencies) {
+        if (this.getModule(name) == null) {
+            this.addModule(name, module);
+        }
+        this.addDependencies(name, dependencies);
+        if (commandClass != null) {
+            this.addCommand(name, commandClass);
         }
     }
 
@@ -216,7 +287,7 @@ public class Console implements Manageable {
         for (Object config : res) {
             /* 加载指定常量资源 */
             if (config instanceof String) {
-                config = loadResource(config + "-constants");
+                config = this.loadResource(config + "-constants");
             }
             /* 跳过非键值对集合 */
             if (!(config instanceof Map)) {
@@ -224,7 +295,7 @@ public class Console implements Manageable {
                 continue;
             }
             /* 加载键值对集合常量 */
-            loadConstants((Map<String, Object>) config);
+            this.loadConstants((Map<String, Object>) config);
         }
     }
 
@@ -239,9 +310,7 @@ public class Console implements Manageable {
         for (Entry<String, Object> entry : config.entrySet()) {
             value = entry.getValue();
             /* 尝试加载为实例 */
-            if (value instanceof Map) {
-                value = BaseLoader.toLoad(value);
-            }
+            if (value instanceof Map) value = BaseLoader.toLoad(value);
             type = value.getClass();
             if (Map.class.isAssignableFrom(type)) {
                 type = Map.class;
@@ -250,10 +319,10 @@ public class Console implements Manageable {
             } else if (CharSequence.class.isAssignableFrom(type)) {
                 Class<?> clazz = Reflects.getClass(value);
                 if (clazz != null) {
-                    ConstantStrategy.set(container, Class.class, entry.getKey(), clazz);
+                    ConstantStrategy.set(this.container, Class.class, entry.getKey(), clazz);
                 }
             }
-            ConstantStrategy.set(container, type, entry.getKey(), value);
+            ConstantStrategy.set(this.container, type, entry.getKey(), value);
         }
     }
 
@@ -269,7 +338,7 @@ public class Console implements Manageable {
         for (Object config : res) {
             if (config instanceof String) {
                 name = (String) config;
-                config = loadResource(name + "-module");
+                config = this.loadResource(name + "-module");
                 if (!(config instanceof Map)) {
                     LOG.warn("(!) Skipped invalid module config {}", config);
                     continue;
@@ -282,7 +351,7 @@ public class Console implements Manageable {
                 LOG.warn("(!) Skipped invalid module config {}", config);
                 continue;
             }
-            loadModule((Map<String, Object>) config);
+            this.loadModule((Map<String, Object>) config);
         }
     }
 
@@ -292,21 +361,21 @@ public class Console implements Manageable {
      * @param res
      */
     protected final void loadModule(Map<String, Object> res) {
-        ModuleDescribe entity = (ModuleDescribe) loader.load(res, null);
+        ModuleDescribe entity = (ModuleDescribe) this.loader.load(res, this.assembler);
         String name = entity.getName();
         Module module = entity.getModule();
         addModule: {
             if (Strings.isEmpty(name)) {
                 name = Helpers.getAliasName(module.getClass(), "Module$");
             } else if (module == null) {
-                addDependencies(name, entity.getDependencies());
+                this.addDependencies(name, entity.getDependencies());
                 break addModule;
             }
-            addModule(name, module, entity.getDependencies());
+            this.addModule(name, module, entity.getDependencies());
         }
         Class<? extends Command> type = entity.getCommand();
         if (type != null) {
-            addCommand(name, type);
+            this.addCommand(name, type);
         }
     }
 
@@ -317,21 +386,21 @@ public class Console implements Manageable {
     protected void loadApp() {
         /* 加载指定配置 */
         Object config;
-        for (Entry<String, Module> entry : getModules().entrySet()) {
+        for (Entry<String, Module> entry : this.getModules().entrySet()) {
             /* 多配置文件 */
-            for (Artifact artifact : Depository.getArtifacts(name + "-" + entry.getKey(), prober)) {
-                config = loadResource(artifact);
+            for (Artifact artifact : Depository.getArtifacts(this.name + "-" + entry.getKey(), this.prober)) {
+                config = this.loadResource(artifact);
                 if (config != null) {
-                    entry.getValue().load(config, null);
+                    entry.getValue().load(config, this.assembler);
                 }
             }
         }
         /* 加载全局配置 */
-        config = loadResource(name);
+        config = this.loadResource(this.name);
         if (config instanceof Collection) {
-            loadConfig((Collection<?>) config);
+            this.loadConfig((Collection<?>) config);
         } else if (config instanceof Map) {
-            loadConfig((Map<String, Object>) config);
+            this.loadConfig((Map<String, Object>) config);
         }
     }
 
@@ -344,13 +413,13 @@ public class Console implements Manageable {
     protected final void loadConfig(Collection<?> res) {
         for (Object config : res) {
             if (config instanceof String) {
-                config = loadResource((String) config);
+                config = this.loadResource((String) config);
             }
             if (!(config instanceof Map)) {
                 LOG.warn("(!) Skipped invalid config {}", config);
                 continue;
             }
-            loadConfig((Map<String, Object>) config);
+            this.loadConfig((Map<String, Object>) config);
         }
     }
 
@@ -366,8 +435,8 @@ public class Console implements Manageable {
         for (Entry<String, Object> entry : res.entrySet()) {
             name = entry.getKey();
             value = entry.getValue();
-            if ((module = getModule(name)) != null) {
-                module.load(value, null);
+            if ((module = this.getModule(name)) != null) {
+                module.load(value, this.assembler);
             } else if (LOG.isDebugEnabled()) {
                 LOG.warn("(!) Skipped the unexpected module configuration [{} : {}]", name, value);
             }
@@ -376,48 +445,11 @@ public class Console implements Manageable {
     }
 
     /**
-     * 加载资源
-     * 
-     * @param res
-     * @return
-     */
-    public Object loadResource(String res) {
-        return loadResource(Depository.getArtifact(res, prober));
-    }
-
-    /**
-     * 加载资源
-     * 
-     * @param artifact
-     * @return
-     */
-    private Object loadResource(Artifact artifact) {
-        Object resource = null;
-        if (artifact != null) {
-            resource = artifact.transform(Object.class);
-            if (configurer != null) {
-                resource = configurer.displace(resource);
-            }
-        }
-        return resource;
-    }
-
-    /**
-     * 准备就绪
-     *
-     * @return
-     */
-    public final boolean hasReady() {
-        // return status == INITIALIZED;
-        return initialized;
-    }
-
-    /**
      * 获取容器
      * 
      */
     public final Container getContainer() {
-        return container;
+        return this.container;
     }
 
     /**
@@ -426,7 +458,7 @@ public class Console implements Manageable {
      * @return
      */
     public final Map<String, Module> getModules() {
-        return container.getInstances(Module.class);
+        return this.container.getInstances(Module.class);
     }
 
     /**
@@ -435,7 +467,8 @@ public class Console implements Manageable {
      * @return
      */
     public final Module getModule() {
-        return (Module) ((InternalContext) Context.getAction()).getInternal(Constants.CTX_MODULE);
+        InternalContext context = (InternalContext) Context.getAction();
+        return context == null ? null : (Module) context.getInternal(Constants.CTX_MODULE);
     }
 
     /**
@@ -445,7 +478,7 @@ public class Console implements Manageable {
      * @return
      */
     public final Module getModule(String name) {
-        return container.getInstance(Module.class, name);
+        return this.container.getInstance(Module.class, name);
     }
 
     /**
@@ -458,16 +491,14 @@ public class Console implements Manageable {
         Class<?> type = command.getClass();
         Module module;
         if (type != BaseCommand.class) {
-            module = getModule(type);
-            if (module != null) {
-                return module;
-            }
+            module = this.getModule(type);
+            if (module != null) return module;
         }
         module = getModule(command.getSource().getClass());
         if (module == null) {
             String name = command.getModule();
             if (Strings.isNotEmpty(name)) {
-                module = getModule(name);
+                module = this.getModule(name);
             }
         }
         return module;
@@ -483,11 +514,11 @@ public class Console implements Manageable {
         if (!Command.class.isAssignableFrom(commandType) || Command.class.equals(commandType)) {
             return null;
         }
-        String name = container.getInstance(String.class, commandType.getName() + SUFFIX_MODULE);
+        String name = this.container.getInstance(String.class, commandType.getName() + SUFFIX_MODULE);
         if (Strings.isEmpty(name)) {
-            return getModule(commandType.getSuperclass());
+            return this.getModule(commandType.getSuperclass());
         }
-        return getModule(name);
+        return this.getModule(name);
     }
 
     /**
@@ -500,13 +531,11 @@ public class Console implements Manageable {
         Class<?> type = command.getClass();
         String moduleName;
         if (type != BaseCommand.class) {
-            moduleName = getModuleName(type);
-            if (moduleName != null) {
-                return moduleName;
-            }
+            moduleName = this.getModuleName(type);
+            if (Strings.isNotEmpty(moduleName)) return moduleName;
         }
         moduleName = getModuleName(command.getSource().getClass());
-        if (moduleName == null) {
+        if (Strings.isEmpty(moduleName)) {
             moduleName = command.getModule();
         }
         return moduleName;
@@ -522,9 +551,9 @@ public class Console implements Manageable {
         if (!Command.class.isAssignableFrom(type) || Command.class.equals(type)) {
             return null;
         }
-        String name = container.getInstance(String.class, type.getName() + SUFFIX_MODULE);
+        String name = this.container.getInstance(String.class, type.getName() + SUFFIX_MODULE);
         if (name == null) {
-            return getModuleName(type.getSuperclass());
+            return this.getModuleName(type.getSuperclass());
         }
         return name;
     }
@@ -538,12 +567,24 @@ public class Console implements Manageable {
         this.prober = ProberMulticaster.add(this.prober, prober);
     }
 
+    /**
+     * 添加依赖
+     * 
+     * @param name
+     * @param dependencies
+     */
     public final void addDependencies(String name, Object... dependencies) {
-        addDependencies(name, Arrays.asList(dependencies));
+        this.addDependencies(name, Arrays.asList(dependencies));
     }
 
+    /**
+     * 添加依赖
+     * 
+     * @param name
+     * @param dependencies
+     */
     public final void addDependencies(String name, List<Object> dependencies) {
-        dependency.addNode(name, dependencies);
+        this.dependency.addNode(name, dependencies);
     }
 
     /**
@@ -554,7 +595,7 @@ public class Console implements Manageable {
      * @param dependencies
      */
     public final void addModule(String name, Module module, Object... dependencies) {
-        addModule(name, module, Arrays.asList(dependencies));
+        this.addModule(name, module, Arrays.asList(dependencies));
     }
 
     /**
@@ -568,11 +609,11 @@ public class Console implements Manageable {
         if (LOG.isDebugEnabled()) {
             LOG.info("Binding [{}] module [{}]", name, module);
         }
-        module = ConstantStrategy.set(container, Module.class, name, module);
+        module = ConstantStrategy.set(this.container, Module.class, name, module);
         if (module != null) {
             LOG.warn("(!) Discard [{}] module [{}]", name, module);
         }
-        addDependencies(name, dependencies);
+        this.addDependencies(name, dependencies);
     }
 
     /**
@@ -586,7 +627,7 @@ public class Console implements Manageable {
         if (LOG.isDebugEnabled()) {
             LOG.info("Binding [{}] command [{}]", name, typeName);
         }
-        String oldName = ConstantStrategy.set(container, String.class, typeName + SUFFIX_MODULE, name);
+        String oldName = ConstantStrategy.set(this.container, String.class, typeName + SUFFIX_MODULE, name);
         if (name.equals(oldName)) {
             LOG.warn("(!) Discard [{}] command [{}]", oldName, typeName);
         }
@@ -616,21 +657,21 @@ public class Console implements Manageable {
      * @param command
      */
     public final void execute(Command command) {
-        preparer.prepare(command);
+        this.preparer.prepare(command);
         InternalContext context = (InternalContext) Context.getAction();
         try {
             BaseCommand cmd = context.getCommand();
             Module module = getModule(cmd);
             if (module == null) {
                 /* 控制操作 */
-                operator.operate(cmd);
+                this.operator.operate(cmd);
             } else {
                 /* 模块执行 */
                 context.setInternal(Constants.CTX_MODULE, module);
                 module.execute(cmd);
             }
         } finally {
-            preparer.cleanup();
+            this.preparer.cleanup();
         }
     }
 
@@ -638,31 +679,25 @@ public class Console implements Manageable {
      * 注销
      */
     public final synchronized void destroy() {
-        /* 等待初始中状态完成 */
-        if (!initialized) {
-            return;
-        }
+        if (this.status == Status.UNINITIALIZED || this.status == Status.DESTROYED) return;
         /* 传音确认 */
-        if (airfone != null) {
-            while (!airfone.ack(Airfone.ACTION_DESTROY)) {
-                Helpers.sleep(200l);
-            }
+        if (this.airfone != null) {
+            while (!this.airfone.ack(Airfone.ACTION_DESTROY)) Helpers.sleep(200l);
         }
         /* 模块注销 */
-        Map<String, Module> modules = getModules();
-        List<Object> nodes = new LinkedList<Object>(dependency.getNodes());
-        Collections.reverse(nodes);
+        Map<String, Module> modules = this.getModules();
+        List<Object> nodes = new LinkedList<Object>(this.dependency.getNodes());
+        Collections.reverse(nodes); // 倒置依赖关系
         for (Object node : nodes) {
             modules.get(node).destroy();
         }
         /* 容器注销 */
-        container.destroy();
-        if (hook != null) {
-            Runtime.getRuntime().removeShutdownHook(hook);
-            hook = null;
+        this.container.destroy();
+        if (this.hook != null) {
+            Runtime.getRuntime().removeShutdownHook(this.hook);
+            this.hook = null;
         }
-        // status = DESTROYED;
-        initialized = false;
+        this.status = Status.DESTROYED;
     }
 
 }

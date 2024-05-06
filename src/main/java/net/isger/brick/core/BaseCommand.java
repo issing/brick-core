@@ -2,7 +2,6 @@ package net.isger.brick.core;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,15 +10,13 @@ import java.util.Map.Entry;
 import org.apache.avro.Schema;
 
 import net.isger.brick.auth.AuthIdentity;
-import net.isger.brick.stub.model.Meta;
 import net.isger.brick.stub.model.Model;
+import net.isger.brick.util.Assemblers;
 import net.isger.util.Helpers;
 import net.isger.util.Reflects;
 import net.isger.util.Strings;
-import net.isger.util.reflect.AssemblerAdapter;
 import net.isger.util.reflect.BoundField;
 import net.isger.util.reflect.ClassAssembler;
-import net.isger.util.reflect.TypeToken;
 
 /**
  * 基本命令
@@ -594,14 +591,13 @@ public class BaseCommand extends Command implements Cloneable {
                 }
             }
             params.putAll(getParameter());
+            Object instance = Strings.isEmpty(namespace) ? null : Helpers.getInstance(params, namespace);
+            if (instance != null && type.isInstance(instance)) return instance;
             params = Helpers.coalesce((Map<String, Object>) Helpers.getMap(params, namespace), params);
-            if (assembler == null) assembler = this.createAssembler(params);
+            if (assembler == null) assembler = Assemblers.createAssembler();
             /* 单实例转换 */
-            if (Map.class.isAssignableFrom(type)) {
-                return params;
-            } else if (!isBatch) {
-                return Reflects.newInstance(type, params, assembler);
-            }
+            if (Map.class.isAssignableFrom(type)) return params;
+            else if (!isBatch) return Reflects.newInstance(type, params, assembler);
             /* 批实例转换 */
             List<Object> result = new ArrayList<Object>();
             List<String> names = new ArrayList<String>();
@@ -651,68 +647,6 @@ public class BaseCommand extends Command implements Cloneable {
             }
             Object values = Helpers.getValues(params, key.toString(), suffix);
             return values == null || values.getClass().isArray() ? values : Helpers.newArray(values);
-        }
-
-        protected ClassAssembler createAssembler(final Map<String, Object> params) {
-            final Console console = CoreHelper.getConsole();
-            return console == null ? null : new AssemblerAdapter() {
-                public Class<?> assemble(Class<?> rawClass) {
-                    Class<?> clazz = Reflects.getClass(params.get(Reflects.KEY_CLASS));
-                    if (clazz != null && rawClass.isAssignableFrom(clazz)) {
-                        rawClass = clazz;
-                    } else if (rawClass.isInterface()) {
-                        rawClass = console.getContainer().getInstance(Class.class, (Strings.toColumnName(rawClass.getSimpleName()).replaceAll("[_]", ".") + ".class"));
-                    }
-                    return rawClass;
-                }
-
-                @SuppressWarnings("unchecked")
-                public Object assemble(BoundField field, Object instance, Object value, Object... args) {
-                    Map<String, Object> data = (Map<String, Object>) args[0]; // 组装数据
-                    Assemble assermble = createAssemble(field); // 组装信息
-                    if (value == Reflects.UNKNOWN) {
-                        value = Helpers.getInstance(data, Strings.toFieldName(assermble.sourceColumn));
-                    }
-                    TypeToken<?> typeToken = field.getToken(); // 组装类型
-                    Class<?> rawClass = typeToken.getRawClass();
-                    if (Collection.class.isAssignableFrom(rawClass)) {
-                        rawClass = (Class<?>) Reflects.getActualType(typeToken.getType());
-                    } else if (rawClass.isArray()) {
-                        rawClass = (Class<?>) Reflects.getComponentType(typeToken.getType());
-                    }
-                    // 获取接口类型所配置的实现类型
-                    rawClass = assemble(rawClass);
-                    if (!(value == null || value instanceof Map)) {
-                        Map<String, Object> params = new HashMap<String, Object>();
-                        params.put(assermble.targetField, value);
-                        value = params;
-                    }
-                    return Reflects.newInstance(rawClass, (Map<String, Object>) value, this);
-                }
-            };
-        }
-
-        @SuppressWarnings("unchecked")
-        private Assemble createAssemble(BoundField field) {
-            Assemble assemble = new Assemble();
-            assemble.meta = Meta.createMeta(field); // 元字段
-            if (assemble.meta.toModel() == null) {
-                assemble.sourceColumn = assemble.meta.getName();
-                assemble.targetField = (String) assemble.meta.getValue();
-            } else {
-                Map<String, Object> params = (Map<String, Object>) assemble.meta.getValue();
-                Map<String, Object> source = (Map<String, Object>) params.get("source");
-                assemble.sourceColumn = (String) source.get("name");
-                Map<String, Object> target = (Map<String, Object>) params.get("target");
-                assemble.targetField = Strings.toFieldName((String) target.get("name"));
-            }
-            return assemble;
-        }
-
-        private class Assemble {
-            Meta meta;
-            String sourceColumn;
-            String targetField;
         }
 
         public final Map<String, Object> getParameter() {

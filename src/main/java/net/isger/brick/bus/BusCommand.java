@@ -9,6 +9,8 @@ public class BusCommand extends BaseCommand {
 
     public static final String OPERATE_SEND = "send";
 
+    public static final String OPERATE_SUBSCRIBE = "subscribe";
+
     public BusCommand() {
     }
 

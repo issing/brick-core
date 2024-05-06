@@ -21,12 +21,12 @@ import net.isger.util.anno.Ignore.Mode;
 @Ignore
 public class BaseGate implements Gate, Ordered {
 
-    @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     protected Container container;
 
     /** 操作器 */
-    @Ignore(mode = Mode.INCLUDE)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     private CommandOperator operator;
 
     @Ignore(mode = Mode.INCLUDE)
@@ -40,7 +40,15 @@ public class BaseGate implements Gate, Ordered {
         parameters = new HashMap<String, Object>();
     }
 
-    public void initial() {
+    public boolean hasReady() {
+        return true;
+    }
+
+    public Status getStatus() {
+        return Status.STATELESS;
+    }
+
+    public synchronized void initial() {
     }
 
     public int order() {
@@ -59,8 +67,8 @@ public class BaseGate implements Gate, Ordered {
         operator.operate(cmd);
     }
 
-    public void destroy() {
-        parameters.clear();
+    public synchronized void destroy() {
+        this.parameters.clear();
     }
 
 }

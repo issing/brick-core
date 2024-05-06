@@ -25,7 +25,7 @@ public interface Constants {
 
     public static final String BRICK_ENCODING = "brick.encoding";
 
-    public static final String ENC_UTF8 = StandardCharsets.UTF_8.name();
+    public static final String ENCODING_UTF_8 = StandardCharsets.UTF_8.name();
 
     public static final String BRICK_RELOAD = "brick.reload";
 
@@ -60,7 +60,7 @@ public interface Constants {
     // -----------------------------------------------------------------
 
     /** 语境模块（当前作业隶属模块） */
-    public static final String CTX_MODULE = "brick.core.module";
+    public static final String CTX_MODULE = "brick.context.module";
 
     // =================================================================
 

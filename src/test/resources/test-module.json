@@ -6,5 +6,8 @@
         },
         "something": "this is module"
     },
-    "command": "net.isger.brick.test.TestCommand"
+    "command": "net.isger.brick.test.TestCommand",
+    "dependencies": [
+        "cache"
+    ]
 }

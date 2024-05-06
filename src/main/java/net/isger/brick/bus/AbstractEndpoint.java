@@ -3,6 +3,8 @@ package net.isger.brick.bus;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import net.isger.brick.Constants;
 import net.isger.brick.bus.protocol.Protocol;
@@ -24,23 +26,29 @@ import net.isger.util.anno.Ignore.Mode;
 @Ignore
 public abstract class AbstractEndpoint implements Endpoint {
 
-    /** 容器 */
-    @Ignore(mode = Mode.INCLUDE)
-    @Alias(Constants.SYSTEM)
-    protected Container container;
+    private volatile transient Lock locker;
+
+    @Alias(Constants.BRICK_ENCODING)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
+    protected String encoding;
 
     /** 控制台 */
-    @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     protected Console console;
 
-    /** 总线 */
-    @Ignore(mode = Mode.INCLUDE)
+    /** 容器 */
     @Alias(Constants.SYSTEM)
-    private Bus bus;
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
+    protected Container container;
+
+    /** 总线 */
+    @Alias(Constants.SYSTEM)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
+    protected Bus bus;
 
     /** 操作器 */
-    @Ignore(mode = Mode.INCLUDE)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     private CommandOperator operator;
 
     @Ignore(mode = Mode.INCLUDE)
@@ -51,7 +59,7 @@ public abstract class AbstractEndpoint implements Endpoint {
 
     private transient Protocol endpointProtocol;
 
-    @Ignore(mode = Mode.INCLUDE)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     private IdentityHandler handler;
 
     @Ignore(mode = Mode.INCLUDE)
@@ -60,79 +68,88 @@ public abstract class AbstractEndpoint implements Endpoint {
     private transient volatile Status status;
 
     public AbstractEndpoint() {
-        operator = new CommandOperator(this);
-        parameters = new HashMap<String, Object>();
-        status = Status.INACTIVATE; // 非激活状态
+        this.locker = new ReentrantLock();
+        this.operator = new CommandOperator(this);
+        this.parameters = new HashMap<String, Object>();
+        this.status = Status.UNINITIALIZED;
+    }
+
+    public boolean hasReady() {
+        return this.status == Status.INITIALIZED;
+    }
+
+    public Status getStatus() {
+        return this.status;
     }
 
     public final void initial() {
-        status = Status.ACTIVATING; // 激活中状态
-        if (Strings.isEmpty(protocol)) {
-            protocol = name();
+        this.locker.lock();
+        try {
+            if (!(status == Status.UNINITIALIZED || status == Status.DESTROYED)) return;
+            this.status = Status.INITIALIZING;
+            if (Strings.isEmpty(this.protocol)) this.protocol = this.name();
+            this.endpointProtocol = this.findProtocol(this.protocol, this.getClass(), null);
+            if (this.handler != null) this.container.inject(this.handler);
+            else this.handler = new IdentityHandlerAdapter();
+            /* 等待控制台就绪 */
+            this.status = Status.PENDING;
+            while (!this.console.hasReady()) Helpers.sleep(200l);
+        } finally {
+            this.locker.unlock();
         }
-        endpointProtocol = findProtocol(protocol, getClass(), null);
-        if (handler != null) {
-            container.inject(handler);
+        this.open();
+    }
+
+    protected synchronized boolean toActive() {
+        if (this.status == Status.PENDING) {
+            this.status = Status.INITIALIZED; // 已初始状态
         }
-        /* 等待控制台就绪 */
-        while (!console.hasReady()) {
-            Helpers.sleep(200l);
-        }
-        open();
-        status = Status.ACTIVATED; // 已激活状态状态
+        return this.hasReady();
     }
 
     @SuppressWarnings("unchecked")
     private Protocol findProtocol(String name, Class<?> rawClass, String namespace) {
         Protocol protocol;
         if (Strings.isEmpty(namespace)) {
-            protocol = bus.getProtocol(name);
+            protocol = this.bus.getProtocol(name);
         } else {
-            protocol = bus.getProtocol(name + "." + namespace);
+            protocol = this.bus.getProtocol(name + "." + namespace);
         }
         if (protocol == null && rawClass != AbstractEndpoint.class) {
-            protocol = findProtocol(name, rawClass.getSuperclass(), Endpoints.getName((Class<Endpoint>) rawClass));
+            protocol = this.findProtocol(name, rawClass.getSuperclass(), Endpoints.getName((Class<Endpoint>) rawClass));
         }
         return protocol;
     }
 
     public String name() {
-        if (Strings.isEmpty(name)) {
-            name = Endpoints.getName(getClass());
+        if (Strings.isEmpty(this.name)) {
+            this.name = Endpoints.getName(getClass());
         }
-        return name;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public boolean isActive() {
-        return status == Status.ACTIVATED;
+        return this.name;
     }
 
     public String getProtocolName() {
-        return protocol;
+        return this.protocol;
     }
 
     public Protocol getProtocol() {
-        return endpointProtocol;
+        return this.endpointProtocol;
     }
 
     public IdentityHandler getHandler() {
-        return handler;
+        return this.handler;
     }
 
     public final Object getParameter(String name) {
-        return parameters.get(name);
+        return this.parameters.get(name);
     }
 
     public final Map<String, Object> getParameters() {
-        return Collections.unmodifiableMap(parameters);
+        return Collections.unmodifiableMap(this.parameters);
     }
 
     public void operate(BusCommand cmd) {
-        operator.operate(cmd);
+        this.operator.operate(cmd);
     }
 
     /**
@@ -146,10 +163,14 @@ public abstract class AbstractEndpoint implements Endpoint {
     protected abstract void close();
 
     public final void destroy() {
-        if (status != Status.DEACTIVATED) {
-            close();
+        this.locker.lock();
+        try {
+            if (this.status == Status.UNINITIALIZED || this.status == Status.DESTROYED) return;
+            this.close();
+            this.status = Status.DESTROYED;
+        } finally {
+            this.locker.unlock();
         }
-        status = Status.DEACTIVATED; // 已制动状态
     }
 
 }

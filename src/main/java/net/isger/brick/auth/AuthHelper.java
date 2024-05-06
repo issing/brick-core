@@ -74,4 +74,18 @@ public class AuthHelper extends CoreHelper {
         return cmd;
     }
 
+    public static AuthCommand toLogout(AuthIdentity identity, Object token) {
+        AuthCommand cmd = makeCommand(identity, token);
+        cmd.setOperate(AuthCommand.OPERATE_LOGOUT);
+        CoreHelper.toConsole(cmd);
+        return cmd;
+    }
+
+    public static AuthCommand toLogout(String domain, Object token) {
+        AuthCommand cmd = makeCommand(domain, token);
+        cmd.setOperate(AuthCommand.OPERATE_LOGOUT);
+        CoreHelper.toConsole(cmd);
+        return cmd;
+    }
+
 }

@@ -12,9 +12,9 @@ public interface Endpoint extends Manageable, Named {
 
     public static final String BRICK_ENDPOINT = "brick.core.endpoint";
 
-    public Status getStatus();
+    public static final String KEY_PROTOCOL = "protocol";
 
-    public boolean isActive();
+    public static final String PARAM_MESSAGE = "message";
 
     public void operate(BusCommand cmd);
 

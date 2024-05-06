@@ -17,7 +17,6 @@ import net.isger.brick.inject.Container;
 import net.isger.brick.inject.ContainerBuilder;
 import net.isger.brick.inject.ContainerProvider;
 import net.isger.brick.inject.ContainerProviderFactory;
-import net.isger.brick.inject.InjectConductor;
 import net.isger.brick.inject.InjectReserver;
 import net.isger.brick.inject.Key;
 import net.isger.raw.Prober;
@@ -61,13 +60,13 @@ public class ConsoleManager {
     private volatile transient Container bootstrap;
 
     /** 加载状态 */
-    @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.BRICK_RELOAD)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     private boolean isReload;
 
     /** 控制台 */
-    @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     private Console console;
 
     static {
@@ -87,19 +86,19 @@ public class ConsoleManager {
         this.name = Strings.empty(name, Constants.BRICK);
         this.path = Strings.empty(path, Files.getBasePath());
         this.providers = new ArrayList<ContainerProvider>();
-        loadContainerProviders();
+        this.loadContainerProviders();
     }
 
     /**
      * 加载供应容器
      */
     private void loadContainerProviders() {
-        clearContainerProviders();
+        this.clearContainerProviders();
         // 服务形式加载（/META-INF/services/net.isger.brick.inject.ContainerProvider）
         ServiceLoader<ContainerProvider> loader = ServiceLoader.load(ContainerProvider.class, Reflects.getClassLoader(this));
         Iterator<ContainerProvider> iterator = loader.iterator();
         while (iterator.hasNext()) {
-            addContainerProvider(iterator.next());
+            this.addContainerProvider(iterator.next());
         }
     }
 
@@ -109,7 +108,7 @@ public class ConsoleManager {
      * @return
      */
     public final List<ContainerProvider> getContainerProviders() {
-        return new ArrayList<ContainerProvider>(providers);
+        return new ArrayList<ContainerProvider>(this.providers);
     }
 
     /**
@@ -118,10 +117,10 @@ public class ConsoleManager {
      * @param providers
      */
     public final void setContainerProviders(List<ContainerProvider> providers) {
-        loadContainerProviders();
+        this.loadContainerProviders();
         if (providers != null) {
             for (ContainerProvider provider : providers) {
-                addContainerProvider(provider);
+                this.addContainerProvider(provider);
             }
         }
     }
@@ -132,14 +131,14 @@ public class ConsoleManager {
      * @param provider
      */
     public final void addContainerProvider(ContainerProvider provider) {
-        lock.lock();
+        this.lock.lock();
         try {
-            if (!(provider == null || providers.contains(provider))) {
-                providers.add(provider);
-                isChanged = true;
+            if (!(provider == null || this.providers.contains(provider))) {
+                this.providers.add(provider);
+                this.isChanged = true;
             }
         } finally {
-            lock.unlock();
+            this.lock.unlock();
         }
     }
 
@@ -148,12 +147,12 @@ public class ConsoleManager {
      * 
      */
     public final void clearContainerProviders() {
-        lock.lock();
+        this.lock.lock();
         try {
-            providers.clear();
-            isChanged = true;
+            this.providers.clear();
+            this.isChanged = true;
         } finally {
-            lock.unlock();
+            this.lock.unlock();
         }
     }
 
@@ -161,18 +160,18 @@ public class ConsoleManager {
      * 加载控制台
      */
     public final synchronized void load() {
-        List<ContainerProvider> providers = getContainerProviders();
-        if (console == null) {
-            load(providers);
-        } else if (isChanged || isReload) {
-            if (isReload(providers)) {
+        List<ContainerProvider> providers = this.getContainerProviders();
+        if (this.console == null) {
+            this.load(providers);
+        } else if (this.isChanged || this.isReload) {
+            if (this.isReload(providers)) {
                 // 注销控制台及容器
-                console.destroy();
-                console = null;
+                this.console.destroy();
+                this.console = null;
                 // 重新加载
-                load(providers);
+                this.load(providers);
             }
-            isChanged = false;
+            this.isChanged = false;
         }
     }
 
@@ -182,7 +181,7 @@ public class ConsoleManager {
      * @return
      */
     public boolean isReload() {
-        return isReload(getContainerProviders());
+        return this.isReload(this.getContainerProviders());
     }
 
     /**
@@ -212,19 +211,18 @@ public class ConsoleManager {
      */
     private void load(List<ContainerProvider> providers) {
         // 创建引导容器并初始化
-        if (bootstrap != null) {
-            bootstrap.destroy();
-            bootstrap = null;
+        if (this.bootstrap != null) {
+            this.bootstrap.destroy();
         }
-        bootstrap = createBootstrap();
-        bootstrap.initial();
+        this.bootstrap = this.createBootstrap();
+        this.bootstrap.initial();
         // 创建应用容器并初始化
-        Container container = createContainer(Helpers.sort(new ArrayList<ContainerProvider>(providers)));
+        Container container = this.createContainer(Helpers.sort(new ArrayList<ContainerProvider>(providers)));
         container.initial();
         // 控制台管理器注入实例
         container.inject(this);
-        Asserts.throwState(console != null, "The container does not provide effective supply for console");
-        console.initial();
+        Asserts.throwState(this.console != null, "The container does not provide effective supply for console");
+        this.console.initial();
     }
 
     /**
@@ -234,8 +232,8 @@ public class ConsoleManager {
      */
     protected Container createBootstrap() {
         ContainerBuilder builder = new ContainerBuilder();
-        builder.constant(Constants.BRICK_NAME, name);
-        builder.constant(Constants.BRICK_PATH, path);
+        builder.constant(Constants.BRICK_NAME, this.name);
+        builder.constant(Constants.BRICK_PATH, this.path);
         builder.constant(Constants.BRICK_RELOAD, Boolean.FALSE);
         ContainerProviderFactory.getProvider().register(builder); // 引导供应器
         return builder.create(Constants.BOOTSTRAP);
@@ -248,10 +246,10 @@ public class ConsoleManager {
      * @return
      */
     private Container createContainer(List<ContainerProvider> providers) {
-        ContainerBuilder builder = createBuilder();
+        ContainerBuilder builder = this.createBuilder();
         // 注入引导实例至供应容器，然后向应用容器构建器注册供应资源
         for (ContainerProvider provider : providers) {
-            bootstrap.inject(provider);
+            this.bootstrap.inject(provider);
             provider.register(builder);
         }
         // 注入引导后备器
@@ -260,8 +258,8 @@ public class ConsoleManager {
                 return bootstrap.contains(key.getType(), key.getName());
             }
 
-            public <T> T alternate(Key<T> key, InjectConductor conductor) {
-                return bootstrap.getInstance(key.getType(), key.getName(), conductor);
+            public <T> T alternate(Key<T> key) {
+                return bootstrap.getInstance(key.getType(), key.getName());
             }
         });
         return builder.create(Constants.SYSTEM);
@@ -291,10 +289,10 @@ public class ConsoleManager {
      */
     public final Console getConsole() {
         synchronized (this) {
-            if (console == null) {
-                load(getContainerProviders());
+            if (this.console == null) {
+                this.load(this.getContainerProviders());
             }
         }
-        return console;
+        return this.console;
     }
 }

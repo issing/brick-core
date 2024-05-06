@@ -18,8 +18,8 @@ import net.isger.util.reflect.ClassAssembler;
 public class ConsoleLoader extends BaseLoader {
 
     /** 控制台 */
-    @Ignore(mode = Mode.INCLUDE)
     @Alias(Constants.SYSTEM)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     protected Console console;
 
     public ConsoleLoader() {
@@ -30,13 +30,13 @@ public class ConsoleLoader extends BaseLoader {
     }
 
     protected Object load(String res, ClassAssembler assembler) {
-        if (console != null) {
-            Object result = console.loadResource(res);
+        if (this.console != null) {
+            Object result = this.console.loadResource(res);
             if (result != null) {
                 if (result instanceof String) {
                     result = super.load(result, assembler);
                 } else {
-                    result = load(result, assembler);
+                    result = this.load(result, assembler);
                 }
                 return result;
             }

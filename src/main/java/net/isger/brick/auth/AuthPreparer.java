@@ -3,7 +3,6 @@ package net.isger.brick.auth;
 import net.isger.brick.Constants;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.core.Command;
-import net.isger.brick.core.Console;
 import net.isger.brick.core.Context;
 import net.isger.brick.core.Preparer;
 import net.isger.util.Helpers;
@@ -20,13 +19,8 @@ import net.isger.util.anno.Ignore.Mode;
  */
 public class AuthPreparer extends Preparer {
 
-    /** 控制台 */
-    @Ignore(mode = Mode.INCLUDE)
-    @Alias(Constants.SYSTEM)
-    private Console console;
-
     /** 认证模块 */
-    @Ignore(mode = Mode.INCLUDE)
+    @Ignore(mode = Mode.INCLUDE, serialize = false)
     @Alias(Constants.MOD_AUTH)
     private AuthModule module;
 

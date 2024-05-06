@@ -19,7 +19,7 @@ public class TextSocketDecoder implements Decoder {
     private transient byte[] delimiter;
 
     public TextSocketDecoder() {
-        this(Constants.ENC_UTF8, Constants.ENC_UTF8, TextSocketProtocol.DELIMITER);
+        this(Constants.ENCODING_UTF_8, Constants.ENCODING_UTF_8, TextSocketProtocol.DELIMITER);
     }
 
     public TextSocketDecoder(String sourceCharset, String targetCharset, String delimiter) {

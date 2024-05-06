@@ -12,7 +12,6 @@ import net.isger.brick.inject.Scope;
  * 作用域注解
  * 
  * @author issing
- * 
  */
 @Target(ElementType.TYPE)
 @Retention(RUNTIME)

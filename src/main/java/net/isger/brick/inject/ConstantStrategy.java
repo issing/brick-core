@@ -2,19 +2,37 @@ package net.isger.brick.inject;
 
 import java.util.concurrent.Callable;
 
+import net.isger.util.Asserts;
 import net.isger.util.reflect.Converter;
 
-public class ConstantStrategy implements Strategy {
+public class ConstantStrategy implements Strategy<Object> {
+
+    private boolean injected;
 
     private Object instance;
 
     protected ConstantStrategy(Object instance) {
-        this.instance = instance;
+        this.setInstance(instance);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> T find(Class<T> type, String name, Callable<? extends T> callable) throws Exception {
-        return (T) getInstance();
+    public boolean hasInject(Object instance) {
+        return this.instance == instance && this.injected;
+    }
+
+    @Override
+    public Object find(Container container, Class<Object> type, String name) {
+        return this.find(container, type, name, null);
+    }
+
+    public Object find(Container container, Class<Object> type, String name, Callable<? extends Object> callable) {
+        Object instance = this.getInstance();
+        synchronized (instance) {
+            if (!this.injected) {
+                container.inject(instance);
+                this.injected = true;
+            }
+        }
+        return instance;
     }
 
     public Object getInstance() {
@@ -22,17 +40,31 @@ public class ConstantStrategy implements Strategy {
     }
 
     public void setInstance(Object instance) {
-        this.instance = instance;
+        if (this.instance != Asserts.isNotNull(instance)) {
+            this.instance = instance;
+            this.injected = false;
+        }
     }
 
+    /**
+     * 设置常量策略
+     * 
+     * @param <T>
+     * @param container
+     * @param type
+     * @param name
+     * @param instance
+     * @return
+     */
     @SuppressWarnings("unchecked")
-    public static <T> T set(Container container, Class<? extends T> type, String name, T instance) {
-        T oldInstance = null;
-        Strategy strategy = container.getStrategy(type, name);
+    public static <T> T set(Container container, Class<T> type, String name, Object instance) {
+        Asserts.isInstance(type, instance);
+        Object origin = null;
+        Strategy<T> strategy = (Strategy<T>) container.getStrategy(type, name);
         set: {
             if (strategy != null) {
                 try {
-                    oldInstance = strategy.find(type, name, null);
+                    origin = strategy.find(container, type, name, null);
                 } catch (Exception e) {
                 }
                 if (strategy instanceof ConstantStrategy) {
@@ -40,9 +72,9 @@ public class ConstantStrategy implements Strategy {
                     break set;
                 }
             }
-            container.setStrategy(type, name, new ConstantStrategy(instance));
+            container.setStrategy(type, name, (Strategy<T>) (new ConstantStrategy(instance)));
         }
-        return (T) Converter.convert(type, oldInstance);
+        return (T) Converter.convert(type, origin);
     }
 
 }

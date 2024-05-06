@@ -24,8 +24,14 @@ public class BusModule extends AbstractModule {
 
     private static final Logger LOG;
 
+    private transient volatile Status status;
+
     static {
         LOG = LoggerFactory.getLogger(BusModule.class);
+    }
+
+    public BusModule() {
+        this.status = Status.UNINITIALIZED;
     }
 
     /**
@@ -65,7 +71,7 @@ public class BusModule extends AbstractModule {
      */
     @SuppressWarnings("unchecked")
     protected final Bus getBus() {
-        return container.getInstance((Class<Bus>) getTargetClass(), Constants.SYSTEM);
+        return this.container.getInstance((Class<Bus>) getTargetClass(), Constants.SYSTEM);
     }
 
     /**
@@ -110,15 +116,26 @@ public class BusModule extends AbstractModule {
         return (Endpoint) getInternal(Endpoint.BRICK_ENDPOINT);
     }
 
-    public void initial() {
+    public boolean hasReady() {
+        return this.getBus().hasReady() && this.status == Status.INITIALIZED;
+    }
+
+    public Status getStatus() {
+        return this.status;
+    }
+
+    public synchronized void initial() {
+        if (!(status == Status.UNINITIALIZED || status == Status.DESTROYED)) return;
+        this.status = Status.INITIALIZING;
         super.initial();
         /* 初始总线 */
-        Bus bus = getBus();
+        Bus bus = this.getBus();
         if (bus == null) {
-            setBus(create());
-            bus = getBus();
+            setBus(this.create());
+            bus = this.getBus();
         }
         bus.initial();
+        this.status = Status.INITIALIZED;
     }
 
     public final void execute(BaseCommand cmd) {
@@ -129,19 +146,21 @@ public class BusModule extends AbstractModule {
             super.execute(bcmd);
         } else {
             /* 端点操作 */
-            Endpoint endpoint = getBus().getEndpoint(name);
+            Endpoint endpoint = this.getBus().getEndpoint(name);
             setInternal(Endpoint.BRICK_ENDPOINT, endpoint);
             endpoint.operate(bcmd);
         }
     }
 
-    public void destroy() {
+    public synchronized void destroy() {
+        if (this.status == Status.UNINITIALIZED || this.status == Status.DESTROYED) return;
         /* 注销总线 */
-        Bus bus = getBus();
+        Bus bus = this.getBus();
         if (bus != null) {
             bus.destroy();
         }
         super.destroy();
+        this.status = Status.DESTROYED;
     }
 
 }

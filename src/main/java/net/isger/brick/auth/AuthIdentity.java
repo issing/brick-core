@@ -2,6 +2,7 @@ package net.isger.brick.auth;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import net.isger.util.Helpers;
 import net.isger.util.Strings;
@@ -38,7 +39,7 @@ public class AuthIdentity {
     }
 
     public AuthIdentity(String id, AuthToken<?> token) {
-        this.id = Strings.isEmpty(id) ? Helpers.makeUUID() : id;
+        this.id = Strings.isEmpty(id) ? Strings.join(true, "-", Helpers.wraps(Helpers.makeMarchineCode(), Helpers.makeUUID(), this.hashCode())) : id;
         this.token = token;
         this.mark = this.time = System.currentTimeMillis();
         this.attributes = new HashMap<String, Object>();
@@ -73,16 +74,13 @@ public class AuthIdentity {
     }
 
     public void setAttribute(String name, Object value) {
-        if (value == null) {
-            this.attributes.remove(name);
-        } else {
-            this.attributes.put(name, value);
-        }
+        if (value == null) this.attributes.remove(name);
+        else this.attributes.put(name, value);
     }
 
     public void active(boolean create) {
         this.time = System.currentTimeMillis();
-        if ((this.time - this.mark) / 1000 / 60 >= 1) {
+        if ((this.time - this.mark) / TimeUnit.MINUTES.toMillis(1) >= 1) {
             this.mark = this.time;
             this.frequency = 0;
         }

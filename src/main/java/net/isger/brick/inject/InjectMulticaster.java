@@ -4,29 +4,25 @@ public class InjectMulticaster implements InjectReserver {
 
     protected final InjectReserver a, b;
 
-    protected InjectMulticaster(InjectReserver a, InjectReserver b) {
+    InjectMulticaster(InjectReserver a, InjectReserver b) {
         this.a = a;
         this.b = b;
     }
 
     protected InjectReserver remove(InjectReserver oldl) {
-        if (oldl == a)
-            return b;
-        if (oldl == b)
-            return a;
-        InjectReserver a2 = removeInternal(a, oldl);
-        InjectReserver b2 = removeInternal(b, oldl);
-        if (a2 == a && b2 == b) {
+        if (oldl == this.a) return this.b;
+        if (oldl == this.b) return this.a;
+        InjectReserver a2 = removeInternal(this.a, oldl);
+        InjectReserver b2 = removeInternal(this.b, oldl);
+        if (a2 == this.a && b2 == this.b) {
             return this;
         }
         return addInternal(a2, b2);
     }
 
     protected static InjectReserver addInternal(InjectReserver a, InjectReserver b) {
-        if (a == null)
-            return b;
-        if (b == null)
-            return a;
+        if (a == null) return b;
+        if (b == null) return a;
         return new InjectMulticaster(a, b);
     }
 
@@ -41,13 +37,13 @@ public class InjectMulticaster implements InjectReserver {
     }
 
     public boolean contains(Key<?> key) {
-        return a.contains(key) || b.contains(key);
+        return this.a.contains(key) || this.b.contains(key);
     }
 
-    public <T> T alternate(Key<T> key, InjectConductor conductor) {
-        T instance = a.alternate(key, conductor);
+    public <T> T alternate(Key<T> key) {
+        T instance = this.a.alternate(key);
         if (instance == null) {
-            instance = b.alternate(key, conductor);
+            instance = this.b.alternate(key);
         }
         return instance;
     }

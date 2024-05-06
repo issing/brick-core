@@ -23,8 +23,14 @@ public class TaskModule extends AbstractModule {
 
     private static final Logger LOG;
 
+    private transient volatile Status status;
+
     static {
         LOG = LoggerFactory.getLogger(TaskModule.class);
+    }
+
+    public TaskModule() {
+        this.status = Status.UNINITIALIZED;
     }
 
     /**
@@ -39,7 +45,7 @@ public class TaskModule extends AbstractModule {
      */
     @SuppressWarnings("unchecked")
     public Class<? extends Task> getImplementClass() {
-        return (Class<? extends Task>) getImplementClass(TASK);
+        return (Class<? extends Task>) this.getImplementClass(TASK);
     }
 
     /**
@@ -54,7 +60,7 @@ public class TaskModule extends AbstractModule {
      */
     protected Object create(Class<?> clazz, Map<String, Object> res, ClassAssembler assembler) {
         Task task = (Task) super.create(clazz, res, assembler);
-        setTask(task);
+        this.setTask(task);
         return task;
     }
 
@@ -65,7 +71,7 @@ public class TaskModule extends AbstractModule {
      */
     @SuppressWarnings("unchecked")
     protected Task getTask() {
-        return container.getInstance((Class<Task>) getTargetClass(), Constants.SYSTEM);
+        return this.container.getInstance((Class<Task>) this.getTargetClass(), Constants.SYSTEM);
     }
 
     /**
@@ -78,7 +84,7 @@ public class TaskModule extends AbstractModule {
         if (LOG.isDebugEnabled()) {
             LOG.info("Achieve task [{}]", task);
         }
-        setTask(Task.class, Constants.SYSTEM, task);
+        this.setTask(Task.class, Constants.SYSTEM, task);
     }
 
     /**
@@ -89,7 +95,7 @@ public class TaskModule extends AbstractModule {
      * @param task
      */
     private void setTask(Class<?> type, String name, Object task) {
-        task = ConstantStrategy.set(container, type, name, task);
+        task = ConstantStrategy.set(this.container, type, name, task);
         if (LOG.isDebugEnabled() && task != null) {
             LOG.info("(!) Discard task [{}]", task);
         }
@@ -102,15 +108,26 @@ public class TaskModule extends AbstractModule {
         return (Task) super.create();
     }
 
-    public void initial() {
+    public boolean hasReady() {
+        return this.getTask().hasReady() && this.status == Status.INITIALIZED;
+    }
+
+    public Status getStatus() {
+        return this.status;
+    }
+
+    public synchronized void initial() {
+        if (!(status == Status.UNINITIALIZED || status == Status.DESTROYED)) return;
+        this.status = Status.INITIALIZING;
         super.initial();
         /* 初始任务 */
-        Task task = getTask();
+        Task task = this.getTask();
         if (task == null) {
-            setTask(create());
-            task = getTask();
+            this.setTask(create());
+            task = this.getTask();
         }
         task.initial();
+        this.status = Status.INITIALIZED;
     }
 
     public final void execute(BaseCommand cmd) {
@@ -120,19 +137,21 @@ public class TaskModule extends AbstractModule {
             super.execute(payload);
         } else {
             /* 任务操作 */
-            Task task = getTask();
-            setInternal(Task.BRICK_TASK, task);
+            Task task = this.getTask();
+            this.setInternal(Task.BRICK_TASK, task);
             task.operate(payload);
         }
     }
 
-    public void destroy() {
+    public synchronized void destroy() {
+        if (this.status == Status.UNINITIALIZED || this.status == Status.DESTROYED) return;
         /* 注销任务 */
-        Task task = getTask();
+        Task task = this.getTask();
         if (task != null) {
             task.destroy();
         }
         super.destroy();
+        this.status = Status.DESTROYED;
     }
 
 }

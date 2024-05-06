@@ -19,9 +19,8 @@ public interface InjectReserver {
      * 备用实例
      *
      * @param key
-     * @param conductor
      * @return
      */
-    public <T> T alternate(Key<T> key, InjectConductor conductor);
+    public <T> T alternate(Key<T> key);
 
 }

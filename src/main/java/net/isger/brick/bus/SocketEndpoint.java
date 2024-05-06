@@ -16,7 +16,6 @@ import net.isger.util.anno.Ignore.Mode;
  * 套接字端点
  * 
  * @author issing
- *
  */
 @Ignore
 public abstract class SocketEndpoint extends AbstractEndpoint {
@@ -28,8 +27,6 @@ public abstract class SocketEndpoint extends AbstractEndpoint {
     @Ignore(mode = Mode.INCLUDE)
     private String network;
 
-    private NetworkInterface networkInterface;
-
     @Ignore(mode = Mode.INCLUDE)
     private String channel;
 
@@ -39,7 +36,9 @@ public abstract class SocketEndpoint extends AbstractEndpoint {
     @Ignore(mode = Mode.INCLUDE)
     private int port;
 
-    private InetSocketAddress address;
+    private transient NetworkInterface networkInterface;
+
+    private transient InetSocketAddress address;
 
     public SocketEndpoint() {
         this(null, 0);
@@ -81,9 +80,9 @@ public abstract class SocketEndpoint extends AbstractEndpoint {
         address = newAddress(host, port);
         try {
             if (Strings.isEmpty(network)) {
-                networkInterface = NetworkInterface.getByInetAddress(address.getAddress());
+                this.networkInterface = NetworkInterface.getByInetAddress(address.getAddress());
             } else {
-                networkInterface = NetworkInterface.getByName(network);
+                this.networkInterface = NetworkInterface.getByName(network);
             }
         } catch (SocketException e) {
             throw Asserts.argument("Invalid network interface name [%s]", network, e);

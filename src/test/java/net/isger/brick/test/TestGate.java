@@ -8,8 +8,7 @@ public class TestGate extends BaseGate {
     private String something;
 
     public void operate() {
-        System.out.println("TestGate does not implement the operate ["
-                + Context.getAction().getCommand().getOperate() + "]");
+        System.out.println("TestGate does not implement the operate [" + Context.getAction().getCommand().getOperate() + "]");
     }
 
     public void say() {

@@ -7,7 +7,6 @@ import net.isger.util.load.Loader;
  * 模块接口
  * 
  * @author issing
- * 
  */
 public interface Module extends Loader, Manageable {
 

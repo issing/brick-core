@@ -12,6 +12,7 @@ public class ObjectSocketDecoder implements Decoder {
         return decode(new ByteArrayInputStream(content));
     }
 
+    @SuppressWarnings("resource")
     public Object decode(InputStream is) {
         try {
             return new ObjectInputStream(is).readObject();
