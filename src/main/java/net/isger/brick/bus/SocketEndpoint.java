@@ -60,6 +60,14 @@ public abstract class SocketEndpoint extends AbstractEndpoint {
         return channel;
     }
 
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
     public NetworkInterface getNetworkInterface() {
         return networkInterface;
     }
