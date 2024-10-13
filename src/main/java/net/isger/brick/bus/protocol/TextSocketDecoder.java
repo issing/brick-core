@@ -40,24 +40,24 @@ public class TextSocketDecoder implements Decoder {
         is.mark(0);
         try {
             String value;
-            byte[] data = new byte[Math.max(is.available(), delimiter.length)];
-            int size = is.read(data) - delimiter.length;
+            byte[] data = new byte[Math.max(is.available(), this.delimiter.length)];
+            int size = is.read(data) - this.delimiter.length;
             int i = 0;
             next: while (i++ < size) {
                 int j = 0;
                 do {
-                    if (data[i + j] != delimiter[j]) {
+                    if (data[i + j] != this.delimiter[j]) {
                         continue next;
                     }
-                } while (++j < delimiter.length);
+                } while (++j < this.delimiter.length);
                 is.reset();
                 is.skip(i + j);
                 value = new String(data, 0, i, sourceCharset).trim();
-                if (value.length() == 0 || value.equals(new String(delimiter, targetCharset))) {
+                if (value.length() == 0 || value.equals(new String(this.delimiter, this.targetCharset))) {
                     is.mark(0);
                     continue;
                 }
-                return Strings.toCharset(value.getBytes(sourceCharset), sourceCharset, targetCharset);
+                return Strings.toCharset(value.getBytes(this.sourceCharset), this.sourceCharset, this.targetCharset);
             }
             is.reset();
         } catch (IOException e) {
@@ -75,7 +75,7 @@ public class TextSocketDecoder implements Decoder {
     }
 
     public String getEncoding() {
-        return getTargetCharset();
+        return this.getTargetCharset();
     }
 
     public byte[] getDelimiter() {

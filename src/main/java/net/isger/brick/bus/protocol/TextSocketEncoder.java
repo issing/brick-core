@@ -29,7 +29,7 @@ public class TextSocketEncoder implements Encoder {
         if (message != null) {
             try {
                 data = (message + this.delimiter).getBytes(this.sourceCharset);
-                if (!this.sourceCharset.equalsIgnoreCase(targetCharset)) {
+                if (!this.sourceCharset.equalsIgnoreCase(this.targetCharset)) {
                     data = Strings.toCharset(data, this.sourceCharset, this.targetCharset).getBytes(this.targetCharset);
                 }
             } catch (UnsupportedEncodingException e) {
