@@ -602,7 +602,7 @@ public class SqlDialect implements Dialect {
                 if (optionValue == null) {
                     value = "0";
                 } else {
-                    value = String.valueOf(Numbers.parseInt(optionValue));
+                    value = String.valueOf(Numbers.toInt(optionValue));
                 }
                 break;
             }

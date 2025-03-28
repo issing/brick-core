@@ -6,7 +6,7 @@
     <parent>
         <groupId>net.isger</groupId>
         <artifactId>brick-primary</artifactId>
-        <version>0.0.3-SNAPSHOT</version>
+        <version>0.0.3</version>
     </parent>
     <artifactId>brick-core</artifactId>
     <packaging>jar</packaging>
@@ -38,6 +38,10 @@
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
         </dependency>
         <!-- 砖头依赖 -->
         <dependency>
