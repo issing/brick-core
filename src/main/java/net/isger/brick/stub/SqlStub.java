@@ -31,9 +31,8 @@ import net.isger.util.sql.SqlTransformerAdapter;
 
 /**
  * 结构化查询语言存根
- * 
- * @author issing
  *
+ * @author issing
  */
 @Ignore
 public class SqlStub extends AbstractStub {
@@ -58,6 +57,9 @@ public class SqlStub extends AbstractStub {
 
     @Ignore(mode = Mode.INCLUDE)
     private SqlTransformer transformer;
+
+    @Ignore(mode = Mode.INCLUDE)
+    private Boolean standardizing;
 
     static {
         LOG = LoggerFactory.getLogger(SqlStub.class);
@@ -102,12 +104,13 @@ public class SqlStub extends AbstractStub {
             transformer.initial();
         }
         /* 标准化 */
-        initialStandard(StubCommand.getAction());
+        if (standardizing == null || standardizing)
+            initialStandard(StubCommand.getAction());
     }
 
     /**
      * 初始标准化
-     * 
+     *
      * @param cmd
      */
     protected void initialStandard(StubCommand cmd) {
@@ -122,7 +125,7 @@ public class SqlStub extends AbstractStub {
 
     /**
      * 初始模型
-     * 
+     *
      * @param cmd
      * @param table
      */
@@ -171,7 +174,7 @@ public class SqlStub extends AbstractStub {
 
     /**
      * 获取库连接
-     * 
+     *
      * @return
      */
     protected Connection getConnection(StubCommand cmd) {
@@ -305,7 +308,8 @@ public class SqlStub extends AbstractStub {
         Object[] condition = getCondition(cmd, 3);
         final Connection conn = getConnection(cmd);
         Object[] result;
-        search: try {
+        search:
+        try {
             SqlEntry sqlEntry;
             if (table instanceof String) {
                 sqlEntry = dialect.getSearchEntry((String) table, (String[]) condition[0], (Object[]) condition[1]);
@@ -356,7 +360,7 @@ public class SqlStub extends AbstractStub {
 
     /**
      * 检查表是否存在
-     * 
+     *
      * @param cmd
      */
     @Ignore(mode = Mode.INCLUDE)
@@ -365,7 +369,8 @@ public class SqlStub extends AbstractStub {
         Object[] condition = getCondition(cmd, 3);
         final Connection conn = getConnection(cmd);
         Object[] result;
-        search: try {
+        search:
+        try {
             SqlEntry sqlEntry;
             if (table instanceof String) {
                 sqlEntry = dialect.getExistsEntry((String) table);
@@ -421,7 +426,7 @@ public class SqlStub extends AbstractStub {
 
     /**
      * 获取条件
-     * 
+     *
      * @param cmd
      * @param length
      * @return
@@ -436,7 +441,7 @@ public class SqlStub extends AbstractStub {
 
     /**
      * 修改操作
-     * 
+     *
      * @param operate
      * @param table
      * @param condition
@@ -469,7 +474,7 @@ public class SqlStub extends AbstractStub {
 
     /**
      * 规范操作条件
-     * 
+     *
      * @param operate
      * @param condition
      */
@@ -485,7 +490,7 @@ public class SqlStub extends AbstractStub {
 
     /**
      * 关闭库连接
-     * 
+     *
      * @param conn
      */
     public void close(Connection conn) {
