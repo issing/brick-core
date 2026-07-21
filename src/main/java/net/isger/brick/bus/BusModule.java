@@ -1,16 +1,15 @@
 package net.isger.brick.bus;
 
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import net.isger.brick.Constants;
 import net.isger.brick.core.AbstractModule;
 import net.isger.brick.core.BaseCommand;
 import net.isger.brick.inject.ConstantStrategy;
 import net.isger.util.Asserts;
 import net.isger.util.reflect.ClassAssembler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * 总线模块
